@@ -31,7 +31,7 @@ const Sidebar: React.FC<SidebarProps> = ({ sidebarOpen, setSidebarOpen }) => {
   const navigationItems = [
     { name: "Dashboard", icon: LayoutDashboard, path: "/main" },
     { name: "Project", icon: FolderOpen, path: "/main-projects" },
-    { name: "Task", icon: CheckSquare, path: "/create" },
+    { name: "Task", icon: CheckSquare, path: "/tasks" },
     { name: "Work Logs", icon: Clock, path: "/work-logs" },
     { name: "Performance", icon: TrendingUp, path: "/performance" },
     { name: "Settings", icon: Settings, path: "/settings" },

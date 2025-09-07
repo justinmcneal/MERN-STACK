@@ -9,6 +9,7 @@ import MainProjects from './view_pages/manager/projects_main';
 import Projects from './view_pages/manager/monitorProjects'; 
 import AssignTask from './view_pages/manager/projectTask'; 
 import CreateProject from './view_pages/manager/createProjects'; 
+import Task from './view_pages/manager/task'; 
 import CreateTask from './view_pages/manager/createTask'; 
 import Performance from './view_pages/manager/performance'; 
 import Settings from './view_pages/manager/settings';
@@ -39,6 +40,7 @@ const App: React.FC = () => {
         <Route path="/main-projects" element={<MainProjects />} />
         <Route path="/projects" element={<Projects />} />
         <Route path="/assign-task" element={<AssignTask />} />
+        <Route path="/tasks" element={<Task />} />
         <Route path="/create-project" element={<CreateProject />} />
         <Route path="/work-logs" element={<WorkLogs/>}/>
         <Route path="/performance" element={<Performance />} />
