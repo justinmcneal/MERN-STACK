@@ -109,6 +109,14 @@ export const refreshToken = asyncHandler(async (req: Request, res: Response) => 
       const now = Math.floor(Date.now() / 1000);
       console.log(`[Refresh] Token expires in ${decoded.exp - now} seconds`);
     }
+    // Issue new refresh token and set as cookie (rotation)
+    const newRefreshToken = generateRefreshToken(decoded.id);
+    res.cookie('refreshToken', newRefreshToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production' ? true : false,
+      sameSite: 'strict',
+      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+    });
     const accessToken = generateAccessToken(decoded.id);
     res.json({ accessToken });
   } catch (err: any) {
