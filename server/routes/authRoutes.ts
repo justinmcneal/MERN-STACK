@@ -7,9 +7,9 @@ const router = Router();
 
 // Rate limiter: max 10 requests per minute per IP for auth endpoints
 const authRateLimiter = rateLimit({
-	windowMs: 60 * 1000, // 1 minute
-	max: 10,
-	message: 'Too many requests, please try again later.',
+  windowMs: 60 * 1000, // 1 minute
+  max: process.env.NODE_ENV === 'production' ? 10 : 100,
+  message: 'Too many requests, please try again later.',
 });
 
 // Auth routes

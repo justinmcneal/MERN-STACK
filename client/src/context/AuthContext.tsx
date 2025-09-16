@@ -120,20 +120,34 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   // Initialize user and accessToken from localStorage on app load
   useEffect(() => {
     accessToken = localStorage.getItem(ACCESS_TOKEN_KEY);
+    const hasRefreshTokenCookie = () => {
+      // Check for refreshToken cookie presence
+      return document.cookie.split(';').some((c) => c.trim().startsWith('refreshToken='));
+    };
     const initAuth = async () => {
       try {
         const { data } = await api.get<User>('/auth/me', {
           headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : undefined,
         });
         setUser(data);
-      } catch {
-        try {
-          await refreshAccessToken();
-          const { data } = await api.get<User>('/auth/me', {
-            headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : undefined,
-          });
-          setUser(data);
-        } catch {
+      } catch (err: any) {
+        if (hasRefreshTokenCookie()) {
+          try {
+            await refreshAccessToken();
+            const { data } = await api.get<User>('/auth/me', {
+              headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : undefined,
+            });
+            setUser(data);
+          } catch (refreshErr: any) {
+            // If refresh fails due to rate limiting, keep user state and show a warning
+            if (refreshErr?.response?.status === 429) {
+              console.warn('[Auth] Refresh rate limited. Keeping previous user state.');
+              // Optionally, show a message to the user here
+              return;
+            }
+            setUser(null);
+          }
+        } else {
           setUser(null);
         }
       }

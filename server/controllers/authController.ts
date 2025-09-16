@@ -72,16 +72,16 @@ export const registerUser = asyncHandler(async (req: Request, res: Response) => 
     await user.save();
     res.cookie('refreshToken', refreshToken, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production', // always true in prod
-      sameSite: 'strict',
+      secure: process.env.NODE_ENV === 'production' ? true : false,
+      sameSite: process.env.NODE_ENV === 'production' ? 'strict' : 'lax',
       maxAge: 7 * 24 * 60 * 60 * 1000,
     });
     // Generate CSRF token and set as cookie (not httpOnly)
     const csrfToken = crypto.randomBytes(32).toString('hex');
     res.cookie('csrfToken', csrfToken, {
       httpOnly: false,
-      secure: process.env.NODE_ENV === 'production', // always true in prod
-      sameSite: 'strict',
+      secure: process.env.NODE_ENV === 'production' ? true : false,
+      sameSite: process.env.NODE_ENV === 'production' ? 'strict' : 'lax',
       maxAge: 7 * 24 * 60 * 60 * 1000,
     });
     const accessToken = generateAccessToken(user._id.toString());
@@ -128,16 +128,16 @@ export const authUser = asyncHandler(async (req: Request, res: Response) => {
     await user.save();
     res.cookie('refreshToken', refreshToken, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production', // always true in prod
-      sameSite: 'strict',
+      secure: process.env.NODE_ENV === 'production' ? true : false,
+      sameSite: process.env.NODE_ENV === 'production' ? 'strict' : 'lax',
       maxAge: 7 * 24 * 60 * 60 * 1000,
     });
     // Generate CSRF token and set as cookie (not httpOnly)
     const csrfToken = crypto.randomBytes(32).toString('hex');
     res.cookie('csrfToken', csrfToken, {
       httpOnly: false,
-      secure: process.env.NODE_ENV === 'production', // always true in prod
-      sameSite: 'strict',
+      secure: process.env.NODE_ENV === 'production' ? true : false,
+      sameSite: process.env.NODE_ENV === 'production' ? 'strict' : 'lax',
       maxAge: 7 * 24 * 60 * 60 * 1000,
     });
     const accessToken = generateAccessToken(user._id.toString());
@@ -213,8 +213,8 @@ export const refreshToken = asyncHandler(async (req: Request, res: Response) => 
     await user.save();
     res.cookie('refreshToken', newRefreshToken, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production', // always true in prod
-      sameSite: 'strict',
+      secure: process.env.NODE_ENV === 'production' ? true : false,
+      sameSite: process.env.NODE_ENV === 'production' ? 'strict' : 'lax',
       maxAge: 7 * 24 * 60 * 60 * 1000,
     });
     const accessToken = generateAccessToken(decoded.id);

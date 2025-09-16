@@ -18,7 +18,15 @@ const App: React.FC = () => {
           </ProtectedRoute>
         }
       />
-      <Route path="*" element={<Navigate to="/" replace />} />
+      {/* Catch-all: if not logged in, go to /login; if logged in, go to home */}
+      <Route
+        path="*"
+        element={
+          <ProtectedRoute>
+            <Navigate to="/" replace />
+          </ProtectedRoute>
+        }
+      />
     </Routes>
   );
 };
