@@ -1,17 +1,22 @@
-import axios, { AxiosInstance } from 'axios';
+import axios, { AxiosInstance, InternalAxiosRequestConfig } from 'axios';
+import { getAccessToken } from './authToken'; // helper to get current in-memory access token
 
 const api: AxiosInstance = axios.create({
   baseURL: import.meta.env.VITE_API_URL || 'http://localhost:5000/api',
-  withCredentials: true, // useful later if you switch to httpOnly cookies
+  withCredentials: true, // necessary for httpOnly cookies
 });
 
-// Add request interceptor to send accessToken in Authorization header
-api.interceptors.request.use((config) => {
-  const accessToken = localStorage.getItem('accessToken');
-  if (accessToken && config.headers) {
-    config.headers['Authorization'] = `Bearer ${accessToken}`;
-  }
-  return config;
-});
+// Attach in-memory access token to all requests
+api.interceptors.request.use(
+  (config: InternalAxiosRequestConfig) => {
+    const token = getAccessToken();
+    if (token) {
+      config.headers = config.headers || {};
+      config.headers['Authorization'] = `Bearer ${token}`;
+    }
+    return config;
+  },
+  (error) => Promise.reject(error)
+);
 
 export default api;
