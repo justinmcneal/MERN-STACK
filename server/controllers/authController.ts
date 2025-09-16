@@ -95,7 +95,26 @@ export const registerUser = asyncHandler(async (req: Request, res: Response) => 
 export const authUser = asyncHandler(async (req: Request, res: Response) => {
   const { email, password } = req.body;
   const user = await User.findOne({ email });
-  if (user && await user.matchPassword(password)) {
+  const MAX_FAILED_ATTEMPTS = 5;
+  const LOCK_TIME = 15 * 60 * 1000; // 15 minutes
+
+  if (!user) {
+    res.status(401);
+    throw new Error('Invalid email or password');
+  }
+
+  // Check if account is locked
+  if (user.isLocked()) {
+    res.status(403);
+    throw new Error('Account is temporarily locked due to too many failed login attempts. Please try again later.');
+  }
+
+  // Check password
+  const isMatch = await user.matchPassword(password);
+  if (isMatch) {
+    // Reset failed attempts and lock
+    user.failedLoginAttempts = 0;
+    user.lockUntil = null;
     // Generate refresh token and save to user
     const refreshToken = generateRefreshToken(user._id.toString());
     user.refreshTokens.push(refreshToken);
@@ -123,8 +142,17 @@ export const authUser = asyncHandler(async (req: Request, res: Response) => {
       csrfToken,
     });
   } else {
+    // Increment failed attempts
+    user.failedLoginAttempts += 1;
+    // Lock account if max attempts reached
+    if (user.failedLoginAttempts >= MAX_FAILED_ATTEMPTS) {
+      user.lockUntil = Date.now() + LOCK_TIME;
+    }
+    await user.save();
     res.status(401);
-    throw new Error('Invalid email or password');
+    throw new Error(user.isLocked()
+      ? 'Account is temporarily locked due to too many failed login attempts. Please try again later.'
+      : 'Invalid email or password');
   }
 });
 

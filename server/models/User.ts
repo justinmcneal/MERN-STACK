@@ -9,6 +9,9 @@ export interface IUser extends Document {
   password: string;
   refreshTokens: string[];
   matchPassword(enteredPassword: string): Promise<boolean>;
+  failedLoginAttempts: number;
+  lockUntil: number | null;
+  isLocked(): boolean;
 }
 
 const userSchema: Schema<IUser> = new mongoose.Schema(
@@ -17,9 +20,16 @@ const userSchema: Schema<IUser> = new mongoose.Schema(
     email: { type: String, required: true, unique: true, lowercase: true },
     password: { type: String, required: true },
     refreshTokens: [{ type: String, required: true }],
+    failedLoginAttempts: { type: Number, default: 0 },
+    lockUntil: { type: Number, default: null },
   },
   { timestamps: true }
 );
+
+// Instance method to check if account is locked
+userSchema.methods.isLocked = function (): boolean {
+  return !!(this.lockUntil && this.lockUntil > Date.now());
+};
 
 // Hash password before save (only if modified)
 userSchema.pre<IUser>('save', async function (next) {
