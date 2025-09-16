@@ -51,6 +51,13 @@ export const registerUser = asyncHandler(async (req: Request, res: Response) => 
     throw new Error('Please provide name, email and password');
   }
 
+  // Password strength validation
+  const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]).{8,}$/;
+  if (!passwordRegex.test(password)) {
+    res.status(400);
+    throw new Error('Password must be at least 8 characters long and include uppercase, lowercase, number, and special character.');
+  }
+
   const exists = await User.findOne({ email });
   if (exists) {
     res.status(400);
