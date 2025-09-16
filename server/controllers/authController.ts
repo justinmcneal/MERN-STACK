@@ -21,7 +21,7 @@ const sendTokens = (res: Response, userId: string) => {
 
   res.cookie('refreshToken', refreshToken, {
     httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
+    secure: process.env.NODE_ENV === 'production' ? true : false, // false in dev for HTTP
     sameSite: 'strict',
     maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
   });
@@ -93,12 +93,27 @@ export const getMe = asyncHandler(async (req: Request, res: Response) => {
 // POST /api/auth/refresh (optional endpoint to get new access token)
 export const refreshToken = asyncHandler(async (req: Request, res: Response) => {
   const token = req.cookies.refreshToken;
+  console.log('[Refresh] Received refresh token:', token || '[missing]');
   if (!token) {
     res.status(401);
     throw new Error('No refresh token provided');
   }
-
-  const decoded = jwt.verify(token, process.env.JWT_SECRET as string) as { id: string };
-  const accessToken = generateAccessToken(decoded.id);
-  res.json({ accessToken });
+  try {
+    // Decode without verifying to inspect payload
+    const decodedRaw = jwt.decode(token, { complete: true });
+    console.log('[Refresh] Decoded raw token:', decodedRaw);
+    // Now verify
+    const decoded = jwt.verify(token, process.env.JWT_SECRET as string) as { id: string, exp?: number };
+    console.log('[Refresh] Token verified:', decoded);
+    if (decoded.exp) {
+      const now = Math.floor(Date.now() / 1000);
+      console.log(`[Refresh] Token expires in ${decoded.exp - now} seconds`);
+    }
+    const accessToken = generateAccessToken(decoded.id);
+    res.json({ accessToken });
+  } catch (err: any) {
+    console.error('[Refresh] Invalid/expired refresh token:', err.message);
+    res.status(401);
+    throw new Error('Invalid or expired refresh token');
+  }
 });

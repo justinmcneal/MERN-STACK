@@ -46,16 +46,27 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const navigate = useNavigate();
 
-  // Refresh token logic
+  // Prevent multiple simultaneous refresh attempts
+  let isRefreshing = false;
   const refreshAccessToken = async (): Promise<void> => {
+    if (isRefreshing) {
+      console.warn('[Auth] Refresh already in progress, skipping.');
+      return;
+    }
+    isRefreshing = true;
+    console.log('[Auth] Attempting to refresh access token...');
     try {
       const { data } = await api.post<{ accessToken: string }>('/auth/refresh');
       setAccessToken(data.accessToken);
-    } catch (err) {
+      console.log('[Auth] Access token refreshed:', data.accessToken);
+    } catch (err: any) {
+      console.error('[Auth] Refresh token failed:', err?.response?.data || err);
       setUser(null);
       setAccessToken(null);
       navigate('/login');
       throw err;
+    } finally {
+      isRefreshing = false;
     }
   };
 
@@ -64,20 +75,31 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     const interceptor = api.interceptors.response.use(
       (response) => response,
       async (error: AxiosError) => {
-        const originalRequest = error.config as AxiosRequestConfig & { _retry?: boolean };
-        if (error.response?.status === 401 && originalRequest && !originalRequest._retry) {
+        const originalRequest = error.config as AxiosRequestConfig & { _retry?: boolean; _refreshTried?: boolean };
+        // Only try refresh ONCE per request, and only for 401
+        if (
+          error.response?.status === 401 &&
+          originalRequest &&
+          !originalRequest._retry &&
+          !originalRequest._refreshTried
+        ) {
+          console.warn('[Auth] 401 detected, attempting refresh...');
           originalRequest._retry = true;
+          originalRequest._refreshTried = true;
           try {
             await refreshAccessToken();
             if (accessToken && originalRequest.headers) {
               originalRequest.headers['Authorization'] = `Bearer ${accessToken}`;
             }
+            console.log('[Auth] Retrying original request after refresh.');
             return api(originalRequest);
           } catch (err) {
+            console.error('[Auth] Refresh failed, logging out.');
             await logout();
             return Promise.reject(err);
           }
         }
+        // If already tried refresh, just reject and do not retry
         return Promise.reject(error);
       }
     );

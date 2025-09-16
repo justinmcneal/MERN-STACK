@@ -19,7 +19,7 @@ const Home: React.FC = () => {
       }
     }
     fetchProfile();
-  }, [getProfile]);
+  }, []); // Only run once on mount
 
   return (
     <div style={{ maxWidth: 720, margin: '40px auto' }}>
