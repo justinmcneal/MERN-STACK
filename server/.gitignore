@@ -1,0 +1,51 @@
+# Node modules
+node_modules/
+
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Environment variables
+.env
+
+# Build output
+/dist
+/build
+
+# TypeScript
+*.tsbuildinfo
+
+# OS files
+.DS_Store
+
+# Coverage
+coverage/
+
+# Misc
+*.swp
+*.swo
+
+# Ignore IDE settings
+.vscode/
+.idea/
+
+# Ignore test output
+/test-output
+
+# Ignore database files
+*.sqlite
+*.db
+
+# Ignore error snapshots
+error.log
+
+# Ignore package-lock
+package-lock.json
+yarn.lock
+
+# Ignore temp files
+*.tmp
+*.temp
