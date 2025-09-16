@@ -1,7 +1,15 @@
-let accessToken: string | null = null;
+const ACCESS_TOKEN_KEY = 'accessToken';
 
+// Set the token in both memory and localStorage
 export const setAccessToken = (token: string | null) => {
-  accessToken = token;
+  if (token) {
+    localStorage.setItem(ACCESS_TOKEN_KEY, token);
+  } else {
+    localStorage.removeItem(ACCESS_TOKEN_KEY);
+  }
 };
 
-export const getAccessToken = (): string | null => accessToken;
+// Get the token from localStorage
+export const getAccessToken = (): string | null => {
+  return localStorage.getItem(ACCESS_TOKEN_KEY);
+};

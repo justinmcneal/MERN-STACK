@@ -7,10 +7,16 @@ interface ProtectedRouteProps {
 }
 
 const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
-  const auth = useContext(AuthContext);
-  if (!auth) return <Navigate to="/login" replace />; // in case context is undefined
-  const { user } = auth;
-  if (!user) return <Navigate to="/login" replace />;
+  const { user, isLoading } = useContext(AuthContext);
+
+  if (isLoading) {
+    return null; // or a loading spinner
+  }
+
+  if (!user) {
+    return <Navigate to="/login" replace />;
+  }
+
   return <>{children}</>;
 };
 

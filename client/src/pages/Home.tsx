@@ -2,11 +2,7 @@ import React, { useContext, useEffect, useState } from 'react';
 import AuthContext, { User } from '../context/AuthContext';
 
 const Home: React.FC = () => {
-  const auth = useContext(AuthContext);
-
-  if (!auth) throw new Error('AuthContext must be used within AuthProvider');
-
-  const { user, logout, getProfile } = auth;
+  const { user, logout, getProfile } = useContext(AuthContext);
   const [profile, setProfile] = useState<User | null>(user);
   const [error, setError] = useState<string>('');
 
@@ -24,7 +20,7 @@ const Home: React.FC = () => {
       }
     }
     fetchProfile();
-  }, []); // Only run once on mount
+  }, [getProfile]); // Only run once on mount
 
   return (
     <div style={{ maxWidth: 720, margin: '40px auto' }}>

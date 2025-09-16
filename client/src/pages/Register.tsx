@@ -8,17 +8,14 @@ const Register: React.FC = () => {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   
-  const auth = useContext(AuthContext);
+  const { register } = useContext(AuthContext);
   const navigate = useNavigate();
-
-  if (!auth) throw new Error('AuthContext must be used within AuthProvider');
-  const { register } = auth;
 
   const submit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     try {
       await register(name, email, password);
-      navigate('/');
+      navigate('/home');
     } catch (err: any) {
       let message = 'Registration failed.';
       if (err?.response?.data?.message) message = err.response.data.message;
