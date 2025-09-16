@@ -20,7 +20,11 @@ const Register: React.FC = () => {
       await register(name, email, password);
       navigate('/');
     } catch (err: any) {
-      setError(err.response?.data?.message || err.message);
+      let message = 'Registration failed.';
+      if (err?.response?.data?.message) message = err.response.data.message;
+      else if (err?.message) message = err.message;
+      else if (typeof err === 'string') message = err;
+      setError(message);
     }
   };
 

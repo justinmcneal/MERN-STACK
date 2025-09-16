@@ -1,3 +1,4 @@
+import crypto from 'crypto';
 import { Request, Response } from 'express';
 import asyncHandler from 'express-async-handler';
 import jwt from 'jsonwebtoken';
@@ -21,7 +22,7 @@ export const logoutUser = asyncHandler(async (req: Request, res: Response) => {
   }
   res.clearCookie('refreshToken', {
     httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
+    secure: process.env.NODE_ENV === 'production', // always true in prod
     sameSite: 'strict',
   });
   res.status(200).json({ message: 'Logged out' });
@@ -34,7 +35,7 @@ const sendTokens = (res: Response, userId: string) => {
 
   res.cookie('refreshToken', refreshToken, {
     httpOnly: true,
-    secure: process.env.NODE_ENV === 'production' ? true : false, // false in dev for HTTP
+    secure: process.env.NODE_ENV === 'production', // always true in prod
     sameSite: 'strict',
     maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
   });
@@ -64,7 +65,15 @@ export const registerUser = asyncHandler(async (req: Request, res: Response) => 
     await user.save();
     res.cookie('refreshToken', refreshToken, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production' ? true : false,
+      secure: process.env.NODE_ENV === 'production', // always true in prod
+      sameSite: 'strict',
+      maxAge: 7 * 24 * 60 * 60 * 1000,
+    });
+    // Generate CSRF token and set as cookie (not httpOnly)
+    const csrfToken = crypto.randomBytes(32).toString('hex');
+    res.cookie('csrfToken', csrfToken, {
+      httpOnly: false,
+      secure: process.env.NODE_ENV === 'production', // always true in prod
       sameSite: 'strict',
       maxAge: 7 * 24 * 60 * 60 * 1000,
     });
@@ -74,6 +83,7 @@ export const registerUser = asyncHandler(async (req: Request, res: Response) => 
       name: user.name,
       email: user.email,
       accessToken,
+      csrfToken,
     });
   } else {
     res.status(400);
@@ -92,7 +102,15 @@ export const authUser = asyncHandler(async (req: Request, res: Response) => {
     await user.save();
     res.cookie('refreshToken', refreshToken, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production' ? true : false,
+      secure: process.env.NODE_ENV === 'production', // always true in prod
+      sameSite: 'strict',
+      maxAge: 7 * 24 * 60 * 60 * 1000,
+    });
+    // Generate CSRF token and set as cookie (not httpOnly)
+    const csrfToken = crypto.randomBytes(32).toString('hex');
+    res.cookie('csrfToken', csrfToken, {
+      httpOnly: false,
+      secure: process.env.NODE_ENV === 'production', // always true in prod
       sameSite: 'strict',
       maxAge: 7 * 24 * 60 * 60 * 1000,
     });
@@ -102,6 +120,7 @@ export const authUser = asyncHandler(async (req: Request, res: Response) => {
       name: user.name,
       email: user.email,
       accessToken,
+      csrfToken,
     });
   } else {
     res.status(401);
@@ -126,10 +145,18 @@ export const getMe = asyncHandler(async (req: Request, res: Response) => {
 // POST /api/auth/refresh (optional endpoint to get new access token)
 export const refreshToken = asyncHandler(async (req: Request, res: Response) => {
   const token = req.cookies.refreshToken;
+  const csrfCookie = req.cookies.csrfToken;
+  const csrfHeader = req.headers['x-csrf-token'];
   console.log('[Refresh] Received refresh token:', token || '[missing]');
+  console.log('[Refresh] CSRF cookie:', csrfCookie);
+  console.log('[Refresh] CSRF header:', csrfHeader);
   if (!token) {
     res.status(401);
     throw new Error('No refresh token provided');
+  }
+  if (!csrfCookie || !csrfHeader || csrfCookie !== csrfHeader) {
+    res.status(403);
+    throw new Error('CSRF token mismatch');
   }
   try {
     // Decode without verifying to inspect payload
@@ -151,7 +178,7 @@ export const refreshToken = asyncHandler(async (req: Request, res: Response) => 
     await user.save();
     res.cookie('refreshToken', newRefreshToken, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production' ? true : false,
+      secure: process.env.NODE_ENV === 'production', // always true in prod
       sameSite: 'strict',
       maxAge: 7 * 24 * 60 * 60 * 1000,
     });

@@ -19,7 +19,11 @@ const Login: React.FC = () => {
       await login(email, password);
       navigate('/');
     } catch (err: any) {
-      setError(err.response?.data?.message || err.message);
+      let message = 'Login failed.';
+      if (err?.response?.data?.message) message = err.response.data.message;
+      else if (err?.message) message = err.message;
+      else if (typeof err === 'string') message = err;
+      setError(message);
     }
   };
 

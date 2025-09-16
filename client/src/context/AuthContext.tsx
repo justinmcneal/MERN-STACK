@@ -48,6 +48,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   // Prevent multiple simultaneous refresh attempts
   let isRefreshing = false;
+  const getCsrfTokenFromCookie = (): string | null => {
+    const match = document.cookie.match(/(?:^|; )csrfToken=([^;]*)/);
+    return match ? decodeURIComponent(match[1]) : null;
+  };
   const refreshAccessToken = async (): Promise<void> => {
     if (isRefreshing) {
       console.warn('[Auth] Refresh already in progress, skipping.');
@@ -56,7 +60,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     isRefreshing = true;
     console.log('[Auth] Attempting to refresh access token...');
     try {
-      const { data } = await api.post<{ accessToken: string }>('/auth/refresh');
+      const csrfToken = getCsrfTokenFromCookie();
+      if (!csrfToken) {
+        throw new Error('CSRF token missing from cookie');
+      }
+      const { data } = await api.post<{ accessToken: string }>('/auth/refresh', undefined, {
+        headers: { 'x-csrf-token': csrfToken },
+      });
       setAccessToken(data.accessToken);
       console.log('[Auth] Access token refreshed:', data.accessToken);
     } catch (err: any) {
