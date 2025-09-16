@@ -14,7 +14,7 @@ export interface User {
 // Context type
 interface AuthContextType {
   user: User | null;
-  isLoading: boolean;
+  isAuthReady: boolean;
   login: (email: string, password: string) => Promise<User>;
   register: (name: string, email: string, password: string) => Promise<User>;
   logout: () => Promise<void>;
@@ -31,7 +31,7 @@ const AuthContext = createContext<AuthContextType>({} as AuthContextType);
 
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isAuthReady, setIsAuthReady] = useState(false);
   const navigate = useNavigate();
 
   // Prevent multiple simultaneous refresh attempts
@@ -134,48 +134,35 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   // Initialize user and accessToken from localStorage on app load
   useEffect(() => {
     const initAuth = async () => {
-      console.log('[Auth] Initializing authentication...');
-      setIsLoading(true);
       const isLoggedIn = localStorage.getItem('isLoggedIn');
-      console.log(`[Auth] 'isLoggedIn' from localStorage: ${isLoggedIn}`);
-
       const hasRefreshTokenCookie = () => {
-        const hasCookie = document.cookie.split(';').some((c) => c.trim().startsWith('refreshToken='));
-        console.log(`[Auth] Has refresh token cookie: ${hasCookie}`);
-        return hasCookie;
+        return document.cookie.split(';').some((c) => c.trim().startsWith('refreshToken='));
       };
 
       if (!isLoggedIn && !hasRefreshTokenCookie()) {
-        console.log('[Auth] No stored login data. Setting user to null.');
         setUser(null);
-        setIsLoading(false);
+        setIsAuthReady(true);
         return;
       }
 
       try {
-        console.log('[Auth] Attempting to fetch user profile...');
         const accessToken = getAccessToken();
         const { data } = await api.get<User>('/auth/me', {
           headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : undefined,
         });
-        console.log('[Auth] Profile fetch successful:', data);
         setUser(data);
         localStorage.setItem('isLoggedIn', 'true');
       } catch (err: any) {
-        console.error('[Auth] Profile fetch failed:', err);
         if (hasRefreshTokenCookie()) {
-          console.log('[Auth] Attempting to refresh token after profile fetch failure...');
           try {
             await refreshAccessToken();
             const newAccessToken = getAccessToken();
             const { data } = await api.get<User>('/auth/me', {
               headers: newAccessToken ? { Authorization: `Bearer ${newAccessToken}` } : undefined,
             });
-            console.log('[Auth] Profile fetch after refresh successful:', data);
             setUser(data);
             localStorage.setItem('isLoggedIn', 'true');
           } catch (refreshErr: any) {
-            console.error('[Auth] Refresh token failed:', refreshErr);
             if (refreshErr?.response?.status === 429) {
               console.warn('[Auth] Refresh rate limited. Keeping previous user state.');
               return;
@@ -184,13 +171,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             localStorage.removeItem('isLoggedIn');
           }
         } else {
-          console.log('[Auth] No refresh token. Setting user to null.');
           setUser(null);
           localStorage.removeItem('isLoggedIn');
         }
       } finally {
-        console.log('[Auth] Finished authentication check.');
-        setIsLoading(false);
+        setIsAuthReady(true);
       }
     };
     initAuth();
@@ -217,7 +202,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, isLoading, login, register, logout, getProfile }}>
+    <AuthContext.Provider value={{ user, isAuthReady, login, register, logout, getProfile }}>
       {children}
     </AuthContext.Provider>
   );
