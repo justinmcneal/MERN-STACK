@@ -3,10 +3,11 @@ import bcrypt from 'bcryptjs';
 
 // Interface for User document
 export interface IUser extends Document {
-  _id: string; // explicitly type _id as string
+  _id: string;
   name: string;
   email: string;
   password: string;
+  refreshTokens: string[];
   matchPassword(enteredPassword: string): Promise<boolean>;
 }
 
@@ -15,6 +16,7 @@ const userSchema: Schema<IUser> = new mongoose.Schema(
     name: { type: String, required: true },
     email: { type: String, required: true, unique: true, lowercase: true },
     password: { type: String, required: true },
+    refreshTokens: [{ type: String, required: true }],
   },
   { timestamps: true }
 );

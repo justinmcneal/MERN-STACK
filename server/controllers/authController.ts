@@ -6,6 +6,19 @@ import { generateAccessToken, generateRefreshToken } from '../utils/generateToke
 
 // POST /api/auth/logout
 export const logoutUser = asyncHandler(async (req: Request, res: Response) => {
+  const token = req.cookies.refreshToken;
+  if (token) {
+    try {
+      const decoded = jwt.verify(token, process.env.JWT_SECRET as string) as { id: string };
+      const user = await User.findById(decoded.id);
+      if (user) {
+        user.refreshTokens = user.refreshTokens.filter(t => t !== token);
+        await user.save();
+      }
+    } catch (err) {
+      // ignore invalid token
+    }
+  }
   res.clearCookie('refreshToken', {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
@@ -43,9 +56,19 @@ export const registerUser = asyncHandler(async (req: Request, res: Response) => 
     throw new Error('User already exists');
   }
 
-  const user = await User.create({ name, email, password });
+  const user = await User.create({ name, email, password, refreshTokens: [] });
   if (user) {
-    const accessToken = sendTokens(res, user._id.toString());
+    // Generate refresh token and save to user
+    const refreshToken = generateRefreshToken(user._id.toString());
+    user.refreshTokens.push(refreshToken);
+    await user.save();
+    res.cookie('refreshToken', refreshToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production' ? true : false,
+      sameSite: 'strict',
+      maxAge: 7 * 24 * 60 * 60 * 1000,
+    });
+    const accessToken = generateAccessToken(user._id.toString());
     res.status(201).json({
       _id: user._id,
       name: user.name,
@@ -63,7 +86,17 @@ export const authUser = asyncHandler(async (req: Request, res: Response) => {
   const { email, password } = req.body;
   const user = await User.findOne({ email });
   if (user && await user.matchPassword(password)) {
-    const accessToken = sendTokens(res, user._id.toString());
+    // Generate refresh token and save to user
+    const refreshToken = generateRefreshToken(user._id.toString());
+    user.refreshTokens.push(refreshToken);
+    await user.save();
+    res.cookie('refreshToken', refreshToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production' ? true : false,
+      sameSite: 'strict',
+      maxAge: 7 * 24 * 60 * 60 * 1000,
+    });
+    const accessToken = generateAccessToken(user._id.toString());
     res.json({
       _id: user._id,
       name: user.name,
@@ -105,17 +138,22 @@ export const refreshToken = asyncHandler(async (req: Request, res: Response) => 
     // Now verify
     const decoded = jwt.verify(token, process.env.JWT_SECRET as string) as { id: string, exp?: number };
     console.log('[Refresh] Token verified:', decoded);
-    if (decoded.exp) {
-      const now = Math.floor(Date.now() / 1000);
-      console.log(`[Refresh] Token expires in ${decoded.exp - now} seconds`);
+    // Find user and check if token is in user's refreshTokens
+    const user = await User.findById(decoded.id);
+    if (!user || !user.refreshTokens.includes(token)) {
+      res.status(401);
+      throw new Error('Refresh token not recognized');
     }
-    // Issue new refresh token and set as cookie (rotation)
+    // Remove old token and add new one (rotation)
+    user.refreshTokens = user.refreshTokens.filter(t => t !== token);
     const newRefreshToken = generateRefreshToken(decoded.id);
+    user.refreshTokens.push(newRefreshToken);
+    await user.save();
     res.cookie('refreshToken', newRefreshToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production' ? true : false,
       sameSite: 'strict',
-      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+      maxAge: 7 * 24 * 60 * 60 * 1000,
     });
     const accessToken = generateAccessToken(decoded.id);
     res.json({ accessToken });
