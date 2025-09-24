@@ -1,0 +1,196 @@
+PLANNING TASKS
+
+Goals: Define scope, project structure, and initial designs.
+
+Define Project Scope & Requirements
+
+Select 3 data source: 
+
+* CoinGecko → can fully cover price monitoring.
+* Etherscan family → can cover gas fees.
+* CryptoCompare → can cover historical data (for ML scoring).
+
+Select top 5 tokens for MVP monitoring.
+
+* ETH → Native gas token on Ethereum, widely paired.
+* USDT (Tether) → Most popular stablecoin, high liquidity everywhere.
+* USDC (USD Coin) → Second major stablecoin, often paired with ETH/BNB.
+* BNB → Native to Binance Smart Chain, good for cross-chain arbitrage with ETH.
+* MATIC → Native to Polygon, ensures you test multi-chain behavior.
+
+List core MVP Features (Ito ung goal natin at the end of the project)
+
+* Price Monitoring → Call CoinGecko API for the 5 tokens, store results in DB, show on dashboard.
+* Arbitrage Detection → Compare token prices across chains, calculate spreads.
+* Opportunity Scoring → Lightweight ML (or even a heuristic in MVP: e.g., profit % − gas fee).
+* Dashboard → UI with tables, charts, and filters to visualize data.
+* User Authentication → Basic signup/login (can even be optional).
+* Profile → Let users pick tracked tokens, set alert thresholds.
+
+Create Figma Prototype
+
+0. Landing Page (public, before login)
+
+* Hero section: platform name + tagline (e.g., “Find profitable cross-chain arbitrage opportunities in real-time”)
+* Brief feature highlights (Price Monitoring, Arbitrage Detection, ML Scoring, Dashboard Analytics)
+* Call to Action: Sign Up / Login button
+* Optional: screenshots / charts mockup of dashboard
+* Footer: links to FAQ, About, Terms
+
+1. Authentication
+
+Login Page
+
+* Email / Password inputs
+* Login button
+* "Forgot Password?" link
+* Button link to Signup
+
+Signup Page
+
+* Name, Email, Password, Confirm Password
+* Signup button
+* Button link to Login
+
+2. Main Dashboard
+
+Header / Top bar
+
+* Platform logo
+* Navigation links (Dashboard, Opportunities, Profile, Settings)
+* Notification bell (alerts)
+* User avatar (dropdown: Profile, Logout)
+
+Sidebar (optional if not in top nav)
+
+* Quick nav to pages
+
+Content sections (Still Dashboard)
+
+Price Table
+
+* Columns: Token, Chain, Current Price, Last Updated
+* Filters: by chain, by token
+
+Arbitrage Opportunities Table
+
+* Columns: Token, Chain From, Chain To, Price Diff (%), Gas Cost, Estimated Profit, Score
+* Sorting options: by profit, by token, by score
+* Highlight profitable rows (e.g., green/red)
+
+Charts (Token Trends)
+
+* Line charts for historical prices (1h, 24h, 7d)
+* Option to compare two chains
+
+Summary Cards (Top Section)
+
+* “Best Current Arbitrage Opportunity”
+* “Top Token by Spread”
+* “Total Tracked Tokens”
+
+3. Opportunities (Detailed Page)
+
+* Expanded list of arbitrage opportunities
+* Filters: by token, by chain pair, by profit %
+* Graphs showing spread evolution over time
+
+Opportunity details:
+
+    * Token selected
+    * Price difference breakdown
+    * Gas fee estimation per chain
+    * ROI %
+
+4. User Profile
+
+Profile Info
+
+* Name, Email, Join date, Ready made characters (profile pics)
+
+Preferences
+
+* Tokens tracked (checkbox or dropdown for ETH, BNB, MATIC, USDT, USDC)
+* Alert thresholds (e.g., notify me if profit > 5%)
+* Notification settings (email, dashboard popup)
+
+Security
+
+    * Change password
+    * 2FA toggle (optional, future enhancement)
+
+5. Settings (Optional MVP)
+
+* Theme toggle (Light / Dark Mode)
+* Data refresh interval (e.g., refresh every 5s, 30s, 1min)
+* Connected APIs (show which APIs are enabled: CoinGecko, Etherscan, etc.)
+
+6. Notifications / Alerts
+
+Could be:
+
+* Separate page OR
+* A dropdown/modal accessible from the bell icon
+
+Contents:
+
+* List of triggered alerts: “ETH on BSC → ETH on Polygon = +3.5% spread”
+* Timestamp
+* Clear All / Mark as Read
+
+7. Admin (DO NOT DO IT YET)
+
+* User management
+* API health + usage stats
+* Platform monitoring
+
+8. Contact Support
+
+* Support form (message user is already logged in)
+* alternative contacts or emails
+* Optional: live chat integration (OPTIONAL)
+
+9. FAQ (Frequently Asked Questions)
+
+* What is arbitrage?
+* How do you calculate profit?
+* Which chains/tokens are supported?
+* How accurate are opportunities?
+* Can I automate trades? (Answer: not yet, maybe future)
+* TO ADD MORE
+
+10 & 11. About and Terms
+
+cant think of any yet
+
+Create ERD (Entity-Relationship Diagram)
+
+Tables
+
+* Users
+* Tokens
+* Opportunities
+* UserPreferences
+* Alerts
+
+    USERS ||--|| USERPREFERENCES : "has"
+    USERS ||--o{ ALERTS : "receives"
+    TOKENS ||--o{ OPPORTUNITIES : "generates"
+    OPPORTUNITIES ||--o{ ALERTS : "triggers"
+    USERS ||--o{ OPPORTUNITIES : "tracks via prefs/alerts"
+
+Create SFD (System Flow Diagram)
+
+* Landing → Auth → Dashboard main flow.
+* From Dashboard, user can reach all core features:
+* Price monitoring, arbitrage detection, charts, summary.
+* Opportunities detail page.
+* Profile (with prefs + security).
+* Settings + notifications.
+* Support pages (FAQ, Contact) are accessible both from Landing and inside app.
+* Admin marked as future (greyed out with dashed border).
+
+Create Flowchart 
+
+* create flowchart
+

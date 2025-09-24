@@ -1,0 +1,62 @@
+Project Proposal
+Team Members
+● John Wayne Enrique, Frontend Developer
+● James Patrick Paloyo, Backend Developer
+● Jean Claude Ganay, Quality AssuranceJean Claude Ganay, Quality Assurance
+● Ericka Brudo, Researcher 
+● Justin Mc Neal Caronongan, Project Manager, Data Scientist / ML Engineer
+
+1. Project Title
+● Title: Cross-Chain Arbitrage Intelligence: An LLM–Powered Arbitrage Insights Platform
+
+2. Project Description
+Summary:
+This project aims to build a web-based platform that monitors token prices across multiple blockchains to identify profitable arbitrage opportunities. By leveraging blockchain APIs and a lightweight machine learning model, the platform will provide users with a dashboard displaying potential cross-chain trades, profit estimates, and gas cost considerations. This system is intended for crypto traders and DeFi enthusiasts seeking to identify high-potential arbitrage opportunities efficiently.
+Scope:
+Web Application:
+
+
+Authentication
+Dashboard visualization 
+Price Monitoring
+Arbitrage detection logic that calculates potential profits after gas fees 
+User-friendly interface to track opportunities and historical trends
+Alerts
+
+
+
+3. Objectives
+Develop a web-based dashboard for monitoring token prices across multiple blockchains.
+Detect potential arbitrage opportunities and calculate estimated profits.
+Implement a lightweight model for scoring the most promising opportunities.
+Ensure real-time updates and visualizations of arbitrage data.
+Provide an intuitive interface for crypto traders to explore cross-chain trading options.
+
+4. Target Users
+Crypto Traders seeking arbitrage opportunities across chains.
+DeFi enthusiasts are interested in monitoring token prices and network conditions.
+Portfolio managers and small-scale investors are looking to optimize returns.
+
+5. System Features
+Authentication: Optional user authentication for tracking personal preferences.
+Real-Time Price Monitoring: Fetch token prices via APIs across 3 APIs
+Arbitrage Detection: Calculate potential cross-chain profit after gas fees.
+Opportunity Scoring: LLM based ranking of arbitrage opportunities based on historical trends and estimated ROI.
+Dashboard Visualizations: Interactive charts for token prices, arbitrage potential, and historical performance.
+User Profile: update user informations
+Alerts: Optional alerts when high-value opportunities appear.
+
+6. Technologies and Tools
+Technical Stack Justification:
+ The selected tech stack focuses on speed of development, real-time data integration, and web accessibility for users.
+Frontend: React.js for UI development.
+Backend: Node.js + Express for API handling, efficient data fetching, and integration with ML scoring.
+Database: MongoDB for storing historical prices, opportunities, and optional user preferences due to its flexibility with semi-structured data.
+Model: to check what model is suitable for this
+Version Control: GitHub for source code management, collaboration, and version tracking.
+
+7. Designing Tools
+Figma: For prototyping the dashboard layout and user interface.
+Postman: For API testing during backend development.
+VS Code: For full-stack development, including React frontend, Node.js backend, and Python ML scripts.
+
