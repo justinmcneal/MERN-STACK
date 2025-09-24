@@ -6,6 +6,7 @@ const Register: React.FC = () => {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState('');
   
   const { register } = useContext(AuthContext);
@@ -13,6 +14,10 @@ const Register: React.FC = () => {
 
   const submit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    if (password !== confirmPassword) {
+      setError('Passwords do not match.');
+      return;
+    }
     try {
       await register(name, email, password);
       navigate('/home');
@@ -53,6 +58,15 @@ const Register: React.FC = () => {
             type="password"
             value={password}
             onChange={e => setPassword(e.target.value)}
+            required
+          />
+        </div>
+        <div>
+          <input
+            placeholder="Confirm Password"
+            type="password"
+            value={confirmPassword}
+            onChange={e => setConfirmPassword(e.target.value)}
             required
           />
         </div>

@@ -8,6 +8,20 @@ import authRoutes from './routes/authRoutes';
 import { notFound, errorHandler } from './middleware/errorMiddleware';
 
 const app: Application = express();
+// Debug: Log CORS headers for every request
+app.use((req, res, next) => {
+  res.on('finish', () => {
+    console.log('hello', req.method, req.originalUrl);
+    // console.log('[CORS DEBUG]', {
+    //   url: req.originalUrl,
+    //   origin: req.headers.origin,
+    //   'Access-Control-Allow-Origin': res.getHeader('Access-Control-Allow-Origin'),
+    //   'Access-Control-Allow-Credentials': res.getHeader('Access-Control-Allow-Credentials'),
+    //   method: req.method
+    // });
+  });
+  next();
+});
 
 // Allow client origin and credentials (adjust CLIENT_URL in .env)
 app.use(cors({
