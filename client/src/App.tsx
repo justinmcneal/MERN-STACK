@@ -3,11 +3,13 @@ import { Routes, Route, Navigate } from 'react-router-dom';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import Home from './pages/Home';
+import Landing from './pages/Landing';
 import ProtectedRoute from './components/ProtectedRoute';
 
 const App: React.FC = () => {
   return (
     <Routes>
+      <Route path="/" element={<Landing />} />
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
       <Route
@@ -18,15 +20,8 @@ const App: React.FC = () => {
           </ProtectedRoute>
         }
       />
-      {/* Catch-all: if not logged in, go to /login; if logged in, go to home */}
-      <Route
-        path="*"
-        element={
-          <ProtectedRoute>
-            <Navigate to="/home" replace />
-          </ProtectedRoute>
-        }
-      />
+      {/* Catch-all: if not logged in, go to landing page */}
+      <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );
 };
