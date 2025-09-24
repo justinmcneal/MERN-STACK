@@ -6,7 +6,8 @@ const Login: React.FC = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
-
+  const googleLogin = () => {window.location.href = "http://localhost:5000/api/auth/google"; };
+  const handleGoogleLogin = () => { window.location.href = `${import.meta.env.VITE_API_URL}/auth/google`;};
   const { login } = useContext(AuthContext);
   const navigate = useNavigate();
 
@@ -52,6 +53,9 @@ const Login: React.FC = () => {
       <p>
         Don't have an account? <Link to="/register">Register</Link>
       </p>
+      <button onClick={googleLogin} style={{ marginTop: "1rem" }}>
+        Login with Google
+      </button>
     </div>
   );
 };
