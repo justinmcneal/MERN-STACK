@@ -1,4 +1,3 @@
-# ...existing code...
 import os
 from dotenv import load_dotenv
 import requests
@@ -36,10 +35,12 @@ def get_prices():
         "ids": ids,
         "vs_currencies": VS_CURRENCY
     }
+    print(f"[INFO] Fetching prices from CoinGecko for: {ids}")
     r = requests.get(COINGECKO_URL, params=params)
     r.raise_for_status()
     data = r.json()
     prices = {TOKENS[k]: data.get(k, {}).get(VS_CURRENCY, None) for k in TOKENS}
+    print(f"[INFO] Prices fetched: {prices}")
     return prices
 
 # --- CryptoCompare Historical Data ---
@@ -60,11 +61,14 @@ def get_historical_prices():
             "limit": 24  # last 24 hours
         }
         try:
+            print(f"[INFO] Fetching historical prices for {symbol} from CryptoCompare")
             r = requests.get(CRYPTOCOMPARE_URL, params=params)
             r.raise_for_status()
             data = r.json()
             historical[symbol] = data["Data"]["Data"]  # List of dicts with 'time', 'close', etc.
+            print(f"[INFO] {symbol} historical data points: {len(historical[symbol])}")
         except Exception as e:
+            print(f"[ERROR] Failed to fetch historical for {symbol}: {e}")
             historical[symbol] = []
     return historical
 
@@ -72,18 +76,21 @@ def get_gas_fees():
     gas = {}
     for chain, url in GAS_APIS.items():
         try:
+            print(f"[INFO] Fetching gas fee for {chain} from {url}")
             r = requests.get(url)
             r.raise_for_status()
             result = r.json().get("result", {})
             gas[chain] = result.get("ProposeGasPrice") or result.get("proposeGasPrice")
+            print(f"[INFO] {chain} gas: {gas[chain]}")
         except Exception as e:
+            print(f"[ERROR] Failed to fetch gas for {chain}: {e}")
             gas[chain] = None
     return gas
 
 
 def main():
     # --- Real-time data ---
-    with open("../data/raw/market_data.csv", "a", newline="") as f:
+    with open("data/raw/market_data.csv", "a", newline="") as f:
         writer = csv.writer(f)
         # Write header if file is empty
         f.seek(0, 2)
@@ -100,7 +107,7 @@ def main():
                 "bsc_gas_gwei"
             ])
         # --- Historical data ---
-        with open("../data/raw/historical_data.csv", "a", newline="") as hist_f:
+        with open("data/raw/historical_data.csv", "a", newline="") as hist_f:
             hist_writer = csv.writer(hist_f)
             # Write header if file is empty
             hist_f.seek(0, 2)
@@ -125,6 +132,7 @@ def main():
                 ]
                 writer.writerow(row)
                 f.flush()
+                print(f"[INFO] Wrote real-time data row: {row}")
                 # Fetch and write historical data
                 historical = get_historical_prices()
                 for token, data_points in historical.items():
@@ -140,7 +148,8 @@ def main():
                             dp.get("volumeto")
                         ])
                 hist_f.flush()
-                print(f"Saved snapshot at {now}")
+                print(f"[INFO] Wrote historical data for all tokens.")
+                print(f"[INFO] Saved snapshot at {now}")
                 time.sleep(60)
 
 if __name__ == "__main__":
