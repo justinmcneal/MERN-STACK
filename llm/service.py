@@ -59,11 +59,11 @@ def arbitrage_opportunity(data: ArbitrageInput):
         def fetch_token_price(token_id):
             url = "https://api.coingecko.com/api/v3/simple/price"
             params = {"ids": token_id, "vs_currencies": "usd"}
-            resp = requests.get(url, params=params)
+            print(f"Fetching CoinGecko price for {token_id}...")
+            resp = requests.get(url, params=params, timeout=5)
             try:
                 resp.raise_for_status()
                 data = resp.json()
-                # Debug: print/log the response
                 print(f"CoinGecko response: {data}")
                 if not isinstance(data, dict) or token_id not in data or not isinstance(data[token_id], dict) or "usd" not in data[token_id]:
                     raise HTTPException(status_code=502, detail=f"Unexpected CoinGecko response: {data}")
@@ -78,26 +78,43 @@ def arbitrage_opportunity(data: ArbitrageInput):
 
         # Fetch gas price (gwei) for each chain
         def fetch_gas_price(chain):
-            # Unified Etherscan V2 endpoint and chain IDs
-            CHAIN_ID_MAP = {
-                "ethereum": 1,
-                "bsc": 56,
-                "binance smart chain": 56,
-                "polygon": 137
-            }
-            chainid = CHAIN_ID_MAP.get(chain)
-            if not chainid:
-                raise HTTPException(status_code=400, detail=f"Chain {chain} not supported.")
-            api_key = os.getenv("ETHERSCAN_API_KEY")
-            url = f'https://api.etherscan.io/v2/gasOracle?chainid={chainid}&apikey={api_key}'
-            resp = requests.get(url)
             try:
-                resp.raise_for_status()
-                data = resp.json()
-                print(f"Gas API response for {chain}: {data}")
-                if not isinstance(data, dict) or "result" not in data or not isinstance(data["result"], dict) or "ProposeGasPrice" not in data["result"]:
-                    raise Exception(f"Unexpected gas API response for {chain}: {data}")
-                return float(data["result"]["ProposeGasPrice"])
+                if chain == "ethereum":
+                    headers = {}
+                    api_key = os.getenv("BLOCKNATIVE_API_KEY")
+                    if api_key:
+                        headers["Authorization"] = api_key
+                    url = "https://api.blocknative.com/gasprices/blockprices?chainid=1"
+                    print("Fetching Blocknative gas price for ethereum...")
+                    resp = requests.get(url, headers=headers, timeout=5)
+                    resp.raise_for_status()
+                    data = resp.json()
+                    print(f"Blocknative gas API response: {data}")
+                    prices = data.get("blockPrices", [{}])[0].get("estimatedPrices", [])
+                    if prices:
+                        for p in prices:
+                            if p.get("confidence") == 70:
+                                return float(p["maxFeePerGas"])
+                        return float(prices[0]["maxFeePerGas"])
+                    raise Exception(f"No gas price found in Blocknative response: {data}")
+                elif chain == "polygon":
+                    url = "https://gasstation.polygon.technology/v2"
+                    print("Fetching Polygon gas price...")
+                    resp = requests.get(url, timeout=5)
+                    resp.raise_for_status()
+                    data = resp.json()
+                    print(f"Polygon gas API response: {data}")
+                    return float(data["standard"]["maxFee"])
+                elif chain in ["bsc", "binance smart chain"]:
+                    url = "https://bscgas.info/gas"
+                    print("Fetching BSC gas price...")
+                    resp = requests.get(url, timeout=5)
+                    resp.raise_for_status()
+                    data = resp.json()
+                    print(f"BSC gas API response: {data}")
+                    return float(data["standard"])
+                else:
+                    raise HTTPException(status_code=400, detail=f"Chain {chain} not supported.")
             except Exception as e:
                 print(f"WARNING: Gas API failed for {chain} ({e}), using mock value 20 gwei.")
                 return 20.0  # fallback mock value in gwei
