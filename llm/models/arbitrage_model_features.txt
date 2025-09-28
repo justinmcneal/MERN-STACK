@@ -1,0 +1,11 @@
+price
+gas
+roi
+token_BNB
+token_ETH
+token_MATIC
+token_USDC
+token_USDT
+chain_bsc
+chain_ethereum
+chain_polygon

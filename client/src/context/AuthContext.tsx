@@ -1,4 +1,4 @@
-import React, { createContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, useState, useEffect, ReactNode, useCallback } from 'react';
 import api from '../services/api';
 import { useNavigate } from 'react-router-dom';
 import { AxiosError, AxiosRequestConfig } from 'axios';
@@ -122,14 +122,14 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   }, [logout]);
 
   // Get profile
-  const getProfile = async (): Promise<User> => {
+  const getProfile = useCallback(async (): Promise<User> => {
     const accessToken = getAccessToken();
     const { data } = await api.get<User>('/auth/me', {
       headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : undefined,
     });
     setUser(data);
     return data;
-  };
+  }, []);
 
   // Initialize user and accessToken from localStorage on app load
   useEffect(() => {
