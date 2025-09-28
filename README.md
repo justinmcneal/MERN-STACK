@@ -1,69 +1,65 @@
-# React + TypeScript + Vite
+# MERN Stack Project
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A full-stack web application built with MongoDB, Express.js, React, and Node.js.
 
-Currently, two official plugins are available:
+## Project Structure
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
-
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default tseslint.config([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      ...tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      ...tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      ...tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```
+MERN-STACK/
+├── client/          # React frontend
+│   ├── src/         # React source code
+│   ├── public/      # Static assets
+│   ├── dist/        # Build output
+│   └── package.json # Frontend dependencies
+├── server/          # Node.js/Express backend
+│   ├── server.js    # Main server file
+│   └── package.json # Backend dependencies
+└── package.json     # Root package.json for scripts
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+## Getting Started
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+### Prerequisites
+- Node.js (v14 or higher)
+- MongoDB (local or cloud instance)
+- npm or yarn
 
-export default tseslint.config([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+### Installation
+
+1. Clone the repository
+2. Install all dependencies:
+   ```bash
+   npm run install-all
+   ```
+
+### Development
+
+To run both frontend and backend in development mode:
+```bash
+npm run dev
 ```
+
+This will start:
+- Backend server on http://localhost:5000
+- Frontend development server on http://localhost:5173
+
+### Individual Commands
+
+- Start only the backend: `npm run server`
+- Start only the frontend: `npm run client`
+- Build the frontend: `npm run build`
+
+## Environment Variables
+
+Create a `.env` file in the server directory with:
+```
+PORT=5000
+MONGODB_URI=mongodb://localhost:27017/mern-app
+NODE_ENV=development
+```
+
+## Technologies Used
+
+- **Frontend**: React, TypeScript, Vite, Tailwind CSS
+- **Backend**: Node.js, Express.js, MongoDB, Mongoose
+- **Development**: Concurrently for running both servers
