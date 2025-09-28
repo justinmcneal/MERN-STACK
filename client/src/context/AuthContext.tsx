@@ -1,7 +1,8 @@
-import React, { createContext, useState, useEffect, ReactNode, useCallback } from 'react';
+import React, { createContext, useState, useEffect, useCallback } from 'react';
+import type { ReactNode } from 'react';
 import api from '../services/api';
 import { useNavigate } from 'react-router-dom';
-import { AxiosError, AxiosRequestConfig } from 'axios';
+import type { AxiosError, AxiosRequestConfig } from 'axios';
 import { getAccessToken, setAccessToken } from '../services/authToken';
 
 // User type

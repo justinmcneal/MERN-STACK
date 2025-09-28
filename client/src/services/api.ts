@@ -1,4 +1,5 @@
-import axios, { AxiosInstance, InternalAxiosRequestConfig } from 'axios';
+import axios from 'axios';
+import type { AxiosInstance, InternalAxiosRequestConfig } from 'axios';
 import { getAccessToken } from './authToken'; // helper to get current in-memory access token
 
 const api: AxiosInstance = axios.create({

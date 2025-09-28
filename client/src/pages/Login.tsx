@@ -1,4 +1,5 @@
-import React, { useState, useContext, FormEvent } from 'react';
+import React, { useState, useContext } from 'react';
+import type { FormEvent } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import AuthContext from '../context/AuthContext';
 
@@ -7,7 +8,6 @@ const Login: React.FC = () => {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const googleLogin = () => {window.location.href = "http://localhost:5000/api/auth/google"; };
-  const handleGoogleLogin = () => { window.location.href = `${import.meta.env.VITE_API_URL}/auth/google`;};
   const { login } = useContext(AuthContext);
   const navigate = useNavigate();
 
