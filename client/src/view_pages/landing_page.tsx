@@ -9,14 +9,14 @@ interface FeatureCardProps {
     icon: ReactNode;
   }
   const FeatureCard: React.FC<FeatureCardProps> = ({ title, children, icon }) => (
-    <div className="group bg-gradient-to-br from-slate-900/80 via-slate-800/50 to-slate-900/80 backdrop-blur-sm border border-slate-700/50 hover:border-cyan-400/30 rounded-2xl p-8 shadow-2xl hover:shadow-cyan-500/10 transition-all duration-500 hover:-translate-y-2">
-      <div className="flex items-start gap-6">
-        <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-cyan-400/20 to-purple-500/20 flex items-center justify-center border border-cyan-400/20 group-hover:border-cyan-400/40 transition-all duration-300">
+    <div className="group bg-gradient-to-br from-slate-900/80 via-slate-800/50 to-slate-900/80 backdrop-blur-sm border border-slate-700/50 hover:border-cyan-400/30 rounded-xl sm:rounded-2xl p-6 sm:p-8 shadow-2xl hover:shadow-cyan-500/10 transition-all duration-500 hover:-translate-y-2">
+      <div className="flex flex-col sm:flex-row items-start gap-4 sm:gap-6">
+        <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-xl sm:rounded-2xl bg-gradient-to-br from-cyan-400/20 to-purple-500/20 flex items-center justify-center border border-cyan-400/20 group-hover:border-cyan-400/40 transition-all duration-300 flex-shrink-0">
           {icon}
         </div>
         <div className="flex-1">
-          <h4 className="text-lg font-bold text-cyan-200 mb-3 group-hover:text-cyan-100 transition-colors">{title}</h4>
-          <p className="text-slate-300 leading-relaxed">{children}</p>
+          <h4 className="text-base sm:text-lg font-bold text-cyan-200 mb-2 sm:mb-3 group-hover:text-cyan-100 transition-colors">{title}</h4>
+          <p className="text-sm sm:text-base text-slate-300 leading-relaxed">{children}</p>
         </div>
       </div>
     </div>
@@ -30,9 +30,9 @@ interface FeatureCardProps {
   }
   
   const StatCard: React.FC<StatCardProps> = ({ value, label, trend }) => (
-    <div className="bg-gradient-to-br from-slate-800/60 to-slate-900/60 backdrop-blur border border-slate-700/50 rounded-xl p-6 text-center">
-      <div className="text-3xl font-bold text-cyan-400 mb-1">{value}</div>
-      <div className="text-slate-400 text-sm mb-2">{label}</div>
+    <div className="bg-gradient-to-br from-slate-800/60 to-slate-900/60 backdrop-blur border border-slate-700/50 rounded-lg sm:rounded-xl p-4 sm:p-6 text-center">
+      <div className="text-xl sm:text-2xl lg:text-3xl font-bold text-cyan-400 mb-1">{value}</div>
+      <div className="text-slate-400 text-xs sm:text-sm mb-2">{label}</div>
       <div className="text-emerald-400 text-xs font-medium">{trend}</div>
     </div>
   );
@@ -47,22 +47,22 @@ const TradingChart = () => {
   }, []);
 
   return (
-    <div className="relative h-80 bg-gradient-to-br from-slate-900/90 to-slate-800/90 rounded-2xl border border-slate-700/50 p-6 overflow-hidden">
+    <div className="relative h-64 sm:h-72 lg:h-80 bg-gradient-to-br from-slate-900/90 to-slate-800/90 rounded-xl sm:rounded-2xl border border-slate-700/50 p-4 sm:p-6 overflow-hidden">
       <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-cyan-500/5 via-transparent to-purple-500/5"></div>
       
       <div className="relative z-10">
-        <div className="flex justify-between items-center mb-6">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 sm:mb-6 gap-2 sm:gap-0">
           <div>
-            <h3 className="text-cyan-200 font-semibold">ETH/USDC Arbitrage</h3>
-            <p className="text-emerald-400 text-sm">+12.4% ROI detected</p>
+            <h3 className="text-cyan-200 font-semibold text-sm sm:text-base">ETH/USDC Arbitrage</h3>
+            <p className="text-emerald-400 text-xs sm:text-sm">+12.4% ROI detected</p>
           </div>
-          <div className="text-right">
-            <div className="text-2xl font-bold text-white">$2,847.32</div>
-            <div className="text-emerald-400 text-sm">+$127.45 (4.7%)</div>
+          <div className="text-left sm:text-right">
+            <div className="text-lg sm:text-xl lg:text-2xl font-bold text-white">$2,847.32</div>
+            <div className="text-emerald-400 text-xs sm:text-sm">+$127.45 (4.7%)</div>
           </div>
         </div>
 
-        <div className="relative h-40">
+        <div className="relative h-32 sm:h-36 lg:h-40">
           <svg className="w-full h-full" viewBox="0 0 400 160">
             <defs>
               <linearGradient id="chartGradient" x1="0%" y1="0%" x2="0%" y2="100%">
@@ -137,16 +137,16 @@ export default function ArbiTraderPro() {
       ></div>
 
       {/* Header */}
-      <header className="relative z-50 w-full px-6 lg:px-8 py-6 backdrop-blur-lg bg-slate-950/80 border-b border-slate-800/50">
+      <header className="relative z-50 w-full px-4 sm:px-6 lg:px-8 py-4 sm:py-6 backdrop-blur-lg bg-slate-950/80 border-b border-slate-800/50">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-8">
-            <div className="flex items-center gap-3 pr-6 border-r border-slate-700">
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-cyan-400 to-purple-500 flex items-center justify-center">
-                <svg className="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <div className="flex items-center gap-4 sm:gap-8">
+            <div className="flex items-center gap-2 sm:gap-3 pr-3 sm:pr-6 border-r border-slate-700">
+              <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-gradient-to-br from-cyan-400 to-purple-500 flex items-center justify-center">
+                <svg className="w-4 h-4 sm:w-6 sm:h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
                 </svg>
               </div>
-              <div className="text-2xl font-bold">
+              <div className="text-lg sm:text-2xl font-bold">
                 <span className="text-cyan-400">Arbi</span>
                 <span className="text-white">Trader</span>
                 <span className="text-purple-400 ml-1">Pro</span>
@@ -161,11 +161,18 @@ export default function ArbiTraderPro() {
             </nav>
           </div>
           
-          <div className="flex items-center gap-4">
-          <button onClick={() => navigate("/logIn")} className="hidden md:inline-flex px-6 py-2.5 border border-slate-600 hover:border-cyan-400 rounded-lg text-slate-300 hover:text-white transition-all duration-300 font-medium">
-            Login
+          <div className="flex items-center gap-2 sm:gap-4">
+            {/* Mobile menu button */}
+            <button className="lg:hidden p-2 text-slate-300 hover:text-white transition-colors">
+              <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+              </svg>
             </button>
-            <button onClick={() => navigate("/signUp")} className="px-6 py-2.5 rounded-lg bg-gradient-to-r from-cyan-500 to-purple-600 hover:from-cyan-400 hover:to-purple-500 shadow-lg hover:shadow-cyan-500/25 transition-all duration-300 font-semibold">
+            
+            <button onClick={() => navigate("/logIn")} className="hidden sm:inline-flex px-4 sm:px-6 py-2 sm:py-2.5 border border-slate-600 hover:border-cyan-400 rounded-lg text-slate-300 hover:text-white transition-all duration-300 font-medium text-sm sm:text-base">
+              Login
+            </button>
+            <button onClick={() => navigate("/signUp")} className="px-3 sm:px-6 py-2 sm:py-2.5 rounded-lg bg-gradient-to-r from-cyan-500 to-purple-600 hover:from-cyan-400 hover:to-purple-500 shadow-lg hover:shadow-cyan-500/25 transition-all duration-300 font-semibold text-sm sm:text-base">
               Sign Up
             </button>
           </div>
@@ -173,16 +180,17 @@ export default function ArbiTraderPro() {
       </header>
 
       {/* Hero Section */}
-      <section className="relative z-10 max-w-7xl mx-auto px-6 lg:px-8 pt-20 pb-32">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-16 items-center">
+      <section className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-12 sm:pt-16 lg:pt-20 pb-16 sm:pb-24 lg:pb-32">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 sm:gap-12 lg:gap-16 items-center">
           <div className="lg:col-span-7">
-            <div className="space-y-8">
-              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-cyan-500/10 to-purple-500/10 border border-cyan-500/20 text-cyan-300 text-sm font-medium">
+            <div className="space-y-6 sm:space-y-8">
+              <div className="inline-flex items-center gap-2 px-3 sm:px-4 py-2 rounded-full bg-gradient-to-r from-cyan-500/10 to-purple-500/10 border border-cyan-500/20 text-cyan-300 text-xs sm:text-sm font-medium">
                 <div className="w-2 h-2 bg-emerald-400 rounded-full animate-pulse"></div>
-                Live market scanning active
+                <span className="hidden sm:inline">Live market scanning active</span>
+                <span className="sm:hidden">Live scanning</span>
               </div>
               
-              <h1 className="text-5xl lg:text-7xl font-black leading-tight">
+              <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-7xl font-black leading-tight">
                 <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-200 via-white to-purple-200">
                   Discover Profitable
                 </span>
@@ -192,22 +200,24 @@ export default function ArbiTraderPro() {
                 </span>
               </h1>
               
-              <p className="text-xl text-slate-300 leading-relaxed max-w-2xl">
+              <p className="text-base sm:text-lg lg:text-xl text-slate-300 leading-relaxed max-w-2xl">
                 Leverage AI-powered insights and real-time multi-chain data to identify and execute profitable arbitrage opportunities with institutional-grade precision.
               </p>
               
-              <div className="flex flex-col sm:flex-row gap-4">
-                <button className="inline-flex items-center justify-center gap-3 px-8 py-4 rounded-xl bg-gradient-to-r from-cyan-500 to-purple-600 hover:from-cyan-400 hover:to-purple-500 font-bold text-lg shadow-2xl hover:shadow-cyan-500/30 transition-all duration-300 transform hover:scale-105">
-                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
+                <button className="inline-flex items-center justify-center gap-2 sm:gap-3 px-6 sm:px-8 py-3 sm:py-4 rounded-xl bg-gradient-to-r from-cyan-500 to-purple-600 hover:from-cyan-400 hover:to-purple-500 font-bold text-sm sm:text-base lg:text-lg shadow-2xl hover:shadow-cyan-500/30 transition-all duration-300 transform hover:scale-105">
+                  <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
                   </svg>
-                  START MONITORING NOW
+                  <span className="hidden sm:inline">START MONITORING NOW</span>
+                  <span className="sm:hidden">START NOW</span>
                 </button>
-                <button className="inline-flex items-center justify-center gap-2 px-8 py-4 rounded-xl border border-slate-600 hover:border-cyan-400 text-slate-300 hover:text-white font-semibold transition-all duration-300">
-                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <button className="inline-flex items-center justify-center gap-2 px-6 sm:px-8 py-3 sm:py-4 rounded-xl border border-slate-600 hover:border-cyan-400 text-slate-300 hover:text-white font-semibold transition-all duration-300 text-sm sm:text-base lg:text-lg">
+                  <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.828 14.828a4 4 0 01-5.656 0M9 10h1.586a1 1 0 01.707.293l2.414 2.414a1 1 0 00.707.293H15M9 10V9a2 2 0 012-2h2a2 2 0 012 2v1.586a1 1 0 01-.293.707L12 14" />
                   </svg>
-                  Watch Demo
+                  <span className="hidden sm:inline">Watch Demo</span>
+                  <span className="sm:hidden">Demo</span>
                 </button>
               </div>
             </div>
@@ -215,14 +225,14 @@ export default function ArbiTraderPro() {
 
           <div className="lg:col-span-5">
             <div className="relative">
-              <div className="absolute -inset-4 bg-gradient-to-r from-cyan-500/20 to-purple-500/20 rounded-3xl blur-xl"></div>
+              <div className="absolute -inset-2 sm:-inset-4 bg-gradient-to-r from-cyan-500/20 to-purple-500/20 rounded-2xl sm:rounded-3xl blur-xl"></div>
               <TradingChart />
             </div>
           </div>
         </div>
 
         {/* Stats */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 mt-20">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mt-12 sm:mt-16 lg:mt-20">
           <StatCard value="$2.4M+" label="Total Volume Tracked" trend="+127% this month" />
           <StatCard value="156" label="Active Opportunities" trend="Real-time updates" />
           <StatCard value="18.4%" label="Avg ROI Potential" trend="+2.1% vs last week" />
@@ -231,17 +241,17 @@ export default function ArbiTraderPro() {
       </section>
 
       {/* Features Section */}
-      <section id="features" className="relative z-10 max-w-7xl mx-auto px-6 lg:px-8 py-20">
-        <div className="text-center mb-16">
-          <h2 className="text-4xl lg:text-5xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-cyan-200 to-purple-200 mb-6">
+      <section id="features" className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16 lg:py-20">
+        <div className="text-center mb-12 sm:mb-16">
+          <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-cyan-200 to-purple-200 mb-4 sm:mb-6">
             Professional Trading Arsenal
           </h2>
-          <p className="text-xl text-slate-400 max-w-3xl mx-auto">
+          <p className="text-base sm:text-lg lg:text-xl text-slate-400 max-w-3xl mx-auto px-4">
             Cutting-edge tools and AI-driven insights designed for serious traders who demand precision and performance.
           </p>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-8">
           <FeatureCard
             title="Real-Time Multi-Chain Monitoring"
             icon={
