@@ -6,6 +6,7 @@ import cookieParser from 'cookie-parser';
 
 import authRoutes from './routes/authRoutes';
 import { notFound, errorHandler } from './middleware/errorMiddleware';
+import googleAuthRoutes from './routes/googleAuthRoutes';
 
 const app: Application = express();
 // Debug: Log CORS headers for every request
@@ -36,7 +37,7 @@ app.use(cookieParser() as express.RequestHandler);
 
 // Routes
 app.use('/api/auth', authRoutes);
-
+app.use('/api/auth', googleAuthRoutes);
 // Error handlers (must be last)
 app.use(notFound);
 app.use(errorHandler);
