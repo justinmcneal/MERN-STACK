@@ -19,7 +19,7 @@ const userSchema: Schema<IUser> = new mongoose.Schema(
     name: { type: String, required: true },
     email: { type: String, required: true, unique: true, lowercase: true },
     password: { type: String, required: true },
-  refreshTokens: [{ type: String }],
+    refreshTokens: [{ type: String }],
     failedLoginAttempts: { type: Number, default: 0 },
     lockUntil: { type: Number, default: null },
   },
@@ -43,6 +43,7 @@ userSchema.pre<IUser>('save', async function (next) {
 userSchema.methods.matchPassword = async function (enteredPassword: string): Promise<boolean> {
   return await bcrypt.compare(enteredPassword, this.password);
 };
+
 
 const User: Model<IUser> = mongoose.model<IUser>('User', userSchema);
 export default User;
