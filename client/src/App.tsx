@@ -3,6 +3,8 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import LandingPage from './view_pages/landing_page';
 import Login from './view_pages/logIn';
 import SignUp from './view_pages/signUp';
+import MainDashboard from './view_pages/main_dashboard';
+import Opportunities from './view_pages/opportunities';
 
 
 
@@ -18,6 +20,8 @@ const App: React.FC = () => {
         {/* Fallback: redirect unknown paths to root */}
         <Route path="/logIn" element={<Login />} />
         <Route path="/signUp" element={<SignUp />} />
+        <Route path="/dashboard" element={<MainDashboard />} />
+        <Route path="/opportunities" element={<Opportunities />} />
         
         
         <Route path="*" element={<Navigate to="/landing_page" replace />} />
