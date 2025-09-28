@@ -30,7 +30,7 @@ MERN-STACK/
 2. Install dependencies for both client and server:
    ```bash
    cd client && npm install
-   cd ../server && npm install
+   cd server && npm install
    ```
 
 ### Development
@@ -50,7 +50,7 @@ npm run dev
 ```
 
 This will start:
-- Backend server on http://localhost:5000
+- Backend server on http://localhost:5001
 - Frontend development server on http://localhost:5173
 
 ### Build
@@ -63,11 +63,32 @@ npm run build
 
 ## Environment Variables
 
-Create a `.env` file in the server directory with:
+### Server Environment
+Create a `.env` file in the server directory:
+```bash
+cp server/env.example server/.env
 ```
-PORT=5000
-MONGODB_URI=mongodb://localhost:27017/mern-app
+
+Required variables:
+```
+PORT=5001
 NODE_ENV=development
+MONGO_URI=mongodb://localhost:27017/mern-app
+JWT_SECRET=your_super_secret_jwt_key_here
+ACCESS_TOKEN_EXPIRE=15m
+REFRESH_TOKEN_EXPIRE=7d
+CLIENT_URL=http://localhost:5173
+```
+
+### Client Environment
+Create a `.env` file in the client directory:
+```bash
+cp client/env.example client/.env
+```
+
+Required variables:
+```
+VITE_API_URL=http://localhost:5001/api
 ```
 
 ## Technologies Used
