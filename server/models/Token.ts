@@ -1,3 +1,4 @@
+// models/Token.ts
 import mongoose, { Document, Schema, Model } from 'mongoose';
 
 // Interface for Token document

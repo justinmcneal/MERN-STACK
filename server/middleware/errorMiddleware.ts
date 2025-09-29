@@ -1,3 +1,4 @@
+// middleware/errorMiddleware.ts
 import { Request, Response, NextFunction } from 'express';
 
 // 404 Not Found Middleware

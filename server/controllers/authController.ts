@@ -1,3 +1,4 @@
+// controllers/authController.ts
 import crypto from 'crypto';
 import { Request, Response } from 'express';
 import asyncHandler from 'express-async-handler';
@@ -17,12 +18,11 @@ export const logoutUser = asyncHandler(async (req: Request, res: Response) => {
         await user.save();
       }
     } catch (err) {
-      // ignore invalid token
     }
   }
   res.clearCookie('refreshToken', {
     httpOnly: true,
-    secure: process.env.NODE_ENV === 'production', // always true in prod
+    secure: process.env.NODE_ENV === 'production', 
     sameSite: 'strict',
   });
   res.status(200).json({ message: 'Logged out' });
@@ -35,7 +35,7 @@ const sendTokens = (res: Response, userId: string) => {
 
   res.cookie('refreshToken', refreshToken, {
     httpOnly: true,
-    secure: process.env.NODE_ENV === 'production', // always true in prod
+    secure: process.env.NODE_ENV === 'production', 
     sameSite: 'strict',
     maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
   });

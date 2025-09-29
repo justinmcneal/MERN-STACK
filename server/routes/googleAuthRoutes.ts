@@ -1,4 +1,5 @@
-//googleAuthRoutes.ts
+// routes/googleAuthRoutes.ts
+
 import express from "express";
 import passport from "passport";
 import { Strategy as GoogleStrategy } from "passport-google-oauth20";

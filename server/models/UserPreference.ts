@@ -1,3 +1,4 @@
+// models/UserPreference.ts
 import mongoose, { Document, Schema, Model, Types } from 'mongoose';
 
 // Interface for UserPreference document

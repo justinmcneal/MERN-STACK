@@ -1,3 +1,4 @@
+// models/Opportunity.ts
 import mongoose, { Document, Schema, Model, Types } from 'mongoose';
 
 // Interface for Opportunity document

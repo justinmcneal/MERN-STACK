@@ -1,3 +1,4 @@
+// models/Alert.ts
 import mongoose, { Document, Schema, Model, Types } from 'mongoose';
 
 // Interface for Alert document

@@ -1,3 +1,4 @@
+// routes/authRoutes.ts
 import { Router } from 'express';
 import rateLimit from 'express-rate-limit';
 import { registerUser, authUser, getMe, refreshToken, logoutUser } from '../controllers/authController';
