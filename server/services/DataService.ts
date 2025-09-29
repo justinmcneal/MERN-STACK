@@ -1,5 +1,11 @@
 // services/DataService.ts
 import axios from 'axios';
+import { 
+  SUPPORTED_TOKENS, 
+  SUPPORTED_CHAINS, 
+  COINGECKO_TOKEN_IDS,
+  getCoinGeckoTokenId 
+} from '../config/tokens';
 
 interface TokenPrice {
   symbol: string;
@@ -45,14 +51,8 @@ export class DataService {
   private readonly bscGasUrl = 'https://bscgas.info/gas';
   private readonly blocknativeUrl = 'https://api.blocknative.com/gasprices/blockprices';
 
-  // Token ID mapping for CoinGecko
-  private readonly tokenIdMap: { [key: string]: string } = {
-    'ETH': 'ethereum',
-    'USDT': 'tether',
-    'USDC': 'usd-coin',
-    'BNB': 'binancecoin',
-    'MATIC': 'matic-network'
-  };
+  // Token ID mapping for CoinGecko (now from shared config)
+  private readonly tokenIdMap = COINGECKO_TOKEN_IDS;
 
   private constructor() {}
 
@@ -219,21 +219,21 @@ export class DataService {
    * Get token ID for CoinGecko API
    */
   getTokenId(symbol: string): string | null {
-    return this.tokenIdMap[symbol.toUpperCase()] || null;
+    return getCoinGeckoTokenId(symbol);
   }
 
   /**
    * Get all supported tokens
    */
   getSupportedTokens(): string[] {
-    return Object.keys(this.tokenIdMap);
+    return [...SUPPORTED_TOKENS];
   }
 
   /**
    * Get all supported chains
    */
   getSupportedChains(): string[] {
-    return ['ethereum', 'polygon', 'bsc'];
+    return [...SUPPORTED_CHAINS];
   }
 }
 

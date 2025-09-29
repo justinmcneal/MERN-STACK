@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import asyncHandler from 'express-async-handler';
 import Token from '../models/Token';
 import DataService from '../services/DataService';
+import { getTokenName } from '../config/tokens';
 
 // GET /api/tokens - Get all tokens
 export const getTokens = asyncHandler(async (req: Request, res: Response) => {
@@ -148,15 +149,4 @@ export const getSupportedChains = asyncHandler(async (req: Request, res: Respons
   });
 });
 
-// Helper function to get token name
-function getTokenName(symbol: string): string {
-  const tokenNames: { [key: string]: string } = {
-    'ETH': 'Ethereum',
-    'USDT': 'Tether',
-    'USDC': 'USD Coin',
-    'BNB': 'Binance Coin',
-    'MATIC': 'Polygon'
-  };
-  
-  return tokenNames[symbol] || symbol;
-}
+// Helper function now imported from shared config
