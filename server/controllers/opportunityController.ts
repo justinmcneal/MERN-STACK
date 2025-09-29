@@ -129,10 +129,11 @@ export const scanOpportunities = asyncHandler(async (req: Request, res: Response
     let opportunitiesFound = 0;
     const results: any[] = [];
 
-    // Analyze each token on each chain pair
+    // Analyze each token on each directional chain pair
     for (const tokenSymbol of tokensToAnalyze) {
       for (let i = 0; i < chainsToAnalyze.length; i++) {
-        for (let j = i + 1; j < chainsToAnalyze.length; j++) {
+        for (let j = 0; j < chainsToAnalyze.length; j++) {
+          if (i === j) continue; // Skip same chain pairs
           const chainFrom = chainsToAnalyze[i];
           const chainTo = chainsToAnalyze[j];
 
@@ -297,15 +298,18 @@ export const getOpportunityStats = asyncHandler(async (req: Request, res: Respon
   });
 });
 
-// GET /api/opportunities/pairs - Get available chain pairs
+// GET /api/opportunities/pairs - Get available chain pairs (all directional pairs)
 export const getSupportedChainPairs = asyncHandler(async (req: Request, res: Response) => {
   const dataService = DataService.getInstance();
   const chains = dataService.getSupportedChains();
   const pairs: string[] = [];
 
+  // Generate all directional pairs (A -> B and B -> A)
   for (let i = 0; i < chains.length; i++) {
-    for (let j = i + 1; j < chains.length; j++) {
-      pairs.push(`${chains[i]} <-> ${chains[j]}`);
+    for (let j = 0; j < chains.length; j++) {
+      if (i !== j) { // Don't include same chain pairs
+        pairs.push(`${chains[i]} -> ${chains[j]}`);
+      }
     }
   }
 

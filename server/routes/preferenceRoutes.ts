@@ -23,6 +23,12 @@ router.get('/', getUserPreferences);
 // PUT /api/preferences - Update user preferences
 router.put('/', updateUserPreferences);
 
+// GET /api/preferences/supported-tokens - Get supported tokens list
+router.get('/supported-tokens', getSupportedTokensForPreferences);
+
+// GET /api/preferences/available-themes - Get available themes
+router.get('/available-themes', getAvailableThemes);
+
 // PUT /api/preferences/tokens - Update tracked tokens
 router.put('/tokens', updateTrackedTokens);
 
@@ -37,11 +43,5 @@ router.put('/appearance', updateAppearanceSettings);
 
 // POST /api/preferences/reset - Reset preferences to defaults
 router.post('/reset', resetPreferences);
-
-// GET /api/preferences/supported-tokens - Get supported tokens list
-router.get('/supported-tokens', getSupportedTokensForPreferences);
-
-// GET /api/preferences/available-themes - Get available themes
-router.get('/available-themes', getAvailableThemes);
 
 export default router;

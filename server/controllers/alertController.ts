@@ -207,6 +207,11 @@ export const getAlertStats = asyncHandler(async (req: Request, res: Response) =>
 // POST /api/alerts/test - Create test alert (for development/testing)
 export const createTestAlert = asyncHandler(async (req: Request, res: Response) => {
   const userId = req.user!._id;
+  
+  // Debug: Log the request body
+  console.log('Alert test - Request body:', req.body);
+  console.log('Alert test - Request headers:', req.headers);
+  
   const { message, priority = 'medium', alertType = 'system' } = req.body;
 
   if (!message) {

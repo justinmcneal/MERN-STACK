@@ -106,6 +106,11 @@ export const updateUserPreferences = asyncHandler(async (req: Request, res: Resp
 // PUT /api/preferences/tokens - Update tracked tokens
 export const updateTrackedTokens = asyncHandler(async (req: Request, res: Response) => {
   const userId = req.user!._id;
+  
+  // Debug: Log the request body
+  console.log('Request body:', req.body);
+  console.log('Request headers:', req.headers);
+  
   const { tokens } = req.body;
 
   if (!Array.isArray(tokens)) {
