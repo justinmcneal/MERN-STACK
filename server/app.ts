@@ -8,6 +8,7 @@ import authRoutes from './routes/authRoutes';
 import tokenRoutes from './routes/tokenRoutes';
 import opportunityRoutes from './routes/opportunityRoutes';
 import preferenceRoutes from './routes/preferenceRoutes';
+import alertRoutes from './routes/alertRoutes';
 import { notFound, errorHandler } from './middleware/errorMiddleware';
 import googleAuthRoutes from './routes/googleAuthRoutes';
 
@@ -29,7 +30,7 @@ app.use((req, res, next) => {
 
 // Allow client origin and credentials (adjust CLIENT_URL in .env)
 app.use(cors({
-  origin: process.env.CLIENT_URL || 'http://localhost:5173',
+  origin: true, // Allow all origins for testing
   credentials: true,
 }));
 
@@ -44,6 +45,7 @@ app.use('/api/auth', googleAuthRoutes);
 app.use('/api/tokens', tokenRoutes);
 app.use('/api/opportunities', opportunityRoutes);
 app.use('/api/preferences', preferenceRoutes);
+app.use('/api/alerts', alertRoutes);
 // Error handlers (must be last)
 app.use(notFound);
 app.use(errorHandler);
