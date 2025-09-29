@@ -148,7 +148,7 @@ export default function ArbiTraderPro() {
               </div>
               <div className="text-lg sm:text-2xl font-bold">
                 <span className="text-cyan-400">Arbi</span>
-                <span className="text-white">Trader</span>
+                <span className="text-white">Trage</span>
                 <span className="text-purple-400 ml-1">Pro</span>
               </div>
             </div>
@@ -244,10 +244,10 @@ export default function ArbiTraderPro() {
       <section id="features" className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16 lg:py-20">
         <div className="text-center mb-12 sm:mb-16">
           <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-cyan-200 to-purple-200 mb-4 sm:mb-6">
-            Professional Trading Arsenal
+            Real-Time Monitoring for Market Professionals
           </h2>
           <p className="text-base sm:text-lg lg:text-xl text-slate-400 max-w-3xl mx-auto px-4">
-            Cutting-edge tools and AI-driven insights designed for serious traders who demand precision and performance.
+            Cutting-edge monitoring tools and AI-driven insights designed for professionals who require accuracy and actionable data.
           </p>
         </div>
 
@@ -304,7 +304,7 @@ export default function ArbiTraderPro() {
               </svg>
             }
           >
-            RESTful APIs and WebSocket feeds for algorithmic trading, with rate limits up to 1000 requests/second for professional trading firms.
+            RESTful APIs and WebSocket feeds for real-time monitoring, supporting up to 1000 requests/second for professional use.
           </FeatureCard>
 
           <FeatureCard
@@ -324,10 +324,10 @@ export default function ArbiTraderPro() {
       <section id="dashboard" className="relative z-10 max-w-7xl mx-auto px-6 lg:px-8 py-20">
         <div className="text-center mb-16">
           <h3 className="text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-cyan-200 to-purple-200 mb-6">
-            Professional Trading Interface
+            Professional Monitoring Interface
           </h3>
           <p className="text-lg text-slate-400 max-w-2xl mx-auto">
-            A comprehensive dashboard built for professional traders who need real-time insights and lightning-fast execution.
+            A comprehensive monitoring dashboard designed for professionals seeking real-time insights and actionable data.
           </p>
         </div>
 
@@ -402,12 +402,12 @@ export default function ArbiTraderPro() {
                 </div>
                 <div className="text-2xl font-bold">
                   <span className="text-cyan-400">Arbi</span>
-                  <span className="text-white">Trader</span>
+                  <span className="text-white">Trage</span>
                   <span className="text-purple-400 ml-1">Pro</span>
                 </div>
               </div>
               <p className="text-slate-400 mb-6 max-w-md">
-                Professional-grade arbitrage trading platform powered by AI and real-time multi-chain data analysis.
+                  Professional-grade monitoring platform powered by AI and real-time multi-chain data insights.
               </p>
               <div className="flex gap-4">
                 <a href="#" className="w-10 h-10 bg-slate-800 hover:bg-slate-700 rounded-lg flex items-center justify-center transition-colors">
@@ -453,7 +453,7 @@ export default function ArbiTraderPro() {
           
           
           <div className="border-t border-slate-800/50 mt-12 pt-8 text-center text-slate-500">
-            <p>© {new Date().getFullYear()} ArbiTrader Pro. All rights reserved. Trading involves substantial risk of loss.</p>
+            <p>© {new Date().getFullYear()} ArbiTrage Pro. All rights reserved.  Monitoring is for informational purposes only.</p>
           </div>
         </div>
       </footer>

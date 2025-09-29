@@ -39,7 +39,7 @@ export default function ArbiTraderLogin() {
           {/* Logo and Title */}
           <div className="mb-12 ml-28">
             <div className="text-4xl lg:text-6xl font-bold mb-4">
-              <span className="text-cyan-400">ArbiTrader</span>
+              <span className="text-cyan-400">ArbiTrage</span>
               <span className="text-purple-400 ml-2">Pro</span>
             </div>
             <p className="text-xl text-slate-300 font-light">
@@ -92,7 +92,7 @@ export default function ArbiTraderLogin() {
             {/* Welcome Header */}
             <div className="text-center mb-12">
               <h1 className="text-3xl font-bold text-white mb-4">Welcome Back!</h1>
-              <p className="text-slate-400 text-lg">Access your trading insights dashboard.</p>
+              <p className="text-slate-400 text-lg">Access your comprehensive professional monitoring dashboard for real-time insights.</p>
             </div>
 
             {/* Login Form */}
@@ -180,7 +180,7 @@ export default function ArbiTraderLogin() {
               {/* Sign Up Link */}
               <div className="text-center pt-4">
                 <p className="text-slate-400">
-                  New to ArbiTrader Pro?{' '}
+                  New to ArbiTrage Pro?{' '}
                   <a onClick={() => navigate("/signUp")} className="text-cyan-400 hover:text-cyan-300 hover:underline font-medium transition-colors cursor-pointer">
                     Create an account
                   </a>
