@@ -1,10 +1,10 @@
 import 'dotenv/config';
 import { createServer } from 'http';
 import app from './app';
-import { connectDB } from './config/db';
+import connectDB from './config/db';
 import { webSocketService } from './services';
-import { opportunityScanner } from './jobs/opportunityScanner';
-import { dataPipeline } from './jobs/dataPipeline';
+import opportunityScanner from './jobs/opportunityScanner';
+import dataPipeline from './jobs/dataPipeline';
 
 const PORT = process.env.PORT || 5001;
 
@@ -18,8 +18,10 @@ webSocketService.initialize(server);
 connectDB();
 
 // Start background jobs
-opportunityScanner.start();
-dataPipeline.start();
+const opportunityScannerInstance = new opportunityScanner();
+  opportunityScannerInstance.startScheduledScans();
+const dataPipelineInstance = new dataPipeline();
+  dataPipelineInstance.startDataPipeline();
 
 // Start server
 server.listen(PORT, () => {

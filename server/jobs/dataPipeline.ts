@@ -1,0 +1,234 @@
+import cron from 'node-cron';
+import { dataService, webSocketService } from '../services';
+import { Token } from '../models';
+
+interface PipelineStatus {
+  isRunning: boolean;
+  lastPriceUpdate: Date | null;
+  lastGasUpdate: Date | null;
+  errors: string[];
+  totalTokensUpdated: number;
+}
+
+class DataPipeline {
+  private isRunning: boolean = false;
+  private status: PipelineStatus = {
+    isRunning: false,
+    lastPriceUpdate: null,
+    lastGasUpdate: null,
+    errors: [],
+    totalTokensUpdated: 0
+  };
+
+  constructor() {
+    this.startDataPipeline();
+  }
+
+  /**
+   * Start the data pipeline with scheduled tasks
+   */
+  public startDataPipeline(): void {
+    // Update token prices every 60 seconds
+    cron.schedule('*/60 * * * * *', async () => {
+      await this.updateTokenPrices();
+    });
+
+    // Update gas prices every 120 seconds (2 minutes)
+    cron.schedule('*/120 * * * * *', async () => {
+      await this.updateGasPrices();
+    });
+
+    // Clean up old data every hour
+    cron.schedule('0 * * * *', async () => {
+      await this.cleanupOldData();
+    });
+
+    console.log('🔄 Data pipeline started:');
+    console.log('   - Token prices: every 60 seconds');
+    console.log('   - Gas prices: every 120 seconds');
+    console.log('   - Data cleanup: every hour');
+  }
+
+  /**
+   * Update token prices from external APIs
+   */
+  public async updateTokenPrices(): Promise<void> {
+    if (this.isRunning) {
+      console.log('⚠️  Price update already in progress, skipping...');
+      return;
+    }
+
+    this.isRunning = true;
+    const startTime = Date.now();
+
+    try {
+      console.log('💰 Updating token prices...');
+
+      const prices = await dataService.fetchTokenPrices();
+      const supportedChains = dataService.getSupportedChains();
+      let tokensUpdated = 0;
+
+      for (const priceInfo of prices) {
+        for (const chain of supportedChains) {
+          const result = await Token.findOneAndUpdate(
+            { symbol: priceInfo.symbol, chain: chain },
+            {
+              currentPrice: priceInfo.price,
+              lastUpdated: new Date(),
+              name: priceInfo.symbol,
+              decimals: 18,
+            },
+            { upsert: true, new: true, setDefaultsOnInsert: true }
+          );
+
+          if (result) {
+            tokensUpdated++;
+          }
+        }
+      }
+
+      this.status.lastPriceUpdate = new Date();
+      this.status.totalTokensUpdated = tokensUpdated;
+      this.status.errors = []; // Clear previous errors on success
+
+      const duration = Date.now() - startTime;
+      console.log(`✅ Updated ${tokensUpdated} token prices in ${duration}ms`);
+
+    } catch (error) {
+      const errorMsg = `Error updating token prices: ${error}`;
+      console.error(errorMsg);
+      this.status.errors.push(errorMsg);
+    } finally {
+      this.isRunning = false;
+    }
+  }
+
+  /**
+   * Update gas prices for all supported chains
+   */
+  public async updateGasPrices(): Promise<void> {
+    try {
+      console.log('⛽ Updating gas prices...');
+
+      const supportedChains = dataService.getSupportedChains();
+      const gasPrices: { [chain: string]: number } = {};
+
+      for (const chain of supportedChains) {
+        try {
+          let gasPrice: any;
+          if (chain === 'ethereum') {
+            gasPrice = await dataService.fetchEthereumGasPrice();
+          } else if (chain === 'polygon') {
+            gasPrice = await dataService.fetchPolygonGasPrice();
+          } else if (chain === 'bsc') {
+            gasPrice = await dataService.fetchBSCGasPrice();
+          } else {
+            throw new Error(`Unsupported chain: ${chain}`);
+          }
+          gasPrices[chain] = gasPrice.gasPrice;
+        } catch (error) {
+          console.error(`Error fetching gas price for ${chain}:`, error);
+          this.status.errors.push(`Gas price error for ${chain}: ${error}`);
+        }
+      }
+
+      this.status.lastGasUpdate = new Date();
+      console.log('✅ Gas prices updated:', gasPrices);
+
+    } catch (error) {
+      const errorMsg = `Error updating gas prices: ${error}`;
+      console.error(errorMsg);
+      this.status.errors.push(errorMsg);
+    }
+  }
+
+  /**
+   * Clean up old data to maintain database performance
+   */
+  public async cleanupOldData(): Promise<void> {
+    try {
+      console.log('🧹 Starting data cleanup...');
+
+      const cutoffDate = new Date();
+      cutoffDate.setDate(cutoffDate.getDate() - 7); // Keep data for 7 days
+
+      // Clean up old expired opportunities
+      const expiredOpportunities = await require('../models').Opportunity.deleteMany({
+        status: 'expired',
+        updatedAt: { $lt: cutoffDate }
+      });
+
+      // Clean up old read alerts
+      const oldAlerts = await require('../models').Alert.deleteMany({
+        isRead: true,
+        createdAt: { $lt: cutoffDate }
+      });
+
+      console.log(`✅ Cleanup completed:`);
+      console.log(`   - Removed ${expiredOpportunities.deletedCount} old expired opportunities`);
+      console.log(`   - Removed ${oldAlerts.deletedCount} old read alerts`);
+
+    } catch (error) {
+      const errorMsg = `Error during cleanup: ${error}`;
+      console.error(errorMsg);
+      this.status.errors.push(errorMsg);
+    }
+  }
+
+  /**
+   * Force update all data (for manual triggers)
+   */
+  public async forceUpdateAll(): Promise<void> {
+    console.log('🔄 Force updating all data...');
+    
+    await Promise.all([
+      this.updateTokenPrices(),
+      this.updateGasPrices()
+    ]);
+
+    console.log('✅ Force update completed');
+  }
+
+  /**
+   * Get pipeline status
+   */
+  public getStatus(): PipelineStatus {
+    return {
+      ...this.status,
+      isRunning: this.isRunning
+    };
+  }
+
+  /**
+   * Get health check information
+   */
+  public getHealthCheck(): any {
+    const now = new Date();
+    const lastPriceUpdate = this.status.lastPriceUpdate;
+    const lastGasUpdate = this.status.lastGasUpdate;
+
+    return {
+      status: 'healthy',
+      isRunning: this.isRunning,
+      lastPriceUpdate: lastPriceUpdate,
+      lastGasUpdate: lastGasUpdate,
+      priceUpdateAge: lastPriceUpdate ? Math.floor((now.getTime() - lastPriceUpdate.getTime()) / 1000) : null,
+      gasUpdateAge: lastGasUpdate ? Math.floor((now.getTime() - lastGasUpdate.getTime()) / 1000) : null,
+      totalTokensUpdated: this.status.totalTokensUpdated,
+      recentErrors: this.status.errors.slice(-5), // Last 5 errors
+      uptime: process.uptime()
+    };
+  }
+
+  /**
+   * Stop the data pipeline
+   */
+  public stop(): void {
+    // Note: node-cron doesn't have a destroy method
+    // The cron jobs will stop when the process exits
+    this.isRunning = false;
+    console.log('🛑 Data pipeline stopped');
+  }
+}
+
+export default DataPipeline;
