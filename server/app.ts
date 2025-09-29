@@ -5,6 +5,7 @@ import morgan from 'morgan';
 import cookieParser from 'cookie-parser';
 
 import authRoutes from './routes/authRoutes';
+import tokenRoutes from './routes/tokenRoutes';
 import { notFound, errorHandler } from './middleware/errorMiddleware';
 import googleAuthRoutes from './routes/googleAuthRoutes';
 
@@ -38,6 +39,7 @@ app.use(cookieParser() as express.RequestHandler);
 // Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/auth', googleAuthRoutes);
+app.use('/api/tokens', tokenRoutes);
 // Error handlers (must be last)
 app.use(notFound);
 app.use(errorHandler);
