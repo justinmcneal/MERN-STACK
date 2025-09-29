@@ -23,14 +23,15 @@ router.use(session({ secret: "secret", resave: false, saveUninitialized: true })
 router.use(passport.initialize());
 router.use(passport.session());
 
-// Configure Google OAuth Strategy
-passport.use(
-  new GoogleStrategy(
-    {
-      clientID: process.env.GOOGLE_CLIENT_ID!,
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
-      callbackURL: process.env.GOOGLE_CALLBACK_URL!,
-    },
+// Configure Google OAuth Strategy (only if credentials are provided)
+if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
+  passport.use(
+    new GoogleStrategy(
+      {
+        clientID: process.env.GOOGLE_CLIENT_ID,
+        clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+        callbackURL: process.env.GOOGLE_CALLBACK_URL || 'http://localhost:5001/api/auth/google/callback',
+      },
     async (accessToken: string, refreshToken: string, profile: GoogleProfile, done: (error: any, user?: GoogleUser) => void) => {
       // You can add DB lookup here to save/find user
       const user: GoogleUser = {
@@ -39,37 +40,48 @@ passport.use(
       };
       return done(null, user);
     }
-  )
-);
+    )
+  );
+  
+  passport.serializeUser((user: any, done: (error: any, user: any) => void) => done(null, user));
+  passport.deserializeUser((user: any, done: (error: any, user: any) => void) => done(null, user));
 
-passport.serializeUser((user: any, done: (error: any, user: any) => void) => done(null, user));
-passport.deserializeUser((user: any, done: (error: any, user: any) => void) => done(null, user));
+  // Start Google Login (only available if Google OAuth is configured)
+  router.get("/google", passport.authenticate("google", { scope: ["profile", "email"] }));
+} else {
+  // Fallback route if Google OAuth is not configured
+  router.get("/google", (req, res) => {
+    res.status(501).json({ 
+      message: "Google OAuth not configured", 
+      error: "Please add GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET to your .env file" 
+    });
+  });
+}
 
-// Start Google Login
-router.get("/google", passport.authenticate("google", { scope: ["profile", "email"] }));
+// Handle Callback (only if Google OAuth is configured)
+if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
+  router.get(
+    "/google/callback",
+    passport.authenticate("google", { failureRedirect: "/" }),
+    (req: any, res) => {
+      if (!req.user) {
+        console.error("No user object from Google OAuth");
+        return res.redirect(`${process.env.CLIENT_URL}/login?error=google_failed`);
+      }
 
-// Handle Callback
-router.get(
-  "/google/callback",
-  passport.authenticate("google", { failureRedirect: "/" }),
-  (req: any, res) => {
-    if (!req.user) {
-      console.error("No user object from Google OAuth");
-      return res.redirect(`${process.env.CLIENT_URL}/login?error=google_failed`);
+      // Build a safe payload
+      const payload = {
+        name: req.user.name,
+        email: req.user.email,
+      };
+
+      const token = jwt.sign(payload, process.env.JWT_SECRET!, { expiresIn: "1h" });
+
+      // Redirect to your frontend with the token
+      res.redirect(`${process.env.CLIENT_URL}/google-auth?token=${token}`);
     }
-
-    // Build a safe payload
-    const payload = {
-      name: req.user.name,
-      email: req.user.email,
-    };
-
-    const token = jwt.sign(payload, process.env.JWT_SECRET!, { expiresIn: "1h" });
-
-    // Redirect to your frontend with the token
-    res.redirect(`${process.env.CLIENT_URL}/google-auth?token=${token}`);
-  }
-);
+  );
+}
 
 // Verify token and return user
 router.get("/google/me", (req, res) => {
