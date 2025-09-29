@@ -149,4 +149,3 @@ export const getSupportedChains = asyncHandler(async (req: Request, res: Respons
   });
 });
 
-// Helper function now imported from shared config

@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import asyncHandler from 'express-async-handler';
 import UserPreference from '../models/UserPreference';
 import DataService from '../services/DataService';
+import { SUPPORTED_TOKENS, getTokenName } from '../config/tokens';
 
 // GET /api/preferences - Get user preferences
 export const getUserPreferences = asyncHandler(async (req: Request, res: Response) => {
@@ -13,7 +14,7 @@ export const getUserPreferences = asyncHandler(async (req: Request, res: Respons
   if (!preferences) {
     preferences = await UserPreference.create({
       userId,
-      tokensTracked: ['ETH', 'USDT', 'USDC', 'BNB', 'MATIC'], // Default tokens
+      tokensTracked: [...SUPPORTED_TOKENS], // Default tokens
       alertThresholds: {
         minProfit: 10,
         maxGasCost: 50,
@@ -243,7 +244,7 @@ export const resetPreferences = asyncHandler(async (req: Request, res: Response)
 
   const defaultPreferences = {
     userId,
-    tokensTracked: ['ETH', 'USDT', 'USDC', 'BNB', 'MATIC'],
+    tokensTracked: [...SUPPORTED_TOKENS],
     alertThresholds: {
       minProfit: 10,
       maxGasCost: 50,
@@ -303,15 +304,4 @@ export const getAvailableThemes = asyncHandler(async (req: Request, res: Respons
   });
 });
 
-// Helper function to get token name
-function getTokenName(symbol: string): string {
-  const tokenNames: { [key: string]: string } = {
-    'ETH': 'Ethereum',
-    'USDT': 'Tether',
-    'USDC': 'USD Coin',
-    'BNB': 'Binance Coin',
-    'MATIC': 'Polygon'
-  };
-  
-  return tokenNames[symbol] || symbol;
-}
+// Helper function now imported from shared config
