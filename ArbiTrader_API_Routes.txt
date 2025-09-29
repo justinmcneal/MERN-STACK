@@ -1,0 +1,285 @@
+# ArbiTrader Pro API Routes
+# Postman Collection: ArbiTrader_Postman_Collection.json
+# Base URL: http://localhost:5001
+
+===============================================================================
+1. AUTHENTICATION ROUTES (/api/auth)
+===============================================================================
+
+1.1 Register User
+Method: POST
+URL: {{base_url}}/api/auth/register
+JSON Body:
+{
+  "name": "Test User",
+  "email": "test@example.com",
+  "password": "TestPass123!"
+}
+
+1.2 Login User
+Method: POST
+URL: {{base_url}}/api/auth/login
+JSON Body:
+{
+  "email": "test@example.com",
+  "password": "TestPass123!"
+}
+
+1.3 Get Profile
+Method: GET
+URL: {{base_url}}/api/auth/me
+Headers: Authorization: Bearer {{access_token}}
+No Body Required
+
+1.4 Logout
+Method: POST
+URL: {{base_url}}/api/auth/logout
+Headers: Authorization: Bearer {{access_token}}
+No Body Required
+
+===============================================================================
+2. TOKENS ROUTES (/api/tokens)
+===============================================================================
+
+2.1 Get All Tokens
+Method: GET
+URL: {{base_url}}/api/tokens?limit=10&skip=0
+No Body Required
+
+2.2 Get Token by Symbol
+Method: GET
+URL: {{base_url}}/api/tokens/ETH
+No Body Required
+
+2.3 Get Token by Symbol and Chain
+Method: GET
+URL: {{base_url}}/api/tokens/ETH/ethereum
+No Body Required
+
+2.4 Refresh Token Prices
+Method: POST
+URL: {{base_url}}/api/tokens/refresh
+JSON Body:
+{}
+
+2.5 Get Supported Tokens
+Method: GET
+URL: {{base_url}}/api/tokens/supported
+No Body Required
+
+2.6 Get Supported Chains
+Method: GET
+URL: {{base_url}}/api/tokens/chains
+No Body Required
+
+===============================================================================
+3. OPPORTUNITIES ROUTES (/api/opportunities)
+===============================================================================
+
+3.1 Get All Opportunities
+Method: GET
+URL: {{base_url}}/api/opportunities?limit=10&skip=0&status=active&sortBy=score&sortOrder=desc
+No Body Required
+
+3.2 Scan Opportunities
+Method: POST
+URL: {{base_url}}/api/opportunities/scan
+JSON Body:
+{
+  "tokens": ["ETH", "USDT", "USDC"],
+  "chains": ["ethereum", "polygon", "bsc"],
+  "forceRefresh": true
+}
+
+3.3 Get Opportunity Stats
+Method: GET
+URL: {{base_url}}/api/opportunities/stats
+No Body Required
+
+3.4 Get Chain Pairs
+Method: GET
+URL: {{base_url}}/api/opportunities/pairs
+No Body Required
+
+===============================================================================
+4. USER PREFERENCES ROUTES (/api/preferences)
+===============================================================================
+* All routes require Authentication: Bearer {{access_token}}
+
+4.1 Get User Preferences
+Method: GET
+URL: {{base_url}}/api/preferences
+No Body Required
+
+4.2 Update All Preferences
+Method: PUT
+URL: {{base_url}}/api/preferences
+JSON Body:
+{
+  "tokensTracked": ["ETH", "USDT", "USDC"],
+  "alertThresholds": {
+    "minProfit": 15,
+    "maxGasCost": 75,
+    "minROI": 8,
+    "minScore": 0.8
+  },
+  "notificationSettings": {
+    "email": true,
+    "dashboard": true,
+    "telegram": true,
+    "discord": false
+  },
+  "refreshInterval": 45,
+  "theme": "dark"
+}
+
+4.3 Update Tracked Tokens
+Method: PUT
+URL: {{base_url}}/api/preferences/tokens
+JSON Body:
+{
+  "tokens": ["ETH", "MATIC", "BNB", "USDC"]
+}
+
+4.4 Update Alert Thresholds
+Method: PUT
+URL: {{base_url}}/api/preferences/alerts
+JSON Body:
+{
+  "alertThresholds": {
+    "minProfit": 20,
+    "maxGasCost": 100,
+    "minROI": 10,
+    "minScore": 0.75
+  }
+}
+
+4.5 Update Notification Settings
+Method: PUT
+URL: {{base_url}}/api/preferences/notifications
+JSON Body:
+{
+  "notificationSettings": {
+    "email": false,
+    "dashboard": true,
+    "telegram": true,
+    "discord": true
+  }
+}
+
+4.6 Update Appearance Settings
+Method: PUT
+URL: {{base_url}}/api/preferences/appearance
+JSON Body:
+{
+  "theme": "light",
+  "refreshInterval": 60
+}
+
+4.7 Reset Preferences
+Method: POST
+URL: {{base_url}}/api/preferences/reset
+No Body Required
+
+4.8 Get Supported Tokens
+Method: GET
+URL: {{base_url}}/api/preferences/supported-tokens
+No Body Required
+
+4.9 Get Available Themes
+Method: GET
+URL: {{base_url}}/api/preferences/available-themes
+No Body Required
+
+===============================================================================
+5. ALERTS ROUTES (/api/alerts)
+===============================================================================
+* All routes require Authentication: Bearer {{access_token}}
+
+5.1 Get User Alerts
+Method: GET
+URL: {{base_url}}/api/alerts?limit=20&skip=0&isRead=false&sortBy=createdAt&sortOrder=desc
+No Body Required
+
+5.2 Mark Alerts as Read
+Method: POST
+URL: {{base_url}}/api/alerts/mark-read
+JSON Body:
+{
+  "markAll": true
+}
+
+5.3 Create Test Alert
+Method: POST
+URL: {{base_url}}/api/alerts/test
+JSON Body:
+{
+  "message": "Test alert from Postman",
+  "priority": "high",
+  "alertType": "system"
+}
+
+5.4 Get Alert Stats
+Method: GET
+URL: {{base_url}}/api/alerts/stats
+No Body Required
+
+5.5 Get Alert Types
+Method: GET
+URL: {{base_url}}/api/alerts/types
+No Body Required
+
+5.6 Get Alert Priorities
+Method: GET
+URL: {{base_url}}/api/alerts/priorities
+No Body Required
+
+5.7 Delete Multiple Alerts
+Method: DELETE
+URL: {{base_url}}/api/alerts
+JSON Body:
+{
+  "deleteRead": true
+}
+
+===============================================================================
+6. ML SERVICE DIRECT ROUTES (/)
+===============================================================================
+* ML Service Base URL: {{ml_url}} = http://localhost:8000
+
+6.1 ML Predict Single
+Method: POST
+URL: {{ml_url}}/predict
+JSON Body:
+{
+  "token": "ETH",
+  "chain": "ethereum",
+  "price": 3000,
+  "gas": 50
+}
+
+6.2 ML Arbitrage Analysis
+Method: POST
+URL: {{ml_url}}/arbitrage_opportunity
+JSON Body:
+{
+  "token": "ETH",
+  "chain_a": "ethereum",
+  "chain_b": "polygon"
+}
+
+===============================================================================
+POSTMAN VARIABLES
+===============================================================================
+- base_url: http://localhost:5001
+- ml_url: http://localhost:8000
+- access_token: (set after login)
+
+===============================================================================
+NOTES
+===============================================================================
+1. Authentication: Use Bearer token in Authorization header where required
+2. Rate Limiting: Auth endpoints limited to 10 requests per minute
+3. Content-Type: application/json required for POST/PUT requests
+4. Query Parameters: Use ?key=value&key2=value2 format
+5. Default Values: Check server defaults for optional parameters

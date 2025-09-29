@@ -3,6 +3,7 @@
 import joblib
 import numpy as np
 import pandas as pd
+from tokens_config import SUPPORTED_TOKENS, SUPPORTED_CHAINS
 
 # Load trained model
 model = joblib.load("models/arbitrage_model.pkl")
@@ -10,9 +11,9 @@ model = joblib.load("models/arbitrage_model.pkl")
 with open("models/arbitrage_model_features.txt") as f:
     FEATURE_NAMES = [line.strip() for line in f.readlines()]
 
-# List of all tokens and chains used in training
-TOKENS = ["ETH", "USDT", "USDC", "BNB", "MATIC"]
-CHAINS = ["ethereum", "polygon", "bsc"]
+# Use shared configuration for tokens and chains
+TOKENS = SUPPORTED_TOKENS
+CHAINS = SUPPORTED_CHAINS
 
 def predict_opportunity(token, chain, price, gas):
     # Prepare input features as in training

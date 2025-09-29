@@ -1,5 +1,7 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import Input from "../../components/ui/Input/Input";
+import Button from "../../components/ui/Button/Button";
 
 export default function ArbiTraderLogin() {
     const [name, setName] = useState("");
@@ -8,8 +10,6 @@ export default function ArbiTraderLogin() {
     const [confirmPassword, setConfirmPassword] = useState("");
     const [service, setService] = useState(false);
     const [subscribe, setSubscribe] = useState(false);
-    const [showPassword, setShowPassword] = useState(false);
-    const [showConfirmPassword, setShowConfirmPassword] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
     const navigate = useNavigate();
 
@@ -34,7 +34,7 @@ export default function ArbiTraderLogin() {
         {/* Left Panel - Branding */}
         <div className="flex flex-col justify-center p-8 lg:p-16 mb-80">
           {/* Back Button */}
-          <button onClick={() => navigate("/landing_page")} className="inline-flex items-center gap-2 text-slate-400 hover:text-cyan-400 transition-colors mb-56 group">
+          <button onClick={() => navigate("/")} className="inline-flex items-center gap-2 text-slate-400 hover:text-cyan-400 transition-colors mb-56 group">
             <svg className="w-5 h-5 transition-transform group-hover:-translate-x-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
             </svg>
@@ -102,118 +102,51 @@ export default function ArbiTraderLogin() {
 
             {/* Signup Form */}
             <form onSubmit={handleSignUp} className="space-y-6">
-            {/* Full Name Field */}
-            <div>
-            <label className="block text-sm font-medium text-slate-300 mb-3">
-                Full Name
-            </label>
-            <input
+              <Input
                 type="text"
-                value={name}
-                onChange={(e) => setName(e.target.value)} // <-- corrected here
-                className="w-full px-4 py-4 bg-slate-800/50 border border-slate-700/50 rounded-xl text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-cyan-400/50 focus:border-cyan-400/50 transition-all duration-300"
+                label="Full Name"
                 placeholder="Enter your full name"
+                value={name}
+                onChange={setName}
                 required
-            />
-            </div>
+              />
 
-              {/* Email Field */}
-              <div>
-                <label className="block text-sm font-medium text-slate-300 mb-3">
-                  Email Address
-                </label>
-                <input
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="w-full px-4 py-4 bg-slate-800/50 border border-slate-700/50 rounded-xl text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-cyan-400/50 focus:border-cyan-400/50 transition-all duration-300"
-                  placeholder="Enter your email address"
-                  required
-                />
-              </div>
+              <Input
+                type="email"
+                label="Email Address"
+                placeholder="Enter your email address"
+                value={email}
+                onChange={setEmail}
+                required
+              />
 
-              {/* Password Field */}
-              <div>
-                <label className="block text-sm font-medium text-slate-300 mb-3">
-                  Password
-                </label>
-                <div className="relative">
-                  <input
-                    type={showPassword ? "text" : "password"}
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    className="w-full px-4 py-4 bg-slate-800/50 border border-slate-700/50 rounded-xl text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-cyan-400/50 focus:border-cyan-400/50 transition-all duration-300"
-                    placeholder="Create your strong password"
-                    required
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute inset-y-0 right-0 flex items-center pr-4 text-slate-400 hover:text-slate-300 transition-colors"
-                  >
-                    {showPassword ? (
-                      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.878 9.878L3 3m6.878 6.878L21 21" />
-                      </svg>
-                    ) : (
-                      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                      </svg>
-                    )}
-                  </button>
-                </div>
-              </div>
+              <Input
+                type="password"
+                label="Password"
+                placeholder="Create your strong password"
+                value={password}
+                onChange={setPassword}
+                required
+              />
 
-              {/* Confirm Password Field */}
-                <div>
-                <label className="block text-sm font-medium text-slate-300 mb-3">
-                    Confirm Password
-                </label>
-                <div className="relative">
-                    <input
-                    type={showConfirmPassword ? "text" : "password"}
-                    value={confirmPassword}
-                    onChange={(e) => setConfirmPassword(e.target.value)}
-                    className="w-full px-4 py-4 bg-slate-800/50 border border-slate-700/50 rounded-xl text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-cyan-400/50 focus:border-cyan-400/50 transition-all duration-300"
-                    placeholder="Confirm your password"
-                    required
-                    />
-                    <button
-                    type="button"
-                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                    className="absolute inset-y-0 right-0 flex items-center pr-4 text-slate-400 hover:text-slate-300 transition-colors"
-                    >
-                    {showConfirmPassword ? (
-                        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.878 9.878L3 3m6.878 6.878L21 21" />
-                        </svg>
-                    ) : (
-                        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                        </svg>
-                    )}
-                    </button>
-                </div>
-                </div>
+              <Input
+                type="password"
+                label="Confirm Password"
+                placeholder="Confirm your password"
+                value={confirmPassword}
+                onChange={setConfirmPassword}
+                required
+              />
 
-
-              {/* Sign In Button */}
-              <button
-                    type="submit"
-                    disabled={isLoading}
-                    className="w-full py-4 px-4 bg-gradient-to-r from-cyan-500 to-purple-600 hover:from-cyan-400 hover:to-purple-500 rounded-xl font-semibold text-white shadow-lg hover:shadow-cyan-500/25 transition-all duration-300 transform hover:scale-[1.02] disabled:opacity-70 disabled:cursor-not-allowed disabled:transform-none"
-                >
-                    {isLoading ? (
-                    <div className="flex items-center justify-center gap-2">
-                        <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-                        Signing Up...
-                    </div>
-                    ) : (
-                    "Sign Up"
-                    )}
-                </button>
+              <Button
+                type="submit"
+                variant="primary"
+                size="lg"
+                loading={isLoading}
+                className="w-full"
+              >
+                Sign Up
+              </Button>
 
               {/* Terms of Service and Privacy Policy */}
               <div className="flex items-center justify-between">
@@ -250,7 +183,7 @@ export default function ArbiTraderLogin() {
                 <p className="text-slate-400">
                     Already have an account?{' '}
                     <a
-                    onClick={() => navigate("/logIn")}
+                    onClick={() => navigate("/login")}
                     className="text-cyan-400 hover:text-cyan-300 hover:underline font-medium transition-colors cursor-pointer"
                     >
                     Login

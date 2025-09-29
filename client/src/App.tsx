@@ -1,8 +1,9 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import LandingPage from './view_pages/landing_page';
-import Login from './view_pages/logIn';
-import SignUp from './view_pages/signUp';
+import LandingPage from './pages/Landing';
+import Login from './pages/auth/Login';
+import Register from './pages/auth/Register';
+import Home from './pages/Home';
 
 
 
@@ -10,17 +11,18 @@ const App: React.FC = () => {
   return (
     <Router>
       <Routes>
-        {/* Root path shows Sign In */}
+        {/* Public routes */}
         <Route path="/" element={<LandingPage />} />
-        <Route path="/landing_page" element={<LandingPage />} />
-        <Route path="/landing_page-in" element={<LandingPage />} />
+        <Route path="/landing" element={<LandingPage />} />
+        <Route path="/login" element={<Login />} />
+        <Route path="/register" element={<Register />} />
         
-        {/* Fallback: redirect unknown paths to root */}
-        <Route path="/logIn" element={<Login />} />
-        <Route path="/signUp" element={<SignUp />} />
+        {/* Protected routes */}
+        <Route path="/home" element={<Home />} />
+        <Route path="/dashboard" element={<Home />} />
         
-        
-        <Route path="*" element={<Navigate to="/landing_page" replace />} />
+        {/* Fallback */}
+        <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </Router>
   );

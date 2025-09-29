@@ -5,6 +5,7 @@ from sklearn.model_selection import train_test_split
 from sklearn.ensemble import RandomForestClassifier
 import joblib
 import os
+from tokens_config import SUPPORTED_TOKENS, SUPPORTED_CHAINS
 
 
 # ---- Step 1: Load real data ----
@@ -16,7 +17,7 @@ def load_market_data():
     # Add chain and token columns for each price
     records = []
     for _, row in df.iterrows():
-        for token in ["ETH", "USDT", "USDC", "BNB", "MATIC"]:
+        for token in SUPPORTED_TOKENS:
             records.append({
                 "timestamp": row["timestamp"],
                 "token": token,
