@@ -6,6 +6,7 @@ import cookieParser from 'cookie-parser';
 
 import authRoutes from './routes/authRoutes';
 import tokenRoutes from './routes/tokenRoutes';
+import opportunityRoutes from './routes/opportunityRoutes';
 import { notFound, errorHandler } from './middleware/errorMiddleware';
 import googleAuthRoutes from './routes/googleAuthRoutes';
 
@@ -40,6 +41,7 @@ app.use(cookieParser() as express.RequestHandler);
 app.use('/api/auth', authRoutes);
 app.use('/api/auth', googleAuthRoutes);
 app.use('/api/tokens', tokenRoutes);
+app.use('/api/opportunities', opportunityRoutes);
 // Error handlers (must be last)
 app.use(notFound);
 app.use(errorHandler);
