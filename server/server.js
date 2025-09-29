@@ -4,7 +4,7 @@ const cors = require('cors');
 require('dotenv').config();
 
 const app = express();
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 5001;
 
 // Middleware
 app.use(cors());
@@ -23,10 +23,21 @@ app.get('/', (req, res) => {
   res.json({ message: 'MERN Stack Server is running!' });
 });
 
-// API routes will be added here
-app.use('/api', (req, res) => {
-  res.json({ message: 'API routes will be implemented here' });
-});
+// Import your routes
+const authRoutes = require('./routes/authRoutes');
+const tokenRoutes = require('./routes/tokenRoutes');
+const opportunityRoutes = require('./routes/opportunityRoutes');
+const preferenceRoutes = require('./routes/preferenceRoutes');
+const alertRoutes = require('./routes/alertRoutes');
+const googleAuthRoutes = require('./routes/googleAuthRoutes');
+
+// Use routes
+app.use('/api/auth', authRoutes);
+app.use('/api/auth', googleAuthRoutes);
+app.use('/api/tokens', tokenRoutes);
+app.use('/api/opportunities', opportunityRoutes);
+app.use('/api/preferences', preferenceRoutes);
+app.use('/api/alerts', alertRoutes);
 
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);

@@ -7,7 +7,7 @@ const Login: React.FC = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
-  const googleLogin = () => {window.location.href = "http://localhost:5000/api/auth/google"; };
+  const googleLogin = () => {window.location.href = "http://localhost:5001/api/auth/google"; };
   const { login } = useContext(AuthContext);
   const navigate = useNavigate();
 
