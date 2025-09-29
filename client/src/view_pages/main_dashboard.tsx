@@ -161,7 +161,7 @@ const Dashboard = () => {
     { name: "Dashboard", icon: <BarChart3 className="w-5 h-5 text-white" /> },
     { name: "Opportunities", icon: <Zap className="w-5 h-5 text-white" />, path: "/opportunities" },
     { name: "Profile", icon: <User className="w-5 h-5 text-white" />, path: "/profile" },
-    { name: "Contact Support", icon: <Phone className="w-5 h-5 text-white" />, path: "/contact" },
+    { name: "Contact Support", icon: <Phone className="w-5 h-5 text-white" />, path: "/contact-support" },
     { name: "FAQ", icon: <HelpCircle className="w-5 h-5 text-white" />, path: "/faq" },
     { name: "Settings", icon: <Settings className="w-5 h-5 text-white" />, path: "/settings" }
   ];

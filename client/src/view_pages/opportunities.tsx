@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { BarChart3, Zap, User, Phone, HelpCircle, Settings, LogOut } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { svg } from "framer-motion/client";
 
 const OpportunitiesPage = () => {
     const navigate = useNavigate();
@@ -239,7 +238,7 @@ const OpportunitiesPage = () => {
     { name: "Dashboard", icon: <BarChart3 className="w-5 h-5 text-white" />, path: "/dashboard" },
     { name: "Opportunities", icon: <Zap className="w-5 h-5 text-white" />},
     { name: "Profile", icon: <User className="w-5 h-5 text-white" />, path: "/profile" },
-    { name: "Contact Support", icon: <Phone className="w-5 h-5 text-white" />, path: "/contact" },
+    { name: "Contact Support", icon: <Phone className="w-5 h-5 text-white" />, path: "/contact-support" },
     { name: "FAQ", icon: <HelpCircle className="w-5 h-5 text-white" />, path: "/faq" },
     { name: "Settings", icon: <Settings className="w-5 h-5 text-white" />, path: "/settings" }
   ];
@@ -462,59 +461,45 @@ const OpportunitiesPage = () => {
               </div>
               
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-               <div>
-                    <label htmlFor="tokenFilter" className="block text-sm text-slate-400 mb-2">
-                        Filter by Token
-                    </label>
-                    <select 
-                        id="tokenFilter"
-                        value={selectedToken}
-                        onChange={(e) => setSelectedToken(e.target.value)}
-                        className="w-full bg-slate-700/50 border border-slate-600/50 rounded-xl px-4 py-3 text-slate-300 focus:outline-none focus:ring-2 focus:ring-cyan-400/50"
-                    >
-                        {["All Token","BTC","ETH","BNB","MATIC","USDT"].map(t => (
-                        <option key={t} value={t} className="bg-slate-900 text-slate-300">{t}</option>
-                        ))}
-                    </select>
-                    </div>
-                
-                    <div>
-                        <label htmlFor="chainPairFilter" className="block text-sm text-slate-400 mb-2">
-                            Filter by Chain Pair
-                        </label>
-                        <select 
-                            id="chainPairFilter"
-                            value={selectedChainPair}
-                            onChange={(e) => setSelectedChainPair(e.target.value)}
-                            className="w-full bg-slate-700/50 border border-slate-600/50 rounded-xl px-4 py-3 text-slate-300 focus:outline-none focus:ring-2 focus:ring-cyan-400/50"
-                        >
-                            {["All Chain Pairs","Ethereum → Polygon","BSC → Ethereum","Polygon → BSC"].map(t => (
-                            <option key={t} value={t} className="bg-slate-900 text-slate-300">{t}</option>
-                            ))}
-                        </select>
-                    </div>
+                <div>
+                  <label className="block text-sm text-slate-400 mb-2">Filter by Token</label>
+                  <select 
+                    value={selectedToken}
+                    onChange={(e) => setSelectedToken(e.target.value)}
+                    className="w-full bg-slate-700/50 border border-slate-600/50 rounded-xl px-4 py-3 text-slate-300 focus:outline-none focus:ring-2 focus:ring-cyan-400/50">
+                    {["All Token","BTC","ETH","BNB","MATIC","USDT"].map(t=> <option key={t} value={t} className="bg-slate-900 text-slate-300">{t}</option>)}
+                  </select>
+                </div>
                 
                 <div>
-                    <label htmlFor="minProfit" className="block text-sm text-slate-400 mb-2">
-                        Minimum Profit %
-                    </label>
-                    <div className="relative">
-                        <input
-                        id="minProfit"
-                        type="range"
-                        min="0"
-                        max="10"
-                        step="0.1"
-                        value={minProfit}
-                        onChange={(e) => setMinProfit(Number(e.target.value))}
-                        className="w-full h-2 bg-slate-600 rounded-lg appearance-none cursor-pointer slider"
-                        />
-                        <div className="flex justify-between text-xs text-slate-400 mt-1">
-                        <span>0%</span>
-                        <span className="text-cyan-400">{minProfit}%</span>
-                        <span>10%</span>
-                        </div>
+                  <label className="block text-sm text-slate-400 mb-2">Filter by Chain Pair</label>
+                  <select 
+                    value={selectedChainPair}
+                    onChange={(e) => setSelectedChainPair(e.target.value)}
+                    className="w-full bg-slate-700/50 border border-slate-600/50 rounded-xl px-4 py-3 text-slate-300 focus:outline-none focus:ring-2 focus:ring-cyan-400/50"
+                  >
+                   {["All Chain Pairs","Ethereum → Polygon","BSC → Ethereum","Polygon → BSC"].map(t=> <option key={t} value={t} className="bg-slate-900 text-slate-300">{t}</option>)}
+                  </select>
+                </div>
+                
+                <div>
+                  <label className="block text-sm text-slate-400 mb-2">Minimum Profit %</label>
+                  <div className="relative">
+                    <input
+                      type="range"
+                      min="0"
+                      max="10"
+                      step="0.1"
+                      value={minProfit}
+                      onChange={(e) => setMinProfit(Number(e.target.value))}
+                      className="w-full h-2 bg-slate-600 rounded-lg appearance-none cursor-pointer slider"
+                    />
+                    <div className="flex justify-between text-xs text-slate-400 mt-1">
+                      <span>0%</span>
+                      <span className="text-cyan-400">{minProfit}%</span>
+                      <span>10%</span>
                     </div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -603,27 +588,25 @@ const OpportunitiesPage = () => {
         ></div>
       )}
 
-    <style>
-    {`
-    .slider::-webkit-slider-thumb {
-        appearance: none;
-        width: 20px;
-        height: 20px;
-        border-radius: 50%;
-        background: #22d3ee;
-        cursor: pointer;
-        border: 2px solid #1e293b;
-    }
-    .slider::-moz-range-thumb {
-        width: 20px;
-        height: 20px;
-        border-radius: 50%;
-        background: #22d3ee;
-        cursor: pointer;
-        border: 2px solid #1e293b;
-    }
-    `}
-    </style>
+      <style>{`
+        .slider::-webkit-slider-thumb {
+          appearance: none;
+          width: 20px;
+          height: 20px;
+          border-radius: 50%;
+          background: #22d3ee;
+          cursor: pointer;
+          border: 2px solid #1e293b;
+        }
+        .slider::-moz-range-thumb {
+          width: 20px;
+          height: 20px;
+          border-radius: 50%;
+          background: #22d3ee;
+          cursor: pointer;
+          border: 2px solid #1e293b;
+        }
+      `}</style>
     </div>
   );
 };

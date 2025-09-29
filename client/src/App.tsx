@@ -5,6 +5,9 @@ import Login from './view_pages/logIn';
 import SignUp from './view_pages/signUp';
 import MainDashboard from './view_pages/main_dashboard';
 import Opportunities from './view_pages/opportunities';
+import Profile from './view_pages/profile';
+import ContactSupport from './view_pages/contact_support';
+
 
 
 
@@ -22,6 +25,8 @@ const App: React.FC = () => {
         <Route path="/signUp" element={<SignUp />} />
         <Route path="/dashboard" element={<MainDashboard />} />
         <Route path="/opportunities" element={<Opportunities />} />
+        <Route path="/profile" element={<Profile />} />
+        <Route path="/contact-support" element={<ContactSupport />} />
         
         
         <Route path="*" element={<Navigate to="/landing_page" replace />} />
