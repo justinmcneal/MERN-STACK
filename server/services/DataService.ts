@@ -1,5 +1,5 @@
 // services/DataService.ts
-import axios from 'axios';
+import * as axios from 'axios';
 import { 
   SUPPORTED_TOKENS, 
   SUPPORTED_CHAINS, 
@@ -51,7 +51,6 @@ export class DataService {
   private readonly bscGasUrl = 'https://bscgas.info/gas';
   private readonly blocknativeUrl = 'https://api.blocknative.com/gasprices/blockprices';
 
-  // Token ID mapping for CoinGecko (now from shared config)
   private readonly tokenIdMap = COINGECKO_TOKEN_IDS;
 
   private constructor() {}
@@ -63,12 +62,10 @@ export class DataService {
     return DataService.instance;
   }
 
-  /**
-   * Fetch token prices from CoinGecko
-   */
   async fetchTokenPrices(): Promise<TokenPrice[]> {
+    const tokenIds = Object.values(this.tokenIdMap).join(',');
+    
     try {
-      const tokenIds = Object.values(this.tokenIdMap).join(',');
       const response = await axios.get<CoinGeckoResponse>(
         `${this.coinGeckoBaseUrl}/simple/price`,
         {
@@ -76,14 +73,16 @@ export class DataService {
             ids: tokenIds,
             vs_currencies: 'usd'
           },
-          timeout: 10000
+          timeout: 10000,
+          headers: {
+            'User-Agent': 'ArbiTrader-Pro/1.0'
+          }
         }
       );
 
       const prices: TokenPrice[] = [];
       const timestamp = new Date();
 
-      // Map response back to symbols
       Object.entries(this.tokenIdMap).forEach(([symbol, tokenId]) => {
         if (response.data[tokenId]?.usd) {
           prices.push({
@@ -95,15 +94,21 @@ export class DataService {
       });
 
       return prices;
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error fetching token prices:', error);
+      
+      // Handle rate limiting - wait and retry once
+      if (error.response?.status === 429) {
+        console.warn('⚠️  CoinGecko rate limit hit, waiting 60 seconds before retry');
+        await new Promise(resolve => setTimeout(resolve, 60000)); 
+        console.log('🔄 Retrying CoinGecko API call...');
+        return this.fetchTokenPrices(); 
+      }
+      
       throw new Error('Failed to fetch token prices from CoinGecko');
     }
   }
 
-  /**
-   * Fetch gas price for Ethereum from Blocknative
-   */
   async fetchEthereumGasPrice(): Promise<GasPrice> {
     try {
       const headers: { [key: string]: string } = {};
@@ -136,18 +141,10 @@ export class DataService {
       };
     } catch (error) {
       console.error('Error fetching Ethereum gas price:', error);
-      // Return fallback value
-      return {
-        chain: 'ethereum',
-        gasPrice: 20.0,
-        timestamp: new Date()
-      };
+      throw new Error('Failed to fetch Ethereum gas price');
     }
   }
 
-  /**
-   * Fetch gas price for Polygon
-   */
   async fetchPolygonGasPrice(): Promise<GasPrice> {
     try {
       const response = await axios.get<PolygonGasResponse>(
@@ -162,18 +159,10 @@ export class DataService {
       };
     } catch (error) {
       console.error('Error fetching Polygon gas price:', error);
-      // Return fallback value
-      return {
-        chain: 'polygon',
-        gasPrice: 20.0,
-        timestamp: new Date()
-      };
+      throw new Error('Failed to fetch Polygon gas price');
     }
   }
 
-  /**
-   * Fetch gas price for BSC
-   */
   async fetchBSCGasPrice(): Promise<GasPrice> {
     try {
       const response = await axios.get<BSCGasResponse>(
@@ -188,18 +177,10 @@ export class DataService {
       };
     } catch (error) {
       console.error('Error fetching BSC gas price:', error);
-      // Return fallback value
-      return {
-        chain: 'bsc',
-        gasPrice: 20.0,
-        timestamp: new Date()
-      };
+      throw new Error('Failed to fetch BSC gas price');
     }
   }
 
-  /**
-   * Fetch all gas prices
-   */
   async fetchAllGasPrices(): Promise<GasPrice[]> {
     try {
       const [ethereum, polygon, bsc] = await Promise.all([
@@ -215,23 +196,14 @@ export class DataService {
     }
   }
 
-  /**
-   * Get token ID for CoinGecko API
-   */
   getTokenId(symbol: string): string | null {
     return getCoinGeckoTokenId(symbol);
   }
 
-  /**
-   * Get all supported tokens
-   */
   getSupportedTokens(): string[] {
     return [...SUPPORTED_TOKENS];
   }
 
-  /**
-   * Get all supported chains
-   */
   getSupportedChains(): string[] {
     return [...SUPPORTED_CHAINS];
   }

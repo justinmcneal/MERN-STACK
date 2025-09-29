@@ -19,6 +19,8 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@types/node-cron": "^3.0.11",
+    "@types/socket.io": "^3.0.1",
     "axios": "^1.12.2",
     "bcryptjs": "^3.0.2",
     "cookie-parser": "^1.4.7",
@@ -32,8 +34,10 @@
     "mongodb": "^6.20.0",
     "mongoose": "^8.18.1",
     "morgan": "^1.10.1",
+    "node-cron": "^4.2.1",
     "passport": "^0.7.0",
     "passport-google-oauth20": "^2.0.0",
+    "socket.io": "^4.8.1",
     "supertest": "^7.1.4",
     "ts-jest": "^29.4.2"
   },
