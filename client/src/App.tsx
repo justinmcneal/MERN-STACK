@@ -7,8 +7,11 @@ import MainDashboard from './view_pages/main_dashboard';
 import Opportunities from './view_pages/opportunities';
 import Profile from './view_pages/profile';
 import ContactSupport from './view_pages/contact_support';
-
-
+import FAQ from './view_pages/faq';
+import AboutUs from './view_pages/about_us';
+import AboutUsInside from './view_pages/about_us_inside';
+import Settings from './view_pages/settings';
+import AllNotifications from './view_pages/all_notifications';
 
 
 const App: React.FC = () => {
@@ -27,7 +30,11 @@ const App: React.FC = () => {
         <Route path="/opportunities" element={<Opportunities />} />
         <Route path="/profile" element={<Profile />} />
         <Route path="/contact-support" element={<ContactSupport />} />
-        
+        <Route path="/faq" element={<FAQ />} />
+        <Route path="/about-us" element={<AboutUs />} />
+        <Route path="/about us" element={<AboutUsInside />} />
+        <Route path="/settings" element={<Settings />} />
+        <Route path="/all-notifications" element={<AllNotifications />} />
         
         <Route path="*" element={<Navigate to="/landing_page" replace />} />
       </Routes>

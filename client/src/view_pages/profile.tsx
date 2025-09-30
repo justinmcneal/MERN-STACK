@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { BarChart3, Zap, User, Phone, HelpCircle, Settings, LogOut, Shield, Save } from "lucide-react";
+import { BarChart3, Zap, User, Phone, HelpCircle, Settings, LogOut, Shield, Save, Info } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 const ProfilePage = () => {
     const navigate = useNavigate();
@@ -81,6 +81,7 @@ const ProfilePage = () => {
     { name: "Profile", icon: <User className="w-5 h-5 text-white" /> },
     { name: "Contact Support", icon: <Phone className="w-5 h-5 text-white" />, path: "/contact-support" },
     { name: "FAQ", icon: <HelpCircle className="w-5 h-5 text-white" />, path: "/faq" },
+    { name: "About Us", icon: <Info className="w-5 h-5 text-white" /> , path: "/about us" },
     { name: "Settings", icon: <Settings className="w-5 h-5 text-white" />, path: "/settings" }
   ];
 
@@ -134,10 +135,12 @@ const ProfilePage = () => {
         <div className={`${sidebarOpen ? 'translate-x-0' : '-translate-x-full'} fixed inset-y-0 left-0 z-50 w-64 bg-slate-900/95 backdrop-blur border-r border-slate-800/50 transition-transform duration-300 lg:translate-x-0 lg:static lg:inset-0`}>
           <div className="flex items-center gap-3 p-6 border-b border-slate-800/50">
             <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-cyan-400 to-purple-500 flex items-center justify-center">
-              <span className="text-white font-bold text-sm">AT</span>
+                <svg className="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+                </svg>
             </div>
             <div className="font-bold text-lg">
-              <span className="text-cyan-400">ArbiTrader</span>
+              <span className="text-cyan-400">ArbiTrage</span>
               <span className="text-purple-400 ml-1">Pro</span>
             </div>
           </div>
@@ -266,7 +269,7 @@ const ProfilePage = () => {
                                 </div>
                             
                                 {/* Footer */}
-                                <button className="w-full py-3 text-center text-sm font-medium bg-gradient-to-r from-cyan-500/20 to-purple-500/20 text-cyan-400 hover:from-cyan-500/30 hover:to-purple-500/30 transition">
+                                <button onClick={() => navigate("/all-notifications")} className="w-full py-3 text-center text-sm font-medium bg-gradient-to-r from-cyan-500/20 to-purple-500/20 text-cyan-400 hover:from-cyan-500/30 hover:to-purple-500/30 transition">
                                     View All Notifications
                                 </button>
                             </div>
@@ -291,7 +294,7 @@ const ProfilePage = () => {
                         </div>
                                 {profileDropdownOpen && (
                             <div className="absolute right-0 mt-2 w-44 bg-slate-800/90 backdrop-blur border border-slate-700/50 rounded-xl shadow-lg z-50">
-                                <button className="w-full flex items-center gap-2 px-4 py-2 text-sm text-slate-200 hover:bg-slate-700/50 transition-colors"><User className="w-4 h-4 text-cyan-400"/> Profile</button>
+                                <button  className="w-full flex items-center gap-2 px-4 py-2 text-sm text-slate-200 hover:bg-slate-700/50 transition-colors"><User className="w-4 h-4 text-cyan-400"/> Profile</button>
                                 <button className="w-full flex items-center gap-2 px-4 py-2 text-sm text-slate-200 hover:bg-slate-700/50 transition-colors"><LogOut className="w-4 h-4 text-red-400"/> Logout</button>
                             </div>
                         )}

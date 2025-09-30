@@ -157,7 +157,7 @@ export default function ArbiTraderPro() {
               <a className="hover:text-cyan-400 transition-colors font-medium" href="#features">Features</a>
               <a className="hover:text-cyan-400 transition-colors font-medium" href="#dashboard">Dashboard</a>
               <a className="hover:text-cyan-400 transition-colors font-medium" href="#pricing">Pricing</a>
-              <a className="hover:text-cyan-400 transition-colors font-medium" href="#about">About</a>
+              <a className="hover:text-cyan-400 transition-colors font-medium" href="/about-us">About</a>
             </nav>
           </div>
           
