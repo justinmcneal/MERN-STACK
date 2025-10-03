@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { ChevronDown, ChevronUp, BarChart3, Zap, User, Phone, HelpCircle, Settings, LogOut, Info } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
@@ -7,7 +7,7 @@ const FAQPage = () => {
     const navigate = useNavigate();
     const [activeTab, setActiveTab] = useState("FAQ");
     const [sidebarOpen, setSidebarOpen] = useState(false);
-    const [openQuestions, setOpenQuestions] = useState([""]);
+    const [openQuestions, setOpenQuestions] = useState<number[]>([]);
     const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
     const [notificationOpen, setNotificationOpen] = useState(false);
 
@@ -97,14 +97,9 @@ const notifications = [
     }
   ];
 
-  const handleNavigation = (item) => {
-    setActiveTab(item.name);
-    if (item.path) {
-      navigate(item.path);
-    }
-  };
+  // Navigation function commented out (unused)
 
-  const toggleQuestion = (index) => {
+  const toggleQuestion = (index: number) => {
     setOpenQuestions(prev => 
       prev.includes(index) 
         ? prev.filter(i => i !== index)
@@ -112,7 +107,7 @@ const notifications = [
     );
   };
 
-  const FAQItem = ({ question, answer, index, isOpen }) => (
+  const FAQItem = ({ question, answer, index, isOpen }: any) => (
     <div className="bg-slate-700/30 border border-slate-600/50 rounded-xl overflow-hidden transition-all duration-300 hover:border-slate-500/50">
       <button
         onClick={() => toggleQuestion(index)}
@@ -387,7 +382,7 @@ const notifications = [
                     </div>
                   </div>
                   <button 
-                    onClick={() => handleNavigation({ name: "Contact Support", path: "/contact-support" })}
+                    onClick={() => navigate("/contact-support")}
                     className="px-6 py-3 bg-gradient-to-r from-cyan-500 to-purple-600 hover:from-cyan-400 hover:to-purple-500 rounded-xl font-semibold whitespace-nowrap transition-all duration-300 transform hover:scale-105 shadow-lg"
                   >
                     Contact Support

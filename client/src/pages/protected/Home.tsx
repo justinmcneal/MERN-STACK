@@ -1,6 +1,6 @@
 import React, { useContext, useEffect, useState } from 'react';
-import AuthContext from '../context/AuthContext';
-import type { User } from '../context/AuthContext';
+import AuthContext from '../../context/AuthContext';
+import type { User } from '../../context/AuthContext';
 
 const Home: React.FC = () => {
   const { user, logout, getProfile } = useContext(AuthContext);

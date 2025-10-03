@@ -1,6 +1,13 @@
 import { useState, useEffect, useCallback } from 'react';
-import { userService, type UserStats, type StatData } from '../services/api/services/userService';
-import { mockData } from '../utils/mockData';
+import { userService, type UserStats } from '../services/api/services/userService';
+
+// Temporary StatData type definition
+interface StatData {
+  title: string;
+  value: string;
+  icon: string;
+  color: 'cyan' | 'emerald' | 'purple' | 'orange';
+}
 
 interface UseUserStatsState {
   stats: UserStats | null;
@@ -42,41 +49,25 @@ export function useUserStats(): UseUserStatsState {
     {
       title: "Total Opportunities",
       value: stats.totalOpportunities.toString(),
-      icon: (
-        <svg className="w-6 h-6 text-cyan-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
-        </svg>
-      ),
+      icon: "chart", // Using string instead of JSX
       color: "cyan" as const
     },
     {
       title: "Active Alerts",
       value: stats.activeAlerts.toString(),
-      icon: (
-        <svg className="w-6 h-6 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-5 5v-5zM4.5 5.5L9 10l-4.5 4.5L0 10l4.5-4.5z" />
-        </svg>
-      ),
+      icon: "alert", // Using string instead of JSX
       color: "emerald" as const
     },
     {
       title: "Total Profit",
       value: stats.totalProfit,
-      icon: (
-        <svg className="w-6 h-6 text-purple-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
-        </svg>
-      ),
+      icon: "money", // Using string instead of JSX
       color: "purple" as const
     },
     {
       title: "Success Rate",
       value: `${stats.successRate}%`,
-      icon: (
-        <svg className="w-6 h-6 text-orange-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-        </svg>
-      ),
+      icon: "check", // Using string instead of JSX
       color: "orange" as const
     }
   ] : [];

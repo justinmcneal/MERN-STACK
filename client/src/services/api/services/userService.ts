@@ -36,7 +36,7 @@ class UserService {
   async getProfile(): Promise<UserProfile> {
     try {
       const response = await api.get('/auth/profile');
-      return response.data;
+      return (response as any);
     } catch (error) {
       console.error('Failed to fetch user profile:', error);
       throw error;
@@ -49,7 +49,7 @@ class UserService {
   async updateProfile(profileData: Partial<UserProfile>): Promise<UserProfile> {
     try {
       const response = await api.put('/auth/profile', profileData);
-      return response.data;
+      return (response as any);
     } catch (error) {
       console.error('Failed to update user profile:', error);
       throw error;
@@ -62,7 +62,7 @@ class UserService {
   async updatePreferences(preferences: Partial<UserPreferences>): Promise<UserPreferences> {
     try {
       const response = await api.put('/auth/preferences', preferences);
-      return response.data;
+      return (response as any);
     } catch (error) {
       console.error('Failed to update user preferences:', error);
       throw error;
@@ -75,7 +75,7 @@ class UserService {
   async getStats(): Promise<UserStats> {
     try {
       const response = await api.get('/auth/stats');
-      return response.data;
+      return (response as any);
     } catch (error) {
       // Fallback to mock data if API fails
       return this.getMockStats();
@@ -107,7 +107,7 @@ class UserService {
           'Content-Type': 'multipart/form-data',
         },
       });
-      return response.data;
+      return (response as any);
     } catch (error) {
       console.error('Failed to upload avatar:', error);
       throw error;

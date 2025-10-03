@@ -1,5 +1,4 @@
-import React from 'react';
-import { Zap, Activity, TrendingUp, RefreshCw } from 'lucide-react';
+import { RefreshCw } from 'lucide-react';
 import { Layout } from '../../components/layout';
 import { 
   StatsGrid, 
@@ -113,7 +112,7 @@ const MainDashboardUnified = () => {
     >
       <div className="p-6 space-y-8">
         {/* Stats Grid */}
-        <StatsGrid data={userStats.statsData} />
+        <StatsGrid stats={userStats.statsData} />
 
         {/* Charts and Tables Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

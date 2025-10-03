@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Menu, Bell, User, ChevronDown } from 'lucide-react';
+import { Menu, Bell, ChevronDown } from 'lucide-react';
 import NotificationDropdown, { type Notification } from '../NotificationDropdown';
 import ProfileDropdown from '../ProfileDropdown';
 

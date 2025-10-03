@@ -1,9 +1,9 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import StatCard from "../components/features/dashboard/StatCard";
-import FeatureCard from "../components/features/dashboard/FeatureCard";
-import Button from "../components/ui/Button/Button";
-import TradingChart from "../components/features/charts/TradingChart";
+import StatCard from '../../components/features/dashboard/StatCard';
+import FeatureCard from '../../components/features/dashboard/FeatureCard';
+import Button from '../../components/ui/Button/Button';
+import TradingChart from '../../components/features/charts/TradingChart';
 
 // Enhanced ArbiTrader Pro with professional design and animations
 export default function ArbiTraderPro() {

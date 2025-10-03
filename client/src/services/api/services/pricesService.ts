@@ -37,7 +37,7 @@ class PricesService {
       if (filters?.limit) params.append('limit', filters.limit.toString());
 
       const response = await api.get(`/tokens/prices?${params.toString()}`);
-      return response.data;
+      return (response as any).tokens as TokenPrice[];
     } catch (error) {
       console.error('Failed to fetch prices:', error);
       throw error;
@@ -50,7 +50,7 @@ class PricesService {
   async getPrice(token: string, chain: string): Promise<TokenPrice> {
     try {
       const response = await api.get(`/tokens/${token}/chains/${chain}/price`);
-      return response.data;
+      return (response as any) as TokenPrice;
     } catch (error) {
       console.error(`Failed to fetch price for ${token} on ${chain}:`, error);
       throw error;
@@ -69,7 +69,7 @@ class PricesService {
       const response = await api.get(
         `/tokens/${token}/chains/${chain}/history?timeframe=${timeframe}`
       );
-      return response.data;
+      return (response as any) as Array<{ timestamp: string; price: number; volume: number }>;
     } catch (error) {
       console.error(`Failed to fetch historical prices for ${token}:`, error);
       throw error;
@@ -82,7 +82,7 @@ class PricesService {
   async getPriceStats(): Promise<PriceStats> {
     try {
       const response = await api.get('/tokens/prices/stats');
-      return response.data;
+      return (response as any) as PriceStats;
     } catch (error) {
       console.error('Failed to fetch price stats:', error);
       throw error;
@@ -94,7 +94,7 @@ class PricesService {
    */
   subscribeToUpdates(
     tokens: string[],
-    callback: (priceUpdate: TokenPrice) => void
+    _callback: (priceUpdate: TokenPrice) => void
   ): () => void {
     // This would integrate with WebSocket service when implemented
     console.log('Price updates subscription requested for:', tokens);

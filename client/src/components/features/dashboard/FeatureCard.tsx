@@ -1,6 +1,6 @@
 import React from 'react';
 import type { FeatureCard as FeatureCardType } from '../../../types/trading';
-import Card from '../../../ui/Card/Card';
+import { Card } from '../../ui';
 
 const FeatureCard: React.FC<FeatureCardType> = ({ title, description, icon }) => {
   return (

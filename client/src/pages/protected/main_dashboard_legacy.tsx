@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { BarChart3, Zap, User, Phone, HelpCircle, Settings, LogOut, Info } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
@@ -142,7 +142,7 @@ const Dashboard = () => {
   };
 
   // Stat Card Component
-  const StatCard = ({icon,title,value,subtitle,color="cyan"})=>(
+  const StatCard = ({icon,title,value,subtitle,color="cyan"}: any)=>(
     <div className={`bg-slate-800/50 backdrop-blur border border-slate-700/50 rounded-2xl p-6 hover:border-slate-600/50 transition-all duration-300`}>
       <div className="flex items-start justify-between">
         <div className="flex-1">

@@ -1,6 +1,6 @@
 import React, { createContext, useState, useEffect, useCallback } from 'react';
 import type { ReactNode } from 'react';
-import api from '../services/api';
+import api from '../services/api/api';
 import { useNavigate } from 'react-router-dom';
 import type { AxiosError, AxiosRequestConfig } from 'axios';
 import { getAccessToken, setAccessToken } from '../services/authToken';
@@ -53,7 +53,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       if (!csrfToken) {
         throw new Error('CSRF token missing from cookie');
       }
-      const { data } = await api.post<{ accessToken: string }>('/auth/refresh', undefined, {
+      const data = await api.post<{ accessToken: string }>('/auth/refresh', undefined, {
         headers: { 'x-csrf-token': csrfToken },
       });
       setAccessToken(data.accessToken);
@@ -107,7 +107,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
               originalRequest.headers['Authorization'] = `Bearer ${accessToken}`;
             }
             console.log('[Auth] Retrying original request after refresh.');
-            return api(originalRequest);
+            return api.get(originalRequest.url!, originalRequest);
           } catch (err) {
             console.error('[Auth] Refresh failed, logging out.');
             await logout();
@@ -125,9 +125,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   // Get profile
   const getProfile = useCallback(async (): Promise<User> => {
     const accessToken = getAccessToken();
-    const { data } = await api.get<User>('/auth/me', {
-      headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : undefined,
-    });
+        const data = await api.get<User>('/auth/me', {
+          headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : undefined,
+        });
     setUser(data);
     return data;
   }, []);
@@ -148,7 +148,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
       try {
         const accessToken = getAccessToken();
-        const { data } = await api.get<User>('/auth/me', {
+        const data = await api.get<User>('/auth/me', {
           headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : undefined,
         });
         setUser(data);
@@ -157,10 +157,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         if (hasRefreshTokenCookie()) {
           try {
             await refreshAccessToken();
-            const newAccessToken = getAccessToken();
-            const { data } = await api.get<User>('/auth/me', {
-              headers: newAccessToken ? { Authorization: `Bearer ${newAccessToken}` } : undefined,
-            });
+        const newAccessToken = getAccessToken();
+        const data = await api.get<User>('/auth/me', {
+          headers: newAccessToken ? { Authorization: `Bearer ${newAccessToken}` } : undefined,
+        });
             setUser(data);
             localStorage.setItem('isLoggedIn', 'true');
           } catch (refreshErr: any) {
@@ -184,7 +184,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   // Register
   const register = async (name: string, email: string, password: string): Promise<User> => {
-    const { data } = await api.post('/auth/register', { name, email, password });
+    const data: any = await api.post('/auth/register', { name, email, password });
     const user = { _id: data._id, name: data.name, email: data.email };
     setUser(user);
     setAccessToken(data.accessToken);
@@ -194,10 +194,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   // Login
   const login = async (email: string, password: string): Promise<User> => {
-    const { data } = await api.post('/auth/login', { email, password });
+    const data: any = await api.post('/auth/login', { email, password });
     const user = { _id: data._id, name: data.name, email: data.email };
     setUser(user);
-    setAccessToken(data.accessToken);
+    setAccessToken(data.access_token);
     localStorage.setItem('isLoggedIn', 'true');
     return user;
   };

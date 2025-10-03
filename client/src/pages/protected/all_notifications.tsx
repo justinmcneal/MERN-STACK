@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { ArrowLeft, Bell, TrendingUp, Target, LogOut, User} from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
@@ -99,7 +99,7 @@ const AllNotificationsPage = () => {
     return true;
   });
 
-  const NotificationCard = ({ notification }) => (
+  const NotificationCard = ({ notification }: any) => (
     <div className={`bg-slate-800/30 border rounded-2xl p-6 transition-all hover:bg-slate-800/40 ${
       notification.unread ? 'border-cyan-500/30' : 'border-slate-700/50'
     }`}>
@@ -256,7 +256,7 @@ const AllNotificationsPage = () => {
                                 {n.details}
                                 </p>
                                 <p className="text-xs text-slate-400">
-                                Est. Profit: {n.profit} • Gas: {n.gas} • Score: {n.score}
+                                 Est. Profit: {(n as any).profit || 'N/A'} • Gas: {(n as any).gas || 'N/A'} • Score: {(n as any).score || 'N/A'}
                                 </p>
                             </>
                             )}

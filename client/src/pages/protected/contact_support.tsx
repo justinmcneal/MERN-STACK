@@ -1,5 +1,5 @@
-import React, { useState } from "react";
-import { Layout, type Notification } from "../../components/layout";
+import React from "react";
+import { Layout } from "../../components/layout";
 import { ContactSupportForm, type ContactFormValues } from "../../components/features/forms";
 import { useFormState, usePageState, useNotificationState } from "../../hooks";
 

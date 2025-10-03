@@ -44,7 +44,7 @@ class OpportunitiesService {
       if (filters?.offset) params.append('offset', filters.offset.toString());
 
       const response = await api.get(`/opportunities?${params.toString()}`);
-      return response.data;
+      return (response as any) as OpportunitiesResponse;
     } catch (error) {
       console.error('Failed to fetch opportunities:', error);
       throw error;
@@ -57,7 +57,7 @@ class OpportunitiesService {
   async getOpportunityById(id: string): Promise<ArbitrageOpportunity> {
     try {
       const response = await api.get(`/opportunities/${id}`);
-      return response.data;
+      return (response as any) as ArbitrageOpportunity;
     } catch (error) {
       console.error(`Failed to fetch opportunity ${id}:`, error);
       throw error;
@@ -75,7 +75,7 @@ class OpportunitiesService {
   }> {
     try {
       const response = await api.get('/opportunities/stats');
-      return response.data;
+      return (response as any) as { total: number; active: number; avgScore: number; avgProfit: number; };
     } catch (error) {
       console.error('Failed to fetch opportunity stats:', error);
       throw error;
@@ -85,7 +85,7 @@ class OpportunitiesService {
   /**
    * Subscribe to real-time opportunity updates
    */
-  subscribeToUpdates(callback: (opportunity: ArbitrageOpportunity) => void): () => void {
+  subscribeToUpdates(_callback: (opportunity: ArbitrageOpportunity) => void): () => void {
     // This would integrate with WebSocket service when implemented
     console.log('Opportunity updates subscription requested');
     return () => console.log('Opportunity updates subscription cancelled');

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { BarChart3, Zap, User, Phone, HelpCircle, Settings, LogOut, Info } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
@@ -12,7 +12,6 @@ const OpportunitiesPage = () => {
     const [selectedToken, setSelectedToken] = useState("All Tokens");
     const [selectedChainPair, setSelectedChainPair] = useState("All Chain Pairs");
     const [minProfit, setMinProfit] = useState(1);
-    const [selectedTokenChart, setSelectedTokenChart] = useState("ETH");
     const [filterView, setFilterView] = useState("My Profit");
     const notifications = [
         {
@@ -52,7 +51,7 @@ const OpportunitiesPage = () => {
     ];
   
   // Mock data
-  const [opportunities, setOpportunities] = useState([
+  const [opportunities] = useState([
     { token: "ETH", from: "Ethereum", to: "Polygon", priceDiff: "+2.5%", estProfit: "$50", roi: "95%", color: "emerald" },
     { token: "USDT", from: "BSC", to: "Polygon", priceDiff: "+1.8%", estProfit: "$45", roi: "85%", color: "emerald" },
     { token: "USDC", from: "Ethereum", to: "BSC", priceDiff: "+2.1%", estProfit: "$60", roi: "88%", color: "emerald" },
@@ -61,17 +60,9 @@ const OpportunitiesPage = () => {
     { token: "DOT", from: "Polkadot", to: "Solana", priceDiff: "+1.4%", estProfit: "$105", roi: "76%", color: "yellow" }
   ]);
 
-  const tokenPrices = {
-    ETH: { ethereum: "$3,247.85", bsc: "$3,260.12", polygon: "$3,245.50" },
-    USDT: { ethereum: "$0.998", bsc: "$1.001", polygon: "$0.999" },
-    USDC: { ethereum: "$1.000", bsc: "$1.002", polygon: "$0.998" }
-  };
+  // Token prices data commented out (unused)
 
-  const gasFees = {
-    ethereum: "0.002 ETH",
-    bsc: "0.001 BNB", 
-    polygon: "0.005 MATIC"
-  };
+  // Gas fees data commented out (unused)
 
   const ChartComponent = () => {
     const [activePoint, setActivePoint] = useState(0);

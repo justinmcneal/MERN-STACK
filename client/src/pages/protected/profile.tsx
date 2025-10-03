@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { BarChart3, Zap, User, Phone, HelpCircle, Settings, LogOut, Shield, Save, Info } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 const ProfilePage = () => {
@@ -85,16 +85,13 @@ const ProfilePage = () => {
     { name: "Settings", icon: <Settings className="w-5 h-5 text-white" />, path: "/settings" }
   ];
 
-  const handleNavigation = (item) => {
-    setActiveTab(item.name);
-    window.history.pushState({}, "", item.path);
-  };
+  // Navigation function commented out (unused)
 
   const handleSaveChanges = () => {
     alert("Changes saved successfully!");
   };
 
-  const TokenCheckbox = ({ token, checked, onChange }) => (
+  const TokenCheckbox = ({ token, checked, onChange }: any) => (
     <label className="flex items-center gap-2 cursor-pointer">
       <input
         type="checkbox"
@@ -110,7 +107,7 @@ const ProfilePage = () => {
     </label>
   );
 
-  const ToggleSwitch = ({ enabled, onChange }) => (
+  const ToggleSwitch = ({ enabled, onChange }: any) => (
     <button
       onClick={onChange}
       className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
@@ -454,7 +451,7 @@ const ProfilePage = () => {
                           <input
                             type="number"
                             value={profitThreshold}
-                            onChange={(e) => setProfitThreshold(e.target.value)}
+                            onChange={(e) => setProfitThreshold(Number(e.target.value))}
                             className="w-16 px-3 py-1.5 bg-slate-700/50 border border-slate-600/50 rounded-lg text-slate-200 text-center focus:outline-none focus:ring-2 focus:ring-cyan-400/50"
                           />
                           <span className="text-slate-400">%</span>
@@ -468,7 +465,7 @@ const ProfilePage = () => {
                           max="10"
                           step="0.5"
                           value={profitThreshold}
-                          onChange={(e) => setProfitThreshold(e.target.value)}
+                           onChange={(e) => setProfitThreshold(Number(e.target.value))}
                           className="w-full h-2 bg-slate-600 rounded-lg appearance-none cursor-pointer"
                         />
                         <div className="flex justify-between text-xs text-slate-500 mt-1">
