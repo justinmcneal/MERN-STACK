@@ -1,6 +1,6 @@
 import React from 'react';
 import type { StatCard as StatCardType } from '../../../types/trading';
-import Card from '../../ui/Card/Card';
+import Card from '../../../ui/Card/Card';
 
 const StatCard: React.FC<StatCardType> = ({ value, label, trend }) => {
   return (
