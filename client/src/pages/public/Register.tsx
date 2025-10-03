@@ -2,6 +2,7 @@ import React, { useState, useContext } from 'react';
 import type { FormEvent } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import AuthContext from '../../context/AuthContext';
+import { Button, Input, Card } from '../../components/ui';
 
 const Register: React.FC = () => {
   const [name, setName] = useState('');
@@ -32,50 +33,97 @@ const Register: React.FC = () => {
   };
 
   return (
-    <div style={{ maxWidth: 420, margin: '40px auto' }}>
-      <h2>Register</h2>
-      {error && <p style={{ color: 'red' }}>{error}</p>}
-      <form onSubmit={submit}>
-        <div>
-          <input
-            placeholder="Name"
-            value={name}
-            onChange={e => setName(e.target.value)}
-            required
-          />
-        </div>
-        <div>
-          <input
-            placeholder="Email"
-            type="email"
-            value={email}
-            onChange={e => setEmail(e.target.value)}
-            required
-          />
-        </div>
-        <div>
-          <input
-            placeholder="Password"
-            type="password"
-            value={password}
-            onChange={e => setPassword(e.target.value)}
-            required
-          />
-        </div>
-        <div>
-          <input
-            placeholder="Confirm Password"
-            type="password"
-            value={confirmPassword}
-            onChange={e => setConfirmPassword(e.target.value)}
-            required
-          />
-        </div>
-        <button type="submit">Register</button>
-      </form>
-      <p>
-        Already registered? <Link to="/login">Login</Link>
-      </p>
+    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 text-white font-inter antialiased flex items-center justify-center p-4">
+      {/* Background Elements */}
+      <div className="fixed inset-0 bg-[radial-gradient(ellipse_at_top_left,_var(--tw-gradient-stops))] from-cyan-900/20 via-slate-950 to-purple-900/20"></div>
+      <div className="fixed inset-0 bg-[radial-gradient(circle_at_bottom_right,_var(--tw-gradient-stops))] from-purple-900/20 via-transparent to-cyan-900/10"></div>
+      
+      <div className="relative z-10 w-full max-w-md">
+        <Card variant="glass" padding="lg" className="backdrop-blur-xl">
+          {/* Header */}
+          <div className="text-center mb-8">
+            <h1 className="text-3xl font-bold text-white mb-2">Create Account</h1>
+            <p className="text-slate-400">Join ArbiTrader and start trading</p>
+          </div>
+
+          {/* Error Display */}
+          {error && (
+            <div className="mb-4 p-3 bg-red-500/20 border border-red-500/50 rounded-lg">
+              <p className="text-red-400 text-sm">{error}</p>
+            </div>
+          )}
+
+          {/* Registration Form */}
+          <form onSubmit={submit} className="space-y-4">
+            <div>
+              <Input
+                type="text"
+                placeholder="Full name"
+                value={name}
+                onChange={setName}
+                required
+                className="w-full"
+              />
+            </div>
+            
+            <div>
+              <Input
+                type="email"
+                placeholder="Email address"
+                value={email}
+                onChange={setEmail}
+                required
+                className="w-full"
+              />
+            </div>
+            
+            <div>
+              <Input
+                type="password"
+                placeholder="Password"
+                value={password}
+                onChange={setPassword}
+                required
+                className="w-full"
+              />
+            </div>
+            
+            <div>
+              <Input
+                type="password"
+                placeholder="Confirm password"
+                value={confirmPassword}
+                onChange={setConfirmPassword}
+                required
+                className="w-full"
+              />
+            </div>
+            
+            <Button
+              type="submit"
+              variant="primary"
+              size="lg"
+              className="w-full"
+              disabled={!name || !email || !password || !confirmPassword}
+            >
+              Create Account
+            </Button>
+          </form>
+
+          {/* Login Link */}
+          <div className="mt-6 text-center">
+            <p className="text-slate-400">
+              Already have an account?{' '}
+              <Link 
+                to="/login" 
+                className="text-cyan-400 hover:text-cyan-300 transition-colors font-medium"
+              >
+                Sign in here
+              </Link>
+            </p>
+          </div>
+        </Card>
+      </div>
     </div>
   );
 };
