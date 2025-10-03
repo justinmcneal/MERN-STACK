@@ -156,7 +156,7 @@ const AllNotificationsPage = () => {
       <div className="relative z-10">
         {/* Header */}
         <header className="border-b border-slate-800/50 bg-slate-900/50 backdrop-blur">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-[35px]">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-cyan-400 to-purple-500 flex items-center justify-center">
@@ -167,133 +167,6 @@ const AllNotificationsPage = () => {
                 <div className="font-bold text-lg">
                   <span className="text-cyan-400">ArbiTrage</span>
                   <span className="text-purple-400 ml-1">Pro</span>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-3">
-                {/* Notification */}
-                <div className="relative">
-                <button
-                    onClick={() => setNotificationOpen((p) => !p)}
-                    className="relative p-2 rounded-lg bg-slate-800/50 border border-slate-700/50 hover:bg-slate-700/50 transition-all"
-                >
-                    <svg
-                    className="w-5 h-5 text-yellow-400"
-                    fill="currentColor"
-                    viewBox="0 0 24 24"
-                    >
-                    <path d="M12 2C10.343 2 9 3.343 9 5v1.07C6.164 6.562 4 9.138 4 12v5l-1 1v1h18v-1l-1-1v-5c0-2.862-2.164-5.438-5-5.93V5c0-1.657-1.343-3-3-3zm0 20a3 3 0 003-3H9a3 3 0 003 3z" />
-                    </svg>
-                    <div className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-[10px] font-bold text-white rounded-full flex items-center justify-center">
-                    {notifications.length}
-                    </div>
-                </button>
-
-                {/* Notification Dropdown */}
-                    {notificationOpen && (
-                    <div
-                        className="
-                        fixed
-                        top-16               
-                        left-4 right-4        
-                        sm:absolute sm:right-6 sm:left-auto
-                        sm:top-12
-                        mt-2
-                        w-auto sm:w-96        
-                        max-h-[70vh]
-                        bg-slate-900/95 backdrop-blur
-                        border border-slate-700/50
-                        rounded-2xl shadow-xl
-                        z-50 overflow-hidden flex flex-col
-                        "
-                    >
-                        {/* Header */}
-                        <div className="flex items-center justify-between px-4 py-3 border-b border-slate-700/50">
-                        <div className="flex items-center gap-2">
-                            <svg className="w-5 h-5 text-yellow-400" fill="currentColor" viewBox="0 0 24 24">
-                            <path d="M12 2C10.343 2 9 3.343 9 5v1.07C6.164 6.562 4 9.138 4 12v5l-1 1v1h18v-1l-1-1v-5c0-2.862-2.164-5.438-5-5.93V5c0-1.657-1.343-3-3-3zm0 20a3 3 0 003-3H9a3 3 0 003 3z" />
-                            </svg>
-                            <span className="font-semibold text-slate-200">Notifications</span>
-                        </div>
-                        <div className="flex gap-6">
-                            <button className="text-xs text-slate-400 hover:text-slate-200">Mark All Read</button>
-                            <button className="text-xs text-slate-400 hover:text-slate-200">Clear All</button>
-                        </div>
-                        </div>
-
-                        {/* List */}
-                        <div className="max-h-[60vh] overflow-y-auto divide-y divide-slate-800/50">
-                        {notifications.map((n, i) => (
-                            <div
-                            key={i}
-                            className="flex flex-col px-4 py-3 hover:bg-slate-800/30 transition"
-                        >
-                            {n.type === "price" && (
-                            <>
-                                <div className="flex items-center justify-between">
-                                <span className="text-slate-200 font-medium">
-                                    {n.title}
-                                </span>
-                                <span className="text-xs text-cyan-400">{n.time}</span>
-                                </div>
-                                <p className="text-sm text-slate-300 mt-1">
-                                {n.pair} reached your target of {n.target}
-                                </p>
-                                <p className="text-xs text-slate-400">
-                                Alert set: {n.target} • Current: {n.current}
-                                </p>
-                            </>
-                            )}
-                            {n.type === "arbitrage" && (
-                            <>
-                                <div className="flex items-center justify-between">
-                                <span className="text-slate-200 font-medium">
-                                    {n.title}
-                                </span>
-                                <span className="text-xs text-cyan-400">{n.time}</span>
-                                </div>
-                                <p className="text-sm text-emerald-400 mt-1">
-                                {n.details}
-                                </p>
-                                <p className="text-xs text-slate-400">
-                                Est. Profit: {n.profit} • Gas: {n.gas} • Score: {n.score}
-                                </p>
-                            </>
-                            )}
-                        </div>
-                        ))}
-                        </div>
-
-                        {/* Footer */}
-                        <button className="w-full py-3 text-center text-sm font-medium bg-gradient-to-r from-cyan-500/20 to-purple-500/20 text-cyan-400 hover:from-cyan-500/30 hover:to-purple-500/30 transition">
-                        View All Notifications
-                        </button>
-                    </div>
-                    )}
-
-                </div>
-
-                {/* Profile */}
-                <div className="relative z-50">
-                  <div className="flex items-center gap-3 bg-slate-800/50 border border-slate-700/50 rounded-xl px-3 py-2 cursor-pointer z-50"
-                    onClick={()=>setProfileDropdownOpen(!profileDropdownOpen)}>
-                    <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-cyan-400 to-purple-500 flex items-center justify-center">
-                      <span className="text-white font-bold text-xs">JW</span>
-                    </div>
-                    <div className="hidden sm:block">
-                      <div className="text-sm font-medium text-slate-200">John Wayne</div>
-                      <div className="text-xs text-slate-400">Pro Trader</div>
-                    </div>
-                    <svg className="w-4 h-4 text-slate-400 transition-transform duration-200" style={{transform: profileDropdownOpen?'rotate(180deg)':'rotate(0deg)'}} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7"/>
-                    </svg>
-                  </div>
-                  {profileDropdownOpen && (
-                    <div className="absolute right-0 mt-2 w-44 bg-slate-800/90 backdrop-blur border border-slate-700/50 rounded-xl shadow-lg z-50">
-                      <button  onClick={() => navigate("/profile")} className="w-full flex items-center gap-2 px-4 py-2 text-sm text-slate-200 hover:bg-slate-700/50 transition-colors"><User className="w-4 h-4 text-cyan-400"/> Profile</button>
-                      <button className="w-full flex items-center gap-2 px-4 py-2 text-sm text-slate-200 hover:bg-slate-700/50 transition-colors"><LogOut className="w-4 h-4 text-red-400"/> Logout</button>
-                    </div>
-                  )}
                 </div>
               </div>
             </div>

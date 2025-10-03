@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { ChevronDown, ChevronUp, BarChart3, Zap, User, Phone, HelpCircle, Settings, LogOut, Info } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { createPortal } from "react-dom";
 
 
 const FAQPage = () => {
@@ -154,20 +155,38 @@ const notifications = [
       {/* Background */}
       <div className="fixed inset-0 bg-[radial-gradient(ellipse_at_top_left,_var(--tw-gradient-stops))] from-cyan-900/10 via-slate-950 to-purple-900/10"></div>
       
-      <div className="relative z-10 flex h-screen">
+      <div className="relative z-50 flex h-screen">
         {/* Sidebar */}
-        <div className={`${sidebarOpen ? 'translate-x-0' : '-translate-x-full'} fixed inset-y-0 left-0 z-50 w-64 bg-slate-900/95 backdrop-blur border-r border-slate-800/50 transition-transform duration-300 lg:translate-x-0 lg:static lg:inset-0`}>
-          <div className="flex items-center gap-3 p-6 border-b border-slate-800/50">
+        <div
+          className={`${sidebarOpen ? "translate-x-0" : "-translate-x-full"} 
+          fixed inset-y-0 left-0 z-[100] w-64 transform 
+          bg-slate-900/95 backdrop-blur-xl border-r border-slate-700/50 
+          transition-transform duration-300 ease-in-out lg:translate-x-0 lg:static lg:inset-auto lg:transform-none`}
+        >
+          <div className="flex items-center justify-between gap-3 p-6 border-b border-slate-800/50">
+          {/* Logo */}
+          <div className="flex items-center gap-3">
             <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-cyan-400 to-purple-500 flex items-center justify-center">
-                <svg className="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
-                </svg>
+              <svg className="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+              </svg>
             </div>
             <div className="font-bold text-lg">
               <span className="text-cyan-400">ArbiTrage</span>
               <span className="text-purple-400 ml-1">Pro</span>
             </div>
           </div>
+
+          {/* X button (only visible on mobile) */}
+          <button
+            onClick={() => setSidebarOpen(false)}
+            className="lg:hidden p-2 rounded-lg hover:bg-slate-800/50 transition"
+          >
+            <svg className="w-6 h-6 text-slate-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
           
           <div className="p-4">
             <div className="text-xs text-slate-400 uppercase tracking-wider mb-4">Main Navigation</div>
@@ -197,7 +216,10 @@ const notifications = [
         </div>
 
         {/* Main Content */}
-        <div className="flex-1 flex flex-col overflow-hidden">
+        <div className={`flex-1 overflow-y-auto transition-all duration-300
+              ${sidebarOpen ? "fixed inset-0 backdrop-blur-5xl bg-black/60 z-40 lg:static lg:backdrop-blur-5xl lg:bg-black/60" : ""}`}
+        onClick={() => sidebarOpen && setSidebarOpen(false)} >
+
           {/* Header */}
           <header className="bg-slate-900/50 backdrop-blur border-b border-slate-800/50 p-4 lg:p-6 z-50">
             <div className="flex items-center justify-between">
@@ -232,87 +254,64 @@ const notifications = [
                         </div>
                     </button>
     
-                    {/* Notification Dropdown */}
-                        {notificationOpen && (
-                        <div
-                            className="
-                            fixed
-                            top-16               
-                            left-4 right-4        
-                            sm:absolute sm:right-6 sm:left-auto
-                            sm:top-12
-                            mt-2
-                            w-auto sm:w-96        
-                            max-h-[70vh]
-                            bg-slate-900/95 backdrop-blur
-                            border border-slate-700/50
-                            rounded-2xl shadow-xl
-                            z-50 overflow-hidden flex flex-col
-                            "
-                        >
-                            {/* Header */}
-                            <div className="flex items-center justify-between px-4 py-3 border-b border-slate-700/50">
-                            <div className="flex items-center gap-2">
-                                <svg className="w-5 h-5 text-yellow-400" fill="currentColor" viewBox="0 0 24 24">
-                                <path d="M12 2C10.343 2 9 3.343 9 5v1.07C6.164 6.562 4 9.138 4 12v5l-1 1v1h18v-1l-1-1v-5c0-2.862-2.164-5.438-5-5.93V5c0-1.657-1.343-3-3-3zm0 20a3 3 0 003-3H9a3 3 0 003 3z" />
-                                </svg>
-                                <span className="font-semibold text-slate-200">Notifications</span>
-                            </div>
-                            <div className="flex gap-6">
-                                <button className="text-xs text-slate-400 hover:text-slate-200">Mark All Read</button>
-                                <button className="text-xs text-slate-400 hover:text-slate-200">Clear All</button>
-                            </div>
-                            </div>
-    
-                            {/* List */}
-                            <div className="max-h-[60vh] overflow-y-auto divide-y divide-slate-800/50">
-                            {notifications.map((n, i) => (
-                                <div
-                                key={i}
-                                className="flex flex-col px-4 py-3 hover:bg-slate-800/30 transition"
+                    {/* Notification Dropdown */} 
+                    {notificationOpen &&
+                          createPortal(
+                            <div
+                              className="fixed top-[70px] right-0 left-0 sm:right-[260px] sm:left-auto w-full sm:w-96 max-h-[70vh] bg-slate-900/95 backdrop-blur border border-slate-700/50 rounded-2xl shadow-xl z-[9999] overflow-hidden flex flex-col"
                             >
-                                {n.type === "price" && (
-                                <>
-                                    <div className="flex items-center justify-between">
-                                    <span className="text-slate-200 font-medium">
-                                        {n.title}
-                                    </span>
-                                    <span className="text-xs text-cyan-400">{n.time}</span>
-                                    </div>
-                                    <p className="text-sm text-slate-300 mt-1">
-                                    {n.pair} reached your target of {n.target}
-                                    </p>
-                                    <p className="text-xs text-slate-400">
-                                    Alert set: {n.target} • Current: {n.current}
-                                    </p>
-                                </>
-                                )}
-                                {n.type === "arbitrage" && (
-                                <>
-                                    <div className="flex items-center justify-between">
-                                    <span className="text-slate-200 font-medium">
-                                        {n.title}
-                                    </span>
-                                    <span className="text-xs text-cyan-400">{n.time}</span>
-                                    </div>
-                                    <p className="text-sm text-emerald-400 mt-1">
-                                    {n.details}
-                                    </p>
-                                    <p className="text-xs text-slate-400">
-                                    Est. Profit: {n.profit} • Gas: {n.gas} • Score: {n.score}
-                                    </p>
-                                </>
-                                )}
-                            </div>
-                            ))}
-                            </div>
+                              {/* Header */}
+                              <div className="flex items-center justify-between px-4 py-3 border-b border-slate-700/50">
+                                <div className="flex items-center gap-2">
+                                  <svg className="w-5 h-5 text-yellow-400" fill="currentColor" viewBox="0 0 24 24">
+                                    <path d="M12 2C10.343 2 9 3.343 9 5v1.07C6.164 6.562 4 9.138 4 12v5l-1 1v1h18v-1l-1-1v-5c0-2.862-2.164-5.438-5-5.93V5c0-1.657-1.343-3-3-3zm0 20a3 3 0 003-3H9a3 3 0 003 3z" />
+                                  </svg>
+                                  <span className="font-semibold text-slate-200">Notifications</span>
+                                </div>
+                                <div className="flex gap-6">
+                                  <button className="text-xs text-slate-400 hover:text-slate-200">Mark All Read</button>
+                                  <button className="text-xs text-slate-400 hover:text-slate-200">Clear All</button>
+                                </div>
+                              </div>
     
-                            {/* Footer */}
-                            <button onClick={() => navigate("/all-notifications")} className="w-full py-3 text-center text-sm font-medium bg-gradient-to-r from-cyan-500/20 to-purple-500/20 text-cyan-400 hover:from-cyan-500/30 hover:to-purple-500/30 transition">
-                            View All Notifications
-                            </button>
-                        </div>
-                        )}
+                              {/* List */}
+                              <div className="max-h-[60vh] overflow-y-auto divide-y divide-slate-800/50">
+                                {notifications.map((n, i) => (
+                                  <div key={i} className="flex flex-col px-4 py-3 hover:bg-slate-800/30 transition">
+                                    {n.type === "price" ? (
+                                      <>
+                                        <div className="flex items-center justify-between">
+                                          <span className="text-slate-200 font-medium">{n.title}</span>
+                                          <span className="text-xs text-cyan-400">{n.time}</span>
+                                        </div>
+                                        <p className="text-sm text-slate-300 mt-1">{n.pair} reached your target of {n.target}</p>
+                                        <p className="text-xs text-slate-400">Alert set: {n.target} • Current: {n.current}</p>
+                                      </>
+                                    ) : (
+                                      <>
+                                        <div className="flex items-center justify-between">
+                                          <span className="text-slate-200 font-medium">{n.title}</span>
+                                          <span className="text-xs text-cyan-400">{n.time}</span>
+                                        </div>
+                                        <p className="text-sm text-emerald-400 mt-1">{n.details}</p>
+                                        <p className="text-xs text-slate-400">Est. Profit: {n.profit} • Gas: {n.gas} • Score: {n.score}</p>
+                                      </>
+                                    )}
+                                  </div>
+                                ))}
+                              </div>
+    
+                              {/* Footer */}
+                              <button
+                                onClick={() => navigate("/all-notifications")}
+                                className="w-full py-3 text-center text-sm font-medium bg-gradient-to-r from-cyan-500/20 to-purple-500/20 text-cyan-400 hover:from-cyan-500/30 hover:to-purple-500/30 transition"
+                              >
+                                View All Notifications
+                              </button>
+                            </div>,
+                            document.body
+                          )
+                        }
     
                     </div>
     
@@ -331,11 +330,17 @@ const notifications = [
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7"/>
                         </svg>
                     </div>
-                    {profileDropdownOpen && (
-                        <div className="absolute right-0 mt-2 w-44 bg-slate-800/90 backdrop-blur border border-slate-700/50 rounded-xl shadow-lg z-50">
-                        <button onClick={() => navigate("/profile")} className="w-full flex items-center gap-2 px-4 py-2 text-sm text-slate-200 hover:bg-slate-700/50 transition-colors"><User className="w-4 h-4 text-cyan-400"/> Profile</button>
-                        <button className="w-full flex items-center gap-2 px-4 py-2 text-sm text-slate-200 hover:bg-slate-700/50 transition-colors"><LogOut className="w-4 h-4 text-red-400"/> Logout</button>
-                        </div>
+                    {profileDropdownOpen &&
+                    createPortal(
+                      <div className="fixed top-[85px] right-[39px] w-44 bg-slate-800/90 backdrop-blur border border-slate-700/50 rounded-xl shadow-lg z-50">
+                        <button onClick={() => navigate("/profile")} className="w-full flex items-center gap-2 px-4 py-2 text-sm text-slate-200 hover:bg-slate-700/50 transition-colors">
+                          <User className="w-4 h-4 text-cyan-400" /> Profile
+                        </button>
+                        <button className="w-full flex items-center gap-2 px-4 py-2 text-sm text-slate-200 hover:bg-slate-700/50 transition-colors">
+                          <LogOut className="w-4 h-4 text-red-400" /> Logout
+                        </button>
+                      </div>,
+                      document.body
                     )}
                     </div>
                 </div>
