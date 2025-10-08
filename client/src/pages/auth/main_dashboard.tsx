@@ -1,15 +1,14 @@
-import React, { useState, useEffect } from "react";
 import { BarChart3, Zap, User, Phone, HelpCircle, Settings, LogOut, Info } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { createPortal } from "react-dom";
 
 const Dashboard = () => {
     const navigate = useNavigate();
-    const [activeTab, setActiveTab] = useState("Dashboard");
-    const [selectedTimeframe, setSelectedTimeframe] = useState("1h");
-    const [sidebarOpen, setSidebarOpen] = useState(false);
-    const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
-    const [notificationOpen, setNotificationOpen] = useState(false);
+    const activeTab = "Dashboard";
+    const selectedTimeframe = "1h";
+    const sidebarOpen = false;
+    const profileDropdownOpen = false;
+    const notificationOpen = false;
     const notifications = [
     {
         type: "price",
@@ -68,9 +67,8 @@ const Dashboard = () => {
 
   // Line Chart Component
   const ChartComponent = () => {
-    const [activeChart, setActiveChart] = useState(0);
-    const [selectedToken, setSelectedToken] = useState("Select token");
-    useEffect(() => { const i = setInterval(() => setActiveChart(p => (p+1)%50), 100); return () => clearInterval(i); }, []);
+    const activeChart = 0;
+    const selectedToken = "ETH";
 
     return (
       <div className="bg-slate-800/50 backdrop-blur border border-slate-700/50 rounded-2xl p-6">
@@ -83,11 +81,11 @@ const Dashboard = () => {
           </h3>
           <div className="flex gap-2 items-center">
             {["1h","24h","7d"].map(tf=>(
-              <button key={tf} onClick={()=>setSelectedTimeframe(tf)}
+              <button key={tf} onClick={() => {}}
                 className={`px-3 py-1 text-xs rounded-lg transition-all ${selectedTimeframe===tf?"bg-cyan-500/20 text-cyan-400 border border-cyan-500/30":"bg-slate-700/50 text-slate-400 hover:text-slate-300 border border-slate-600/50"}`}>{tf}</button>
             ))}
             <div className="relative">
-              <select value={selectedToken} onChange={e=>setSelectedToken(e.target.value)}
+              <select value={selectedToken} onChange={() => {}}
                 className="appearance-none w-full px-3 py-2 text-xs rounded-lg bg-slate-800/50 border border-slate-700/50 text-slate-300 pr-8 focus:outline-none focus:ring-2 focus:ring-cyan-400/50 transition-all duration-300">
                 {["Select token","BTC","ETH","BNB","MATIC","USDT"].map(t=> <option key={t} value={t} className="bg-slate-900 text-slate-300">{t}</option>)}
               </select>
@@ -143,7 +141,7 @@ const Dashboard = () => {
   };
 
   // Stat Card Component
-  const StatCard = ({icon,title,value,subtitle,color="cyan"})=>(
+  const StatCard = ({icon, title, value, subtitle, color="cyan"}: {icon: React.ReactNode, title: string, value: string, subtitle: string, color?: string})=>(
     <div className={`bg-slate-800/50 backdrop-blur border border-slate-700/50 rounded-2xl p-6 hover:border-slate-600/50 transition-all duration-300`}>
       <div className="flex items-start justify-between">
         <div className="flex-1">
@@ -197,7 +195,7 @@ const Dashboard = () => {
 
           {/* X button (only visible on mobile) */}
           <button
-            onClick={() => setSidebarOpen(false)}
+            onClick={() => {}}
             className="lg:hidden p-2 rounded-lg hover:bg-slate-800/50 transition"
           >
             <svg className="w-6 h-6 text-slate-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -215,9 +213,9 @@ const Dashboard = () => {
               <button
                 key={item.name}
                 onClick={() => {
-                  setActiveTab(item.name);
+                  // Static navigation - no state changes
                   if (item.path) navigate(item.path);
-                  setSidebarOpen(false); // 🔥 closes menu on mobile after click
+                  // Static sidebar - no state changes
                 }}
                 className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 ${
                   activeTab === item.name
@@ -237,13 +235,13 @@ const Dashboard = () => {
         {/* Main Content */}
         <div className={`flex-1 overflow-y-auto transition-all duration-300
               ${sidebarOpen ? "fixed inset-0 backdrop-blur-5xl bg-black/60 z-40 lg:static lg:backdrop-blur-5xl lg:bg-black/60" : ""}`}
-        onClick={() => sidebarOpen && setSidebarOpen(false)} >
+        onClick={() => {}} >
           
           {/* Header */}
           <header className="bg-slate-900/50 backdrop-blur border-b border-slate-800/50 p-4 lg:p-6 relative z-30">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-4">
-                <button onClick={()=>setSidebarOpen(!sidebarOpen)} className="lg:hidden p-2 rounded-lg bg-slate-800/50 border border-slate-700/50">
+                <button onClick={()=>{}} className="lg:hidden p-2 rounded-lg bg-slate-800/50 border border-slate-700/50">
                   <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16"/></svg>
                 </button>
                 <h1 className="text-xl font-semibold text-slate-200">Dashboard</h1>
@@ -253,7 +251,7 @@ const Dashboard = () => {
                 {/* Notification */}
                 <div className="relative">
                 <button
-                    onClick={() => setNotificationOpen((p) => !p)}
+                    onClick={() => {}}
                     className="relative p-2 rounded-lg bg-slate-800/50 border border-slate-700/50 hover:bg-slate-700/50 transition-all"
                 >
                     <svg
@@ -333,7 +331,8 @@ const Dashboard = () => {
                 {/* Profile */}
                 <div className="relative z-50">
                   <div className="flex items-center gap-3 bg-slate-800/50 border border-slate-700/50 rounded-xl px-3 py-2 cursor-pointer z-50"
-                    onClick={()=>setProfileDropdownOpen(!profileDropdownOpen)}>
+                    onClick={()=>{}}
+                  >
                     <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-cyan-400 to-purple-500 flex items-center justify-center">
                       <span className="text-white font-bold text-xs">JW</span>
                     </div>
@@ -490,7 +489,7 @@ const Dashboard = () => {
           {notificationOpen && (
             <div
                 className="fixed inset-0 bg-black/40 lg:hidden z-40"
-                onClick={() => setNotificationOpen(false)}
+                onClick={() => {}}
             />
             )}
         </div>
@@ -499,7 +498,7 @@ const Dashboard = () => {
       
 
       {/* Mobile overlay */}
-      {sidebarOpen && <div className="fixed inset-0 bg-black/50 z-40 lg:hidden " onClick={()=>setSidebarOpen(false)}></div>}
+      {sidebarOpen && <div className="fixed inset-0 bg-black/50 z-40 lg:hidden " onClick={()=>{}}></div>}
     </div>
   );
 };

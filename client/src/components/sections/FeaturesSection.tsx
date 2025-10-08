@@ -1,4 +1,3 @@
-import React from "react";
 import FeatureCard from "../ui/FeatureCard/FeatureCard";
 
 const FeaturesSection = () => {

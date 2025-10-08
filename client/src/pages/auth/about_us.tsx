@@ -1,8 +1,6 @@
-import React, { useState } from "react";
 import { Brain, Zap, Link2, BarChart3 } from "lucide-react";
 
 const AboutUsPage = () => {
-  const [activeTab, setActiveTab] = useState("About Us");
 
   const teamMembers = [
     {

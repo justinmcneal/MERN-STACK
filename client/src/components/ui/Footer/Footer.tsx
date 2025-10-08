@@ -1,5 +1,3 @@
-import React from "react";
-
 const Footer = () => {
   return (
     <footer className="relative z-10 border-t border-slate-800/50 mt-20">

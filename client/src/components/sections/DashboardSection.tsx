@@ -1,4 +1,3 @@
-import React from "react";
 import TradingChart from "../features/trading/TradingChart";
 
 const DashboardSection = () => {

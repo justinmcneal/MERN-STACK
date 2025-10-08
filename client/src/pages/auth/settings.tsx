@@ -1,23 +1,22 @@
-import React, { useState } from "react";
 import { TrendingUp, BarChart3, Zap, User, Phone, HelpCircle, Settings, LogOut, Save, Info} from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { createPortal } from "react-dom";
 
 const SettingsPage = () => {
     const navigate = useNavigate();
-    const [activeTab, setActiveTab] = useState("Settings");
-    const [sidebarOpen, setSidebarOpen] = useState(false);
-    const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
-    const [notificationOpen, setNotificationOpen] = useState(false);
+    const activeTab = "Settings"; // Static
+    const sidebarOpen = false; // Static
+    const profileDropdownOpen = false; // Static
+    const notificationOpen = false; // Static
     
-    // General Settings
-    const [themeMode, setThemeMode] = useState(true); // true = dark, false = light
-    const [dataRefreshInterval, setDataRefreshInterval] = useState("Every 30 seconds");
-    const [defaultCurrency, setDefaultCurrency] = useState("Select Currency");
+    // General Settings - static values
+    const themeMode = true; // Static - true = dark, false = light
+    const dataRefreshInterval = "Every 30 seconds"; // Static
+    const defaultCurrency = "Select Currency"; // Static
     
-    // Monitoring Settings
-    const [minProfitThreshold, setMinProfitThreshold] = useState(1.5);
-    const [maxGasFee, setMaxGasFee] = useState(75);
+    // Monitoring Settings - static values
+    const minProfitThreshold = 1.5; // Static
+    const maxGasFee = 75; // Static
 
     const notifications = [
         {
@@ -66,17 +65,14 @@ const SettingsPage = () => {
         { name: "Settings", icon: <Settings className="w-5 h-5 text-white" />}
     ];
 
-  const handleNavigation = (item) => {
-    setActiveTab(item.name);
-    window.history.pushState({}, "", item.path);
-  };
+// Static navigation - no functions needed
 
   const handleSaveChanges = () => {
-    alert("Changes saved successfully!");
+    // Static form submission - no actual processing
   };
 
 
-  const ToggleSwitch = ({ enabled, onChange }) => (
+  const ToggleSwitch = ({ enabled, onChange }: { enabled: boolean, onChange: () => void }) => (
     <button
       onClick={onChange}
       className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
@@ -120,7 +116,7 @@ const SettingsPage = () => {
 
           {/* X button (only visible on mobile) */}
           <button
-            onClick={() => setSidebarOpen(false)}
+            onClick={() => {}}
             className="lg:hidden p-2 rounded-lg hover:bg-slate-800/50 transition"
           >
             <svg className="w-6 h-6 text-slate-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -138,7 +134,7 @@ const SettingsPage = () => {
               <button
                 key={item.name}
                 onClick={() => {
-                  setActiveTab(item.name);
+                  // Static navigation - no state changes
                   if (item.path) {
                     navigate(item.path);
                   }
@@ -160,14 +156,14 @@ const SettingsPage = () => {
         {/* Main Content */}
         <div className={`flex-1 overflow-y-auto transition-all duration-300
               ${sidebarOpen ? "fixed inset-0 backdrop-blur-5xl bg-black/60 z-40 lg:static lg:backdrop-blur-5xl lg:bg-black/60" : ""}`}
-        onClick={() => sidebarOpen && setSidebarOpen(false)} >
+        onClick={() => {}} >
           
           {/* Header */}
           <header className="bg-slate-900/50 backdrop-blur border-b border-slate-800/50 p-4 lg:p-6 z-50">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-4">
                 <button
-                  onClick={() => setSidebarOpen(!sidebarOpen)}
+                  onClick={() => {}}
                   className="lg:hidden p-2 rounded-lg bg-slate-800/50 border border-slate-700/50"
                 >
                   <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -181,7 +177,7 @@ const SettingsPage = () => {
                 {/* Notification */}
                 <div className="relative">
                 <button
-                    onClick={() => setNotificationOpen((p) => !p)}
+                    onClick={() => {}}
                     className="relative p-2 rounded-lg bg-slate-800/50 border border-slate-700/50 hover:bg-slate-700/50 transition-all"
                 >
                     <svg
@@ -260,7 +256,7 @@ const SettingsPage = () => {
                 {/* Profile */}
                 <div className="relative z-50">
                 <div className="flex items-center gap-3 bg-slate-800/50 border border-slate-700/50 rounded-xl px-3 py-2 cursor-pointer z-50"
-                    onClick={()=>setProfileDropdownOpen(!profileDropdownOpen)}>
+                    onClick={() => {}}>
                     <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-cyan-400 to-purple-500 flex items-center justify-center">
                     <span className="text-white font-bold text-xs">JW</span>
                     </div>
@@ -316,7 +312,7 @@ const SettingsPage = () => {
                     </div>
                     <ToggleSwitch 
                       enabled={themeMode}
-                      onChange={() => setThemeMode(!themeMode)}
+                      onChange={() => {}}
                     />
                   </div>
 
@@ -329,7 +325,7 @@ const SettingsPage = () => {
                     <div className="relative w-full sm:w-48">
                       <select 
                         value={dataRefreshInterval}
-                        onChange={(e) => setDataRefreshInterval(e.target.value)}
+                        onChange={() => {}}
                         className="w-full appearance-none px-4 py-2.5 bg-slate-700/50 border border-slate-600/50 rounded-xl text-slate-200 focus:outline-none focus:ring-2 focus:ring-cyan-400/50 transition-all cursor-pointer"
                       >
                         {["Every 10 seconds","Every 30 seconds","Every 1 minute","Every 5 minutes"].map(t=> <option key={t} value={t} className="bg-slate-900 text-slate-300">{t}</option>)}
@@ -349,7 +345,7 @@ const SettingsPage = () => {
                     <div className="relative w-full sm:w-48">
                       <select 
                         value={defaultCurrency}
-                        onChange={(e) => setDefaultCurrency(e.target.value)}
+                        onChange={() => {}}
                         className="w-full appearance-none px-4 py-2.5 bg-slate-700/50 border border-slate-600/50 rounded-xl text-slate-200 focus:outline-none focus:ring-2 focus:ring-cyan-400/50 transition-all cursor-pointer"
                       >
                         {["Select Currency","USD ($)","EUR (€)","GBP (£)","JPY (¥)","PHP (₱)"].map(t=> <option key={t} value={t} className="bg-slate-900 text-slate-300">{t}</option>)}
@@ -391,7 +387,7 @@ const SettingsPage = () => {
                         max="10"
                         step="0.1"
                         value={minProfitThreshold}
-                        onChange={(e) => setMinProfitThreshold(parseFloat(e.target.value))}
+                        onChange={() => {}}
                         className="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer profit-slider"
                       />
                       <div className="flex justify-between text-xs text-slate-500 mt-2">
@@ -414,7 +410,7 @@ const SettingsPage = () => {
                       <input
                         type="number"
                         value={maxGasFee}
-                        onChange={(e) => setMaxGasFee(e.target.value)}
+                        onChange={() => {}}
                         className="w-full sm:w-32 px-4 py-2.5 bg-slate-700/50 border border-slate-600/50 rounded-xl text-slate-200 text-center focus:outline-none focus:ring-2 focus:ring-cyan-400/50 transition-all"
                       />
                     </div>
@@ -446,7 +442,7 @@ const SettingsPage = () => {
       {sidebarOpen && (
         <div
           className="fixed inset-0 bg-black/50 z-40 lg:hidden"
-          onClick={() => setSidebarOpen(false)}
+          onClick={() => {}}
         ></div>
       )}
 

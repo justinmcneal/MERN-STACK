@@ -1,16 +1,14 @@
-import React, { useState } from "react";
-import {  BarChart3, Zap, User, Phone, HelpCircle, Settings, LogOut, Info, Brain, Link2 } from "lucide-react";
+import { BarChart3, Zap, User, Phone, HelpCircle, Settings, LogOut, Info, Brain, Link2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { createPortal } from "react-dom";
 
 
 const AboutUsInside = () => {
     const navigate = useNavigate();
-    const [activeTab, setActiveTab] = useState("About Us");
-    const [sidebarOpen, setSidebarOpen] = useState(false);
-    const [openQuestions, setOpenQuestions] = useState([""]);
-    const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
-    const [notificationOpen, setNotificationOpen] = useState(false);
+    const activeTab = "About Us"; // Static
+    const sidebarOpen = false; // Static
+    const profileDropdownOpen = false; // Static
+    const notificationOpen = false; // Static
 
   const navigation = [
     { name: "Dashboard", icon: <BarChart3 className="w-5 h-5 text-white" /> , path: "/dashboard"  },
@@ -122,21 +120,7 @@ const technologies = [
     }
 ];
 
-
-  const handleNavigation = (item) => {
-    setActiveTab(item.name);
-    if (item.path) {
-      navigate(item.path);
-    }
-  };
-
-  const toggleQuestion = (index) => {
-    setOpenQuestions(prev => 
-      prev.includes(index) 
-        ? prev.filter(i => i !== index)
-        : [...prev, index]
-    );
-  };
+// Static navigation - no functions needed
 
 
   return (
@@ -168,7 +152,7 @@ const technologies = [
 
           {/* X button (only visible on mobile) */}
           <button
-            onClick={() => setSidebarOpen(false)}
+            onClick={() => {}}
             className="lg:hidden p-2 rounded-lg hover:bg-slate-800/50 transition"
           >
             <svg className="w-6 h-6 text-slate-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -186,7 +170,7 @@ const technologies = [
                 <button
                     key={item.name}
                     onClick={() => {
-                    setActiveTab(item.name);
+                    // Static navigation - no state changes
                     if (item.path) {
                         navigate(item.path);
                     }
@@ -208,14 +192,14 @@ const technologies = [
         {/* Main Content */}
         <div className={`flex-1 overflow-y-auto transition-all duration-300
               ${sidebarOpen ? "fixed inset-0 backdrop-blur-5xl bg-black/60 z-40 lg:static lg:backdrop-blur-5xl lg:bg-black/60" : ""}`}
-        onClick={() => sidebarOpen && setSidebarOpen(false)} >
+        onClick={() => {}} >
           
           {/* Header */}
           <header className="bg-slate-900/50 backdrop-blur border-b border-slate-800/50 p-4 lg:p-6 z-50">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-4">
                 <button
-                  onClick={() => setSidebarOpen(!sidebarOpen)}
+                  onClick={() => {}}
                   className="lg:hidden p-2 rounded-lg bg-slate-800/50 border border-slate-700/50"
                 >
                   <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -229,7 +213,7 @@ const technologies = [
                     {/* Notification */}
                     <div className="relative">
                     <button
-                        onClick={() => setNotificationOpen((p) => !p)}
+                        onClick={() => {}}
                         className="relative p-2 rounded-lg bg-slate-800/50 border border-slate-700/50 hover:bg-slate-700/50 transition-all"
                     >
                         <svg
@@ -308,7 +292,7 @@ const technologies = [
                     {/* Profile */}
                     <div className="relative z-50">
                     <div className="flex items-center gap-3 bg-slate-800/50 border border-slate-700/50 rounded-xl px-3 py-2 cursor-pointer z-50"
-                        onClick={()=>setProfileDropdownOpen(!profileDropdownOpen)}>
+                        onClick={() => {}}>
                         <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-cyan-400 to-purple-500 flex items-center justify-center">
                         <span className="text-white font-bold text-xs">JW</span>
                         </div>
@@ -514,7 +498,7 @@ const technologies = [
       {sidebarOpen && (
         <div
           className="fixed inset-0 bg-black/50 z-40 lg:hidden"
-          onClick={() => setSidebarOpen(false)}
+          onClick={() => {}}
         ></div>
       )}
     </div>

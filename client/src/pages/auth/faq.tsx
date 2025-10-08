@@ -1,4 +1,3 @@
-import React, { useState } from "react";
 import { ChevronDown, ChevronUp, BarChart3, Zap, User, Phone, HelpCircle, Settings, LogOut, Info } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { createPortal } from "react-dom";
@@ -6,11 +5,10 @@ import { createPortal } from "react-dom";
 
 const FAQPage = () => {
     const navigate = useNavigate();
-    const [activeTab, setActiveTab] = useState("FAQ");
-    const [sidebarOpen, setSidebarOpen] = useState(false);
-    const [openQuestions, setOpenQuestions] = useState([""]);
-    const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
-    const [notificationOpen, setNotificationOpen] = useState(false);
+    const activeTab = "FAQ"; // Static
+    const sidebarOpen = false; // Static
+    const profileDropdownOpen = false; // Static
+    const notificationOpen = false; // Static
 
   const navigation = [
     { name: "Dashboard", icon: <BarChart3 className="w-5 h-5 text-white" /> , path: "/dashboard"  },
@@ -98,25 +96,12 @@ const notifications = [
     }
   ];
 
-  const handleNavigation = (item) => {
-    setActiveTab(item.name);
-    if (item.path) {
-      navigate(item.path);
-    }
-  };
+// Static navigation - no functions needed
 
-  const toggleQuestion = (index) => {
-    setOpenQuestions(prev => 
-      prev.includes(index) 
-        ? prev.filter(i => i !== index)
-        : [...prev, index]
-    );
-  };
-
-  const FAQItem = ({ question, answer, index, isOpen }) => (
+  const FAQItem = ({ question, answer, isOpen }: { question: string, answer: string, isOpen: boolean }) => (
     <div className="bg-slate-700/30 border border-slate-600/50 rounded-xl overflow-hidden transition-all duration-300 hover:border-slate-500/50">
       <button
-        onClick={() => toggleQuestion(index)}
+        onClick={() => {}}
         className="w-full flex items-start justify-between p-5 text-left transition-all"
       >
         <div className="flex items-start gap-4 flex-1">
@@ -179,7 +164,7 @@ const notifications = [
 
           {/* X button (only visible on mobile) */}
           <button
-            onClick={() => setSidebarOpen(false)}
+            onClick={() => {}}
             className="lg:hidden p-2 rounded-lg hover:bg-slate-800/50 transition"
           >
             <svg className="w-6 h-6 text-slate-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -196,7 +181,7 @@ const notifications = [
                 <button
                     key={item.name}
                     onClick={() => {
-                    setActiveTab(item.name);
+                    // Static navigation - no state changes
                     if (item.path) {
                         navigate(item.path);
                     }
@@ -218,14 +203,14 @@ const notifications = [
         {/* Main Content */}
         <div className={`flex-1 overflow-y-auto transition-all duration-300
               ${sidebarOpen ? "fixed inset-0 backdrop-blur-5xl bg-black/60 z-40 lg:static lg:backdrop-blur-5xl lg:bg-black/60" : ""}`}
-        onClick={() => sidebarOpen && setSidebarOpen(false)} >
+        onClick={() => {}} >
 
           {/* Header */}
           <header className="bg-slate-900/50 backdrop-blur border-b border-slate-800/50 p-4 lg:p-6 z-50">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-4">
                 <button
-                  onClick={() => setSidebarOpen(!sidebarOpen)}
+                  onClick={() => {}}
                   className="lg:hidden p-2 rounded-lg bg-slate-800/50 border border-slate-700/50"
                 >
                   <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -239,7 +224,7 @@ const notifications = [
                     {/* Notification */}
                     <div className="relative">
                     <button
-                        onClick={() => setNotificationOpen((p) => !p)}
+                        onClick={() => {}}
                         className="relative p-2 rounded-lg bg-slate-800/50 border border-slate-700/50 hover:bg-slate-700/50 transition-all"
                     >
                         <svg
@@ -318,7 +303,7 @@ const notifications = [
                     {/* Profile */}
                     <div className="relative z-50">
                     <div className="flex items-center gap-3 bg-slate-800/50 border border-slate-700/50 rounded-xl px-3 py-2 cursor-pointer z-50"
-                        onClick={()=>setProfileDropdownOpen(!profileDropdownOpen)}>
+                        onClick={() => {}}>
                         <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-cyan-400 to-purple-500 flex items-center justify-center">
                         <span className="text-white font-bold text-xs">JW</span>
                         </div>
@@ -371,8 +356,7 @@ const notifications = [
                     key={index}
                     question={item.question}
                     answer={item.answer}
-                    index={index}
-                    isOpen={openQuestions.includes(index)}
+                    isOpen={false}
                   />
                 ))}
               </div>
@@ -392,7 +376,7 @@ const notifications = [
                     </div>
                   </div>
                   <button 
-                    onClick={() => handleNavigation({ name: "Contact Support", path: "/contact-support" })}
+                    onClick={() => {}}
                     className="px-6 py-3 bg-gradient-to-r from-cyan-500 to-purple-600 hover:from-cyan-400 hover:to-purple-500 rounded-xl font-semibold whitespace-nowrap transition-all duration-300 transform hover:scale-105 shadow-lg"
                   >
                     Contact Support
@@ -408,7 +392,7 @@ const notifications = [
       {sidebarOpen && (
         <div
           className="fixed inset-0 bg-black/50 z-40 lg:hidden"
-          onClick={() => setSidebarOpen(false)}
+          onClick={() => {}}
         ></div>
       )}
     </div>

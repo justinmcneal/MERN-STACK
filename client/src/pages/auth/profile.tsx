@@ -1,34 +1,33 @@
-import React, { useState } from "react";
 import { BarChart3, Zap, User, Phone, HelpCircle, Settings, LogOut, Shield, Save, Info } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { createPortal } from "react-dom";
 
 const ProfilePage = () => {
     const navigate = useNavigate();
-    const [activeTab, setActiveTab] = useState("Profile");
-    const [sidebarOpen, setSidebarOpen] = useState(false);
-    const [notificationOpen, setNotificationOpen] = useState(false);
-    const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
+    const activeTab = "Profile"; // Static
+    const sidebarOpen = false; // Static
+    const notificationOpen = false; // Static
+    const profileDropdownOpen = false; // Static
     
-    // Form states
-    const [fullName, setFullName] = useState("John Wayne");
-    const [email, setEmail] = useState("johnwayne@gmail.com");
-    const [joinDate] = useState("March 11, 2025");
-    const [selectedAvatar, setSelectedAvatar] = useState(0);
+    // Form states - static values
+    const fullName = "John Wayne"; // Static
+    const email = "johnwayne@gmail.com"; // Static
+    const joinDate = "March 11, 2025"; // Static
+    const selectedAvatar = 0; // Static
     
-    // Preferences
-    const [tokensTracked, setTokensTracked] = useState({
+    // Preferences - static values
+    const tokensTracked = {
         ETH: true,
         BTC: true,
         MATIC: true,
         USDT: false,
         BNB: false
-    });
+    }; // Static
     
-    const [dashboardPopup, setDashboardPopup] = useState(true);
-    const [emailNotifications, setEmailNotifications] = useState(true);
-    const [profitThreshold, setProfitThreshold] = useState(5);
-    const [twoFactorAuth, setTwoFactorAuth] = useState(false);
+    const dashboardPopup = true; // Static
+    const emailNotifications = true; // Static
+    const profitThreshold = 5; // Static
+    const twoFactorAuth = false; // Static
 
 
   const notifications = [
@@ -87,16 +86,13 @@ const ProfilePage = () => {
     { name: "Settings", icon: <Settings className="w-5 h-5 text-white" />, path: "/settings" }
   ];
 
-  const handleNavigation = (item) => {
-    setActiveTab(item.name);
-    window.history.pushState({}, "", item.path);
-  };
+// Static navigation - no functions needed
 
   const handleSaveChanges = () => {
-    alert("Changes saved successfully!");
+    // Static form submission - no actual processing
   };
 
-  const TokenCheckbox = ({ token, checked, onChange }) => (
+  const TokenCheckbox = ({ token, checked, onChange }: { token: string, checked: boolean, onChange: () => void }) => (
     <label className="flex items-center gap-2 cursor-pointer">
       <input
         type="checkbox"
@@ -112,7 +108,7 @@ const ProfilePage = () => {
     </label>
   );
 
-  const ToggleSwitch = ({ enabled, onChange }) => (
+  const ToggleSwitch = ({ enabled, onChange }: { enabled: boolean, onChange: () => void }) => (
     <button
       onClick={onChange}
       className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
@@ -156,7 +152,7 @@ const ProfilePage = () => {
 
           {/* X button (only visible on mobile) */}
           <button
-            onClick={() => setSidebarOpen(false)}
+            onClick={() => {}}
             className="lg:hidden p-2 rounded-lg hover:bg-slate-800/50 transition"
           >
             <svg className="w-6 h-6 text-slate-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -174,7 +170,7 @@ const ProfilePage = () => {
                 <button
                     key={item.name}
                     onClick={() => {
-                    setActiveTab(item.name);
+                    // Static navigation - no state changes
                     if (item.path) {
                         navigate(item.path);
                     }
@@ -196,14 +192,14 @@ const ProfilePage = () => {
         {/* Main Content */}
         <div className={`flex-1 overflow-y-auto transition-all duration-300
               ${sidebarOpen ? "fixed inset-0 backdrop-blur-5xl bg-black/60 z-40 lg:static lg:backdrop-blur-5xl lg:bg-black/60" : ""}`}
-        onClick={() => sidebarOpen && setSidebarOpen(false)} >
+        onClick={() => {}} >
           
           {/* Header */}
           <header className="bg-slate-900/50 backdrop-blur border-b border-slate-800/50 p-4 lg:p-6 z-30">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-4">
                 <button
-                  onClick={() => setSidebarOpen(!sidebarOpen)}
+                  onClick={() => {}}
                   className="lg:hidden p-2 rounded-lg bg-slate-800/50 border border-slate-700/50"
                 >
                   <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -217,7 +213,7 @@ const ProfilePage = () => {
             {/* Notification */}
             <div className="relative">
                 <button
-                onClick={() => setNotificationOpen((p) => !p)}
+                onClick={() => {}}
                 className="relative p-2 rounded-lg bg-slate-800/50 border border-slate-700/50 hover:bg-slate-700/50 transition-all">
                 <svg
                 className="w-5 h-5 text-yellow-400"
@@ -295,7 +291,7 @@ const ProfilePage = () => {
                     {/* Profile */}
                     <div className="relative z-50">
                         <div className="flex items-center gap-3 bg-slate-800/50 border border-slate-700/50 rounded-xl px-3 py-2 cursor-pointer z-50"
-                                onClick={()=>setProfileDropdownOpen(!profileDropdownOpen)}>
+                                onClick={() => {}}>
                             <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-cyan-400 to-purple-500 flex items-center justify-center">
                                 <span className="text-white font-bold text-xs">JW</span>
                             </div>
@@ -343,7 +339,7 @@ const ProfilePage = () => {
                     <input
                       type="text"
                       value={fullName}
-                      onChange={(e) => setFullName(e.target.value)}
+                      onChange={() => {}}
                       className="w-full px-4 py-3 bg-slate-700/50 border border-slate-600/50 rounded-xl text-slate-200 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-cyan-400/50 transition-all"
                     />
                   </div>
@@ -354,7 +350,7 @@ const ProfilePage = () => {
                     <input
                       type="email"
                       value={email}
-                      onChange={(e) => setEmail(e.target.value)}
+                      onChange={() => {}}
                       className="w-full px-4 py-3 bg-slate-700/50 border border-slate-600/50 rounded-xl text-slate-200 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-cyan-400/50 transition-all"
                     />
                   </div>
@@ -393,7 +389,7 @@ const ProfilePage = () => {
                             {avatars.map((avatar) => (
                             <button
                                 key={avatar.id}
-                                onClick={() => setSelectedAvatar(avatar.id)}
+                                onClick={() => {}}
                                 className={`w-12 h-12 rounded-xl bg-gradient-to-br ${avatar.gradient} flex items-center justify-center transition-all ${
                                 selectedAvatar === avatar.id
                                     ? "ring-2 ring-cyan-400 ring-offset-2 ring-offset-slate-800 scale-110"
@@ -432,7 +428,7 @@ const ProfilePage = () => {
                           key={token}
                           token={token}
                           checked={checked}
-                          onChange={() => setTokensTracked(prev => ({ ...prev, [token]: !checked }))}
+                          onChange={() => {}}
                         />
                       ))}
                     </div>
@@ -448,7 +444,7 @@ const ProfilePage = () => {
                         <span className="text-sm text-slate-300">Dashboard Popup</span>
                         <ToggleSwitch 
                           enabled={dashboardPopup}
-                          onChange={() => setDashboardPopup(!dashboardPopup)}
+                          onChange={() => {}}
                         />
                       </div>
                       
@@ -456,7 +452,7 @@ const ProfilePage = () => {
                         <span className="text-sm text-slate-300">Email</span>
                         <ToggleSwitch 
                           enabled={emailNotifications}
-                          onChange={() => setEmailNotifications(!emailNotifications)}
+                          onChange={() => {}}
                         />
                       </div>
                     </div>
@@ -475,7 +471,7 @@ const ProfilePage = () => {
                           <input
                             type="number"
                             value={profitThreshold}
-                            onChange={(e) => setProfitThreshold(e.target.value)}
+                            onChange={() => {}}
                             className="w-16 px-3 py-1.5 bg-slate-700/50 border border-slate-600/50 rounded-lg text-slate-200 text-center focus:outline-none focus:ring-2 focus:ring-cyan-400/50"
                           />
                           <span className="text-slate-400">%</span>
@@ -489,7 +485,7 @@ const ProfilePage = () => {
                           max="10"
                           step="0.5"
                           value={profitThreshold}
-                          onChange={(e) => setProfitThreshold(e.target.value)}
+                          onChange={() => {}}
                           className="w-full h-2 bg-slate-600 rounded-lg appearance-none cursor-pointer"
                         />
                         <div className="flex justify-between text-xs text-slate-500 mt-1">
@@ -536,7 +532,7 @@ const ProfilePage = () => {
                       </div>
                       <ToggleSwitch 
                         enabled={twoFactorAuth}
-                        onChange={() => setTwoFactorAuth(!twoFactorAuth)}
+                        onChange={() => {}}
                       />
                     </div>
                   </div>
@@ -566,7 +562,7 @@ const ProfilePage = () => {
       {sidebarOpen && (
         <div
           className="fixed inset-0 bg-black/50 z-40 lg:hidden"
-          onClick={() => setSidebarOpen(false)}
+          onClick={() => {}}
         ></div>
       )}
 

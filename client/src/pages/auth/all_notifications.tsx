@@ -1,12 +1,32 @@
-import React, { useState } from "react";
-import { ArrowLeft, Bell, TrendingUp, Target, LogOut, User} from "lucide-react";
+import { ArrowLeft, Bell, TrendingUp, Target } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+
+interface Notification {
+  id: number;
+  type: string;
+  title: string;
+  time: string;
+  unread: boolean;
+  icon?: React.ReactNode;
+  pair?: string;
+  target?: string;
+  current?: string;
+  details?: string;
+  description?: string;
+  stats?: {
+    estimatedProfit?: string;
+    gasCost?: string;
+    confidenceScore?: string;
+    executionTime?: string;
+    profit?: string;
+    gas?: string;
+    score?: number;
+  };
+}
 
 const AllNotificationsPage = () => {
     const navigate = useNavigate();
-    const [activeFilter, setActiveFilter] = useState("All");
-    const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
-    const [notificationOpen, setNotificationOpen] = useState(false);
+    const activeFilter = "All"; // Static
 
   const notifications = [
     {
@@ -99,7 +119,7 @@ const AllNotificationsPage = () => {
     return true;
   });
 
-  const NotificationCard = ({ notification }) => (
+  const NotificationCard = ({ notification }: { notification: Notification }) => (
     <div className={`bg-slate-800/30 border rounded-2xl p-6 transition-all hover:bg-slate-800/40 ${
       notification.unread ? 'border-cyan-500/30' : 'border-slate-700/50'
     }`}>
@@ -132,10 +152,10 @@ const AllNotificationsPage = () => {
               <p className="text-emerald-400 text-sm mb-2">{notification.details}</p>
               <p className="text-slate-300 text-sm mb-3">{notification.description}</p>
               <div className="text-xs text-slate-400">
-                Estimated Profit: <span className="text-emerald-400">{notification.stats.estimatedProfit}</span> • 
-                Gas Cost: <span className="text-slate-300"> {notification.stats.gasCost}</span> • 
-                Confidence Score: <span className="text-cyan-400"> {notification.stats.confidenceScore}</span> • 
-                Execution Time: <span className="text-slate-300"> {notification.stats.executionTime}</span>
+                Estimated Profit: <span className="text-emerald-400">{notification.stats?.estimatedProfit}</span> • 
+                Gas Cost: <span className="text-slate-300"> {notification.stats?.gasCost}</span> • 
+                Confidence Score: <span className="text-cyan-400"> {notification.stats?.confidenceScore}</span> • 
+                Execution Time: <span className="text-slate-300"> {notification.stats?.executionTime}</span>
               </div>
             </div>
           )}
@@ -198,7 +218,7 @@ const AllNotificationsPage = () => {
             {["All", "Alerts", "Systems", "Unread"].map((filter) => (
               <button
                 key={filter}
-                onClick={() => setActiveFilter(filter)}
+                onClick={() => {}}
                 className={`px-5 py-2 rounded-lg font-medium transition-all ${
                   activeFilter === filter
                     ? "bg-cyan-500/20 text-cyan-400 border border-cyan-500/30"

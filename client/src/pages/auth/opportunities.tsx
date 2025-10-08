@@ -1,20 +1,18 @@
-import React, { useState, useEffect } from "react";
 import { BarChart3, Zap, User, Phone, HelpCircle, Settings, LogOut, Info } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { createPortal } from "react-dom";
 
 const OpportunitiesPage = () => {
     const navigate = useNavigate();
-    const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
-    const [notificationOpen, setNotificationOpen] = useState(false);
-    const [activeTab, setActiveTab] = useState("Opportunities");
-    const [sidebarOpen, setSidebarOpen] = useState(false);
-    const [selectedTimeframe, setSelectedTimeframe] = useState("1h");
-    const [selectedToken, setSelectedToken] = useState("All Tokens");
-    const [selectedChainPair, setSelectedChainPair] = useState("All Chain Pairs");
-    const [minProfit, setMinProfit] = useState(1);
-    const [selectedTokenChart, setSelectedTokenChart] = useState("ETH");
-    const [filterView, setFilterView] = useState("My Profit");
+    const profileDropdownOpen = false; // Static
+    const notificationOpen = false; // Static
+    const activeTab = "Opportunities"; // Static
+    const sidebarOpen = false; // Static
+    const selectedTimeframe = "1h"; // Static
+    const selectedToken = "All Tokens"; // Static
+    const selectedChainPair = "All Chain Pairs"; // Static
+    const minProfit = 1; // Static
+    const filterView = "My Profit"; // Static
     const notifications = [
         {
             type: "price",
@@ -53,37 +51,21 @@ const OpportunitiesPage = () => {
     ];
   
   // Mock data
-  const [opportunities, setOpportunities] = useState([
+  const opportunities = [
     { token: "ETH", from: "Ethereum", to: "Polygon", priceDiff: "+2.5%", estProfit: "$50", roi: "95%", color: "emerald" },
     { token: "USDT", from: "BSC", to: "Polygon", priceDiff: "+1.8%", estProfit: "$45", roi: "85%", color: "emerald" },
     { token: "USDC", from: "Ethereum", to: "BSC", priceDiff: "+2.1%", estProfit: "$60", roi: "88%", color: "emerald" },
     { token: "BNB", from: "BSC", to: "Ethereum", priceDiff: "+3.2%", estProfit: "$120", roi: "91%", color: "emerald" },
     { token: "MATIC", from: "Polygon", to: "Ethereum", priceDiff: "+2.8%", estProfit: "$20", roi: "87%", color: "emerald" },
     { token: "DOT", from: "Polkadot", to: "Solana", priceDiff: "+1.4%", estProfit: "$105", roi: "76%", color: "yellow" }
-  ]);
+  ];
 
-  const tokenPrices = {
-    ETH: { ethereum: "$3,247.85", bsc: "$3,260.12", polygon: "$3,245.50" },
-    USDT: { ethereum: "$0.998", bsc: "$1.001", polygon: "$0.999" },
-    USDC: { ethereum: "$1.000", bsc: "$1.002", polygon: "$0.998" }
-  };
-
-  const gasFees = {
-    ethereum: "0.002 ETH",
-    bsc: "0.001 BNB", 
-    polygon: "0.005 MATIC"
-  };
 
   const ChartComponent = () => {
-    const [activePoint, setActivePoint] = useState(0);
-    const [selectedTokenChart, setSelectedTokenChart] = useState("ETH");
+    const activePoint = 0; // Static
+    const selectedTokenChart = "ETH"; // Static
   
-    useEffect(() => {
-      const interval = setInterval(() => {
-        setActivePoint(prev => (prev + 1) % 50);
-      }, 100);
-      return () => clearInterval(interval);
-    }, []);
+    // Static chart data - no useEffect needed
   
     return (
       <div className="bg-slate-800/50 backdrop-blur border border-slate-700/50 rounded-2xl p-6">
@@ -103,11 +85,11 @@ const OpportunitiesPage = () => {
           <div className="xl:flex-1 bg-slate-900/30 border border-slate-700/50 rounded-2xl p-4 relative">
           <div className="flex justify-end gap-2 items-center ">
             {["1h","24h","7d"].map(tf=>(
-              <button key={tf} onClick={()=>setSelectedTimeframe(tf)}
+              <button key={tf} onClick={() => {}}
                 className={`px-3 py-1 text-xs rounded-lg transition-all ${selectedTimeframe===tf?"bg-cyan-500/20 text-cyan-400 border border-cyan-500/30":"bg-slate-700/50 text-slate-400 hover:text-slate-300 border border-slate-600/50"}`}>{tf}</button>
             ))}
             <div className="relative">
-              <select value={selectedToken} onChange={e=>setSelectedToken(e.target.value)}
+              <select value={selectedToken} onChange={() => {}}
                 className="appearance-none w-full px-3 py-2 text-xs rounded-lg bg-slate-800/50 border border-slate-700/50 text-slate-300 pr-8 focus:outline-none focus:ring-2 focus:ring-cyan-400/50 transition-all duration-300">
                 {["Select token","BTC","ETH","BNB","MATIC","USDT"].map(t=> <option key={t} value={t} className="bg-slate-900 text-slate-300">{t}</option>)}
               </select>
@@ -191,7 +173,7 @@ const OpportunitiesPage = () => {
               <div className="relative">
                 <select
                   value={selectedTokenChart}
-                  onChange={(e) => setSelectedTokenChart(e.target.value)}
+                  onChange={() => {}}
                   className="appearance-none px-3 py-2 text-xs rounded-lg bg-slate-800/50 border border-slate-700/50 text-slate-300 pr-8 focus:outline-none focus:ring-2 focus:ring-cyan-400/50 transition-all duration-300"
                 >
                   {["Select token","BTC","ETH","BNB","MATIC","USDT"].map(t => (
@@ -274,7 +256,7 @@ const OpportunitiesPage = () => {
 
           {/* X button (only visible on mobile) */}
           <button
-            onClick={() => setSidebarOpen(false)}
+            onClick={() => {}}
             className="lg:hidden p-2 rounded-lg hover:bg-slate-800/50 transition"
           >
             <svg className="w-6 h-6 text-slate-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -292,7 +274,7 @@ const OpportunitiesPage = () => {
                 <button
                     key={item.name}
                     onClick={() => {
-                    setActiveTab(item.name);
+                    // Static navigation - no state changes
                     if (item.path) {
                         navigate(item.path);
                     }
@@ -314,14 +296,14 @@ const OpportunitiesPage = () => {
         {/* Main Content */}
         <div className={`flex-1 overflow-y-auto transition-all duration-300
               ${sidebarOpen ? "fixed inset-0 backdrop-blur-5xl bg-black/60 z-40 lg:static lg:backdrop-blur-5xl lg:bg-black/60" : ""}`}
-        onClick={() => sidebarOpen && setSidebarOpen(false)} >
+        onClick={() => {}} >
           
           {/* Header */}
           <header className="bg-slate-900/50 backdrop-blur border-b border-slate-800/50 p-4 lg:p-6 z-50">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-4">
                 <button
-                  onClick={() => setSidebarOpen(!sidebarOpen)}
+                  onClick={() => {}}
                   className="lg:hidden p-2 rounded-lg bg-slate-800/50 border border-slate-700/50"
                 >
                   <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -335,7 +317,7 @@ const OpportunitiesPage = () => {
                 {/* Notification */}
                     <div className="relative">
                         <button
-                            onClick={() => setNotificationOpen((p) => !p)}
+                            onClick={() => {}}
                                 className="relative p-2 rounded-lg bg-slate-800/50 border border-slate-700/50 hover:bg-slate-700/50 transition-all">
                                   <svg
                                   className="w-5 h-5 text-yellow-400"
@@ -413,7 +395,7 @@ const OpportunitiesPage = () => {
                         {/* Profile */}
                         <div className="relative z-50">
                             <div className="flex items-center gap-3 bg-slate-800/50 border border-slate-700/50 rounded-xl px-3 py-2 cursor-pointer z-50"
-                                  onClick={()=>setProfileDropdownOpen(!profileDropdownOpen)}>
+                                  onClick={() => {}}>
                                 <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-cyan-400 to-purple-500 flex items-center justify-center">
                                     <span className="text-white font-bold text-xs">JW</span>
                                 </div>
@@ -468,7 +450,7 @@ const OpportunitiesPage = () => {
                   <label className="block text-sm text-slate-400 mb-2">Filter by Token</label>
                   <select 
                     value={selectedToken}
-                    onChange={(e) => setSelectedToken(e.target.value)}
+                    onChange={() => {}}
                     className="w-full bg-slate-700/50 border border-slate-600/50 rounded-xl px-4 py-3 text-slate-300 focus:outline-none focus:ring-2 focus:ring-cyan-400/50">
                     {["All Token","BTC","ETH","BNB","MATIC","USDT"].map(t=> <option key={t} value={t} className="bg-slate-900 text-slate-300">{t}</option>)}
                   </select>
@@ -478,7 +460,7 @@ const OpportunitiesPage = () => {
                   <label className="block text-sm text-slate-400 mb-2">Filter by Chain Pair</label>
                   <select 
                     value={selectedChainPair}
-                    onChange={(e) => setSelectedChainPair(e.target.value)}
+                      onChange={() => {}}
                     className="w-full bg-slate-700/50 border border-slate-600/50 rounded-xl px-4 py-3 text-slate-300 focus:outline-none focus:ring-2 focus:ring-cyan-400/50"
                   >
                    {["All Chain Pairs","Ethereum → Polygon","BSC → Ethereum","Polygon → BSC"].map(t=> <option key={t} value={t} className="bg-slate-900 text-slate-300">{t}</option>)}
@@ -494,7 +476,7 @@ const OpportunitiesPage = () => {
                       max="10"
                       step="0.1"
                       value={minProfit}
-                      onChange={(e) => setMinProfit(Number(e.target.value))}
+                      onChange={() => {}}
                       className="w-full h-2 bg-slate-600 rounded-lg appearance-none cursor-pointer slider"
                     />
                     <div className="flex justify-between text-xs text-slate-400 mt-1">
@@ -520,7 +502,7 @@ const OpportunitiesPage = () => {
                   {["By Profit", "By Token", "ROI"].map((view) => (
                     <button
                       key={view}
-                      onClick={() => setFilterView(view)}
+                      onClick={() => {}}
                       className={`px-3 py-1 text-xs rounded-lg transition-all ${
                         filterView === view
                           ? "bg-cyan-500/20 text-cyan-400 border border-cyan-500/30"
@@ -587,7 +569,7 @@ const OpportunitiesPage = () => {
       {sidebarOpen && (
         <div
           className="fixed inset-0 bg-black/50 z-40 lg:hidden"
-          onClick={() => setSidebarOpen(false)}
+          onClick={() => {}}
         ></div>
       )}
 

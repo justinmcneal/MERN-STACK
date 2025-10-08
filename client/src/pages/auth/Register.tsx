@@ -1,27 +1,14 @@
-import React, { useState } from "react";
+import React from "react";
 import { useNavigate } from "react-router-dom";
 import Input from "../../components/ui/Input/Input";
 import Button from "../../components/ui/Button/Button";
 
 export default function ArbiTraderLogin() {
-    const [name, setName] = useState("");
-    const [email, setEmail] = useState("");
-    const [password, setPassword] = useState("");
-    const [confirmPassword, setConfirmPassword] = useState("");
-    const [service, setService] = useState(false);
-    const [subscribe, setSubscribe] = useState(false);
-    const [isLoading, setIsLoading] = useState(false);
     const navigate = useNavigate();
 
   const handleSignUp = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    setIsLoading(true);
-    
-    // Simulate signup process
-    setTimeout(() => {
-      setIsLoading(false);
-      navigate('/dashboard');
-    }, 2000);
+    // Static form submission - no actual signup processing
   };
 
   return (
@@ -106,8 +93,8 @@ export default function ArbiTraderLogin() {
                 type="text"
                 label="Full Name"
                 placeholder="Enter your full name"
-                value={name}
-                onChange={setName}
+                value=""
+                onChange={() => {}}
                 required
               />
 
@@ -115,8 +102,8 @@ export default function ArbiTraderLogin() {
                 type="email"
                 label="Email Address"
                 placeholder="Enter your email address"
-                value={email}
-                onChange={setEmail}
+                value=""
+                onChange={() => {}}
                 required
               />
 
@@ -124,8 +111,8 @@ export default function ArbiTraderLogin() {
                 type="password"
                 label="Password"
                 placeholder="Create your strong password"
-                value={password}
-                onChange={setPassword}
+                value=""
+                onChange={() => {}}
                 required
               />
 
@@ -133,8 +120,8 @@ export default function ArbiTraderLogin() {
                 type="password"
                 label="Confirm Password"
                 placeholder="Confirm your password"
-                value={confirmPassword}
-                onChange={setConfirmPassword}
+                value=""
+                onChange={() => {}}
                 required
               />
 
@@ -142,7 +129,7 @@ export default function ArbiTraderLogin() {
                 type="submit"
                 variant="primary"
                 size="lg"
-                loading={isLoading}
+                loading={false}
                 className="w-full"
               >
                 Sign Up
@@ -153,8 +140,8 @@ export default function ArbiTraderLogin() {
                 <label className="flex items-center gap-2">
                   <input
                     type="checkbox"
-                    checked={service}
-                    onChange={(e) => setService(e.target.checked)}
+                    checked={false}
+                    onChange={() => {}}
                     className="w-4 h-4 bg-slate-800 border border-slate-600 rounded focus:ring-2 focus:ring-cyan-400/50 text-cyan-500"
                   />
                   <span className="text-sm text-slate-300">
@@ -170,8 +157,8 @@ export default function ArbiTraderLogin() {
                 <label className="flex items-center gap-2">
                   <input
                     type="checkbox"
-                    checked={subscribe}
-                    onChange={(e) => setSubscribe(e.target.checked)}
+                    checked={false}
+                    onChange={() => {}}
                     className="w-4 h-4 bg-slate-800 border border-slate-600 rounded focus:ring-2 focus:ring-cyan-400/50 text-cyan-500"
                   />
                   <span className="text-sm text-slate-300">Subscribe to trading insights and updates</span>

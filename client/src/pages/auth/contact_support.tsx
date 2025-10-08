@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { BarChart3, Zap, User,  HelpCircle, Settings, LogOut, Mail, MessageSquare, Phone, Clock, BookOpen, Send, Info } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { createPortal } from "react-dom";
@@ -65,24 +65,14 @@ const ContactSupportPage = () => {
         { name: "Settings", icon: <Settings className="w-5 h-5 text-white" />, path: "/settings" }
         ];
 
-  const handleNavigation = (item) => {
-    setActiveTab(item.name);
-    window.history.pushState({}, "", item.path);
-  };
+// Static navigation - no functions needed
 
-  const handleSubmit = (e) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    alert("Message sent successfully! Our support team will get back to you within 2 hours.");
-    // Reset form
-    setFullName("");
-    setEmail("");
-    setPhoneNumber("");
-    setSubject("");
-    setMessage("");
-    setPriorityLevel("Low");
+    // Static form submission - no actual processing
   };
 
-  const ContactInfoCard = ({ icon, title, description, link }) => (
+  const ContactInfoCard = ({ icon, title, description, link }: { icon: React.ReactNode, title: string, description: string, link: string }) => (
     <div className="p-6 bg-slate-700/30 border border-slate-600/50 rounded-xl hover:bg-slate-700/40 transition-all">
       <div className="flex items-start gap-4">
         <div className="w-12 h-12 rounded-xl bg-cyan-500/20 flex items-center justify-center flex-shrink-0">
@@ -101,7 +91,7 @@ const ContactSupportPage = () => {
     </div>
   );
 
-  const PriorityButton = ({ level, selected, onClick }) => {
+  const PriorityButton = ({ level, selected, onClick }: { level: string, selected: boolean, onClick: () => void }) => {
     const colors = {
       Low: "from-emerald-500/20 to-cyan-500/20 border-emerald-500/30 text-emerald-400",
       Medium: "from-yellow-500/20 to-orange-500/20 border-yellow-500/30 text-yellow-400",
@@ -120,8 +110,8 @@ const ContactSupportPage = () => {
         onClick={onClick}
         className={`px-6 py-2 rounded-lg font-medium transition-all duration-300 ${
           selected 
-            ? `bg-gradient-to-r ${selectedColors[level]}` 
-            : `bg-gradient-to-r ${colors[level]} border hover:scale-105`
+            ? `bg-gradient-to-r ${selectedColors[level as keyof typeof selectedColors]}` 
+            : `bg-gradient-to-r ${colors[level as keyof typeof colors]} border hover:scale-105`
         }`}
       >
         {level}
@@ -342,25 +332,25 @@ const ContactSupportPage = () => {
                   <ContactInfoCard
                     icon={<Mail className="w-6 h-6 text-cyan-400" />}
                     title="Email Support"
-                    description="arbitragepro@gmail.com" link={undefined}
+                    description="arbitragepro@gmail.com" link="mailto:arbitragepro@gmail.com"
                   />
                   
                   <ContactInfoCard
                     icon={<MessageSquare className="w-6 h-6 text-purple-400" />}
                     title="Live Chat"
-                    description="Available 24/7 in dashboard" link={undefined}
+                    description="Available 24/7 in dashboard" link="https://chat.arbitragepro.com"
                   />
                   
                   <ContactInfoCard
                     icon={<Phone className="w-6 h-6 text-emerald-400" />}
                     title="Phone Support"
-                    description="+1 (555) 123-4881" link={undefined}
+                    description="+1 (555) 123-4881" link="tel:+15551234881"
                   />
                   
                   <ContactInfoCard
                         icon={<Clock className="w-6 h-6 text-yellow-400" />}
                         title="Response Time"
-                        description="< 2 hours average" link={undefined}                  
+                        description="< 2 hours average" link="https://docs.arbitragepro.com"                  
                     />
                   
                   <ContactInfoCard
@@ -460,7 +450,7 @@ const ContactSupportPage = () => {
                       value={message}
                       onChange={(e) => setMessage(e.target.value)}
                       placeholder="Please describe your issue or question in detail. Include any error messages, steps to reproduce, and relevant account information..."
-                      rows="6"
+                      rows={6}
                       className="w-full px-4 py-3 bg-slate-700/50 border border-slate-600/50 rounded-xl text-slate-200 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-cyan-400/50 transition-all resize-none"
                       required
                     ></textarea>

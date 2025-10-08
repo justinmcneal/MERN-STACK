@@ -1,5 +1,5 @@
-import React, { useState } from "react";
-import { ArrowLeft, Eye, EyeOff, Lock, Check, X } from "lucide-react";
+import { useState } from "react";
+import { Eye, EyeOff, Lock, Check, X } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 const ChangePasswordPage = () => {
@@ -41,7 +41,7 @@ const ChangePasswordPage = () => {
   };
 
 
-  const RequirementItem = ({ met, text }) => (
+  const RequirementItem = ({ met, text }: { met: boolean, text: string }) => (
     <div className="flex items-center gap-2">
       <div className={`w-5 h-5 rounded-full flex items-center justify-center ${
         met ? 'bg-emerald-500/20 border border-emerald-500/50' : 'bg-slate-700/50 border border-slate-600/50'
