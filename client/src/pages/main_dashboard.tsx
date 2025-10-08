@@ -1,14 +1,27 @@
 import { BarChart3, Zap, User, Phone, HelpCircle, Settings, LogOut, Info } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { createPortal } from "react-dom";
+import { useState } from "react";
+import { useAuth } from "../context/AuthContext";
 
 const Dashboard = () => {
     const navigate = useNavigate();
-    const activeTab = "Dashboard";
-    const selectedTimeframe = "1h";
-    const sidebarOpen = false;
-    const profileDropdownOpen = false;
-    const notificationOpen = false;
+    const { user, logout } = useAuth();
+    const [activeTab] = useState("Dashboard");
+    const [selectedTimeframe] = useState("1h");
+    const [sidebarOpen, setSidebarOpen] = useState(false);
+    const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
+    const [notificationOpen, setNotificationOpen] = useState(false);
+    const handleLogout = async () => {
+        try {
+            console.log('Logging out user:', user?.name);
+            await logout();
+            navigate('/');
+        } catch (error) {
+            console.error('Logout failed:', error);
+        }
+    };
+
     const notifications = [
     {
         type: "price",
@@ -195,7 +208,7 @@ const Dashboard = () => {
 
           {/* X button (only visible on mobile) */}
           <button
-            onClick={() => {}}
+            onClick={() => setSidebarOpen(false)}
             className="lg:hidden p-2 rounded-lg hover:bg-slate-800/50 transition"
           >
             <svg className="w-6 h-6 text-slate-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -213,9 +226,8 @@ const Dashboard = () => {
               <button
                 key={item.name}
                 onClick={() => {
-                  // Static navigation - no state changes
                   if (item.path) navigate(item.path);
-                  // Static sidebar - no state changes
+                  setSidebarOpen(false); // Close sidebar on mobile after navigation
                 }}
                 className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 ${
                   activeTab === item.name
@@ -235,13 +247,13 @@ const Dashboard = () => {
         {/* Main Content */}
         <div className={`flex-1 overflow-y-auto transition-all duration-300
               ${sidebarOpen ? "fixed inset-0 backdrop-blur-5xl bg-black/60 z-40 lg:static lg:backdrop-blur-5xl lg:bg-black/60" : ""}`}
-        onClick={() => {}} >
+        onClick={() => setSidebarOpen(false)} >
           
           {/* Header */}
           <header className="bg-slate-900/50 backdrop-blur border-b border-slate-800/50 p-4 lg:p-6 relative z-30">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-4">
-                <button onClick={()=>{}} className="lg:hidden p-2 rounded-lg bg-slate-800/50 border border-slate-700/50">
+                <button onClick={() => setSidebarOpen(!sidebarOpen)} className="lg:hidden p-2 rounded-lg bg-slate-800/50 border border-slate-700/50">
                   <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16"/></svg>
                 </button>
                 <h1 className="text-xl font-semibold text-slate-200">Dashboard</h1>
@@ -251,7 +263,7 @@ const Dashboard = () => {
                 {/* Notification */}
                 <div className="relative">
                 <button
-                    onClick={() => {}}
+                    onClick={() => setNotificationOpen(!notificationOpen)}
                     className="relative p-2 rounded-lg bg-slate-800/50 border border-slate-700/50 hover:bg-slate-700/50 transition-all"
                 >
                     <svg
@@ -331,13 +343,15 @@ const Dashboard = () => {
                 {/* Profile */}
                 <div className="relative z-50">
                   <div className="flex items-center gap-3 bg-slate-800/50 border border-slate-700/50 rounded-xl px-3 py-2 cursor-pointer z-50"
-                    onClick={()=>{}}
+                    onClick={() => setProfileDropdownOpen(!profileDropdownOpen)}
                   >
                     <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-cyan-400 to-purple-500 flex items-center justify-center">
-                      <span className="text-white font-bold text-xs">JW</span>
+                      <span className="text-white font-bold text-xs">
+                        {user?.name?.charAt(0).toUpperCase() || 'U'}
+                      </span>
                     </div>
                     <div className="hidden sm:block">
-                      <div className="text-sm font-medium text-slate-200">John Wayne</div>
+                      <div className="text-sm font-medium text-slate-200">{user?.name || 'User'}</div>
                       <div className="text-xs text-slate-400">Pro Trader</div>
                     </div>
                     <svg className="w-4 h-4 text-slate-400 transition-transform duration-200" style={{transform: profileDropdownOpen?'rotate(180deg)':'rotate(0deg)'}} fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -346,8 +360,8 @@ const Dashboard = () => {
                   </div>
                   {profileDropdownOpen && (
                     <div className="absolute right-0 mt-2 w-44 bg-slate-800/90 backdrop-blur border border-slate-700/50 rounded-xl shadow-lg z-50">
-                      <button  onClick={() => navigate("/profile")} className="w-full flex items-center gap-2 px-4 py-2 text-sm text-slate-200 hover:bg-slate-700/50 transition-colors"><User className="w-4 h-4 text-cyan-400"/> Profile</button>
-                      <button className="w-full flex items-center gap-2 px-4 py-2 text-sm text-slate-200 hover:bg-slate-700/50 transition-colors"><LogOut className="w-4 h-4 text-red-400"/> Logout</button>
+                      <button onClick={() => { navigate("/profile"); setProfileDropdownOpen(false); }} className="w-full flex items-center gap-2 px-4 py-2 text-sm text-slate-200 hover:bg-slate-700/50 transition-colors"><User className="w-4 h-4 text-cyan-400"/> Profile</button>
+                      <button onClick={() => { handleLogout(); setProfileDropdownOpen(false); }} className="w-full flex items-center gap-2 px-4 py-2 text-sm text-slate-200 hover:bg-slate-700/50 transition-colors"><LogOut className="w-4 h-4 text-red-400"/> Logout</button>
                     </div>
                   )}
                 </div>
@@ -498,7 +512,7 @@ const Dashboard = () => {
       
 
       {/* Mobile overlay */}
-      {sidebarOpen && <div className="fixed inset-0 bg-black/50 z-40 lg:hidden " onClick={()=>{}}></div>}
+      {sidebarOpen && <div className="fixed inset-0 bg-black/50 z-40 lg:hidden " onClick={() => setSidebarOpen(false)}></div>}
     </div>
   );
 };

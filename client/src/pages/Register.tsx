@@ -1,14 +1,118 @@
-import React from "react";
-import { useNavigate } from "react-router-dom";
-import Input from "../components/ui/Input/Input";
-import Button from "../components/ui/Button/Button";
+import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
+import Input from '../components/ui/Input/Input';
+import Button from '../components/ui/Button/Button';
 
-export default function ArbiTraderLogin() {
-    const navigate = useNavigate();
+interface FormData {
+  name: string;
+  email: string;
+  password: string;
+  confirmPassword: string;
+}
 
-  const handleSignUp = (e: React.FormEvent<HTMLFormElement>) => {
+interface FormErrors {
+  name?: string;
+  email?: string;
+  password?: string;
+  confirmPassword?: string;
+  general?: string;
+}
+
+export default function Register() {
+  const navigate = useNavigate();
+  const { register, isLoading } = useAuth();
+  
+  const [formData, setFormData] = useState<FormData>({
+    name: '',
+    email: '',
+    password: '',
+    confirmPassword: '',
+  });
+  
+  const [errors, setErrors] = useState<FormErrors>({});
+  const [agreeToTerms, setAgreeToTerms] = useState(false);
+  const [subscribeToUpdates, setSubscribeToUpdates] = useState(false);
+
+  const validateForm = (): boolean => {
+    const newErrors: FormErrors = {};
+
+    // Name validation
+    if (!formData.name.trim()) {
+      newErrors.name = 'Full name is required';
+    } else if (formData.name.trim().length < 3) {
+      newErrors.name = 'Name must be at least 3 characters long';
+    }
+
+    // Email validation
+    if (!formData.email) {
+      newErrors.email = 'Email is required';
+    } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
+      newErrors.email = 'Please enter a valid email address';
+    }
+
+    // Password validation
+    if (!formData.password) {
+      newErrors.password = 'Password is required';
+    } else if (formData.password.length < 8) {
+      newErrors.password = 'Password must be at least 8 characters long';
+    } else if (!/(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?])/.test(formData.password)) {
+      newErrors.password = 'Password must include uppercase, lowercase, number, and special character';
+    }
+
+    // Confirm password validation
+    if (!formData.confirmPassword) {
+      newErrors.confirmPassword = 'Please confirm your password';
+    } else if (formData.password !== formData.confirmPassword) {
+      newErrors.confirmPassword = 'Passwords do not match';
+    }
+
+    // Terms agreement validation
+    if (!agreeToTerms) {
+      newErrors.general = 'You must agree to the Terms of Service and Privacy Policy';
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const handleInputChange = (field: keyof FormData) => (value: string) => {
+    setFormData(prev => ({
+      ...prev,
+      [field]: value
+    }));
+    
+    // Clear error when user starts typing
+    if (errors[field]) {
+      setErrors(prev => ({
+        ...prev,
+        [field]: undefined
+      }));
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    // Static form submission - no actual signup processing
+    
+    if (!validateForm()) {
+      return;
+    }
+
+    try {
+      const user = await register({
+        name: formData.name.trim(),
+        email: formData.email,
+        password: formData.password,
+      });
+      
+      console.log('Registration successful, user:', user, 'navigating to dashboard');
+      // Redirect to dashboard on successful registration
+      navigate('/dashboard');
+    } catch (error: any) {
+      setErrors({
+        general: error.message || 'Registration failed. Please try again.'
+      });
+    }
   };
 
   return (
@@ -77,8 +181,7 @@ export default function ArbiTraderLogin() {
             shadow-lg
             "></div>
 
-
-        {/* Right Panel - Login Form */}
+        {/* Right Panel - Registration Form */}
         <div className="flex flex-col justify-center p-8 lg:p-16">
           <div className="max-w-md mx-auto w-full">
             {/* Welcome Header */}
@@ -87,96 +190,119 @@ export default function ArbiTraderLogin() {
               <p className="text-slate-400 text-lg">Please enter your details.</p>
             </div>
 
-            {/* Signup Form */}
-            <form onSubmit={handleSignUp} className="space-y-6">
-              <Input
-                type="text"
-                label="Full Name"
-                placeholder="Enter your full name"
-                value=""
-                onChange={() => {}}
-                required
-              />
+            {/* Error Message */}
+            {errors.general && (
+              <div className="mb-6 p-4 bg-red-500/10 border border-red-500/20 rounded-lg">
+                <p className="text-red-400 text-sm">{errors.general}</p>
+              </div>
+            )}
 
-              <Input
-                type="email"
-                label="Email Address"
-                placeholder="Enter your email address"
-                value=""
-                onChange={() => {}}
-                required
-              />
+            {/* Registration Form */}
+            <form onSubmit={handleSubmit} className="space-y-6">
+              <div>
+                <Input
+                  type="text"
+                  label="Full Name"
+                  placeholder="Enter your full name"
+                  value={formData.name}
+                  onChange={handleInputChange('name')}
+                  required
+                />
+                {errors.name && (
+                  <p className="mt-1 text-sm text-red-400">{errors.name}</p>
+                )}
+              </div>
 
-              <Input
-                type="password"
-                label="Password"
-                placeholder="Create your strong password"
-                value=""
-                onChange={() => {}}
-                required
-              />
+              <div>
+                <Input
+                  type="email"
+                  label="Email Address"
+                  placeholder="Enter your email address"
+                  value={formData.email}
+                  onChange={handleInputChange('email')}
+                  required
+                />
+                {errors.email && (
+                  <p className="mt-1 text-sm text-red-400">{errors.email}</p>
+                )}
+              </div>
 
-              <Input
-                type="password"
-                label="Confirm Password"
-                placeholder="Confirm your password"
-                value=""
-                onChange={() => {}}
-                required
-              />
+              <div>
+                <Input
+                  type="password"
+                  label="Password"
+                  placeholder="Create your strong password"
+                  value={formData.password}
+                  onChange={handleInputChange('password')}
+                  required
+                />
+                {errors.password && (
+                  <p className="mt-1 text-sm text-red-400">{errors.password}</p>
+                )}
+              </div>
+
+              <div>
+                <Input
+                  type="password"
+                  label="Confirm Password"
+                  placeholder="Confirm your password"
+                  value={formData.confirmPassword}
+                  onChange={handleInputChange('confirmPassword')}
+                  required
+                />
+                {errors.confirmPassword && (
+                  <p className="mt-1 text-sm text-red-400">{errors.confirmPassword}</p>
+                )}
+              </div>
 
               <Button
                 type="submit"
                 variant="primary"
                 size="lg"
-                loading={false}
+                loading={isLoading}
                 className="w-full"
               >
                 Sign Up
               </Button>
 
               {/* Terms of Service and Privacy Policy */}
-              <div className="flex items-center justify-between">
-                <label className="flex items-center gap-2">
-                  <input
-                    type="checkbox"
-                    checked={false}
-                    onChange={() => {}}
-                    className="w-4 h-4 bg-slate-800 border border-slate-600 rounded focus:ring-2 focus:ring-cyan-400/50 text-cyan-500"
-                  />
-                  <span className="text-sm text-slate-300">
-                    I agree to the{" "}
-                    <span className="text-cyan-400">Terms of Service</span> and{" "}
-                    <span className="text-cyan-400">Privacy Policy</span>
-                    </span>
-                </label>
+              <div className="flex items-start gap-2">
+                <input
+                  type="checkbox"
+                  checked={agreeToTerms}
+                  onChange={(e) => setAgreeToTerms(e.target.checked)}
+                  className="w-4 h-4 bg-slate-800 border border-slate-600 rounded focus:ring-2 focus:ring-cyan-400/50 text-cyan-500 mt-1"
+                />
+                <span className="text-sm text-slate-300">
+                  I agree to the{" "}
+                  <span className="text-cyan-400 cursor-pointer hover:underline">Terms of Service</span> and{" "}
+                  <span className="text-cyan-400 cursor-pointer hover:underline">Privacy Policy</span>
+                </span>
               </div>
 
-                {/* Subscribe to trading */}
-              <div className="flex items-center justify-between">
-                <label className="flex items-center gap-2">
-                  <input
-                    type="checkbox"
-                    checked={false}
-                    onChange={() => {}}
-                    className="w-4 h-4 bg-slate-800 border border-slate-600 rounded focus:ring-2 focus:ring-cyan-400/50 text-cyan-500"
-                  />
-                  <span className="text-sm text-slate-300">Subscribe to trading insights and updates</span>
-                </label>
+              {/* Subscribe to trading */}
+              <div className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  checked={subscribeToUpdates}
+                  onChange={(e) => setSubscribeToUpdates(e.target.checked)}
+                  className="w-4 h-4 bg-slate-800 border border-slate-600 rounded focus:ring-2 focus:ring-cyan-400/50 text-cyan-500"
+                />
+                <span className="text-sm text-slate-300">Subscribe to trading insights and updates</span>
               </div>
 
-              {/* Sign Up Link */}
-                <div className="text-center pt-4">
+              {/* Login Link */}
+              <div className="text-center pt-4">
                 <p className="text-slate-400">
-                    Already have an account?{' '}
-                    <a
-                    onClick={() => navigate("/login")}
+                  Already have an account?{' '}
+                  <a
+                    onClick={() => navigate("/logIn")}
                     className="text-cyan-400 hover:text-cyan-300 hover:underline font-medium transition-colors cursor-pointer"
-                    >
+                  >
                     Login
-                    </a>
+                  </a>
                 </p>
-                </div>
+              </div>
             </form>
           </div>
         </div>

@@ -1,14 +1,88 @@
-import React from "react";
-import { useNavigate } from "react-router-dom";
-import Input from "../components/ui/Input/Input";
-import Button from "../components/ui/Button/Button";
+import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
+import Input from '../components/ui/Input/Input';
+import Button from '../components/ui/Button/Button';
 
-export default function ArbiTraderLogin() {
+interface FormData {
+  email: string;
+  password: string;
+}
+
+interface FormErrors {
+  email?: string;
+  password?: string;
+  general?: string;
+}
+
+export default function Login() {
   const navigate = useNavigate();
+  const { login, isLoading } = useAuth();
+  
+  const [formData, setFormData] = useState<FormData>({
+    email: '',
+    password: '',
+  });
+  
+  const [errors, setErrors] = useState<FormErrors>({});
+  const [rememberMe, setRememberMe] = useState(false);
 
-  const handleSignIn = (e: React.FormEvent<HTMLFormElement>) => {
+  const validateForm = (): boolean => {
+    const newErrors: FormErrors = {};
+
+    // Email validation
+    if (!formData.email) {
+      newErrors.email = 'Email is required';
+    } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
+      newErrors.email = 'Please enter a valid email address';
+    }
+
+    // Password validation
+    if (!formData.password) {
+      newErrors.password = 'Password is required';
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const handleInputChange = (field: keyof FormData) => (value: string) => {
+    setFormData(prev => ({
+      ...prev,
+      [field]: value
+    }));
+    
+    // Clear error when user starts typing
+    if (errors[field]) {
+      setErrors(prev => ({
+        ...prev,
+        [field]: undefined
+      }));
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    // Static form submission - no actual login processing
+    
+    if (!validateForm()) {
+      return;
+    }
+
+    try {
+      console.log('Login form submitted with:', formData.email);
+      const user = await login({
+        email: formData.email,
+        password: formData.password,
+      });
+      
+      console.log('Login successful, user:', user, 'navigating to dashboard');
+      // Navigate immediately since we have the user data
+      navigate('/dashboard');
+    } catch (error: any) {
+      setErrors({
+        general: error.message || 'Login failed. Please try again.'
+      });
+    }
   };
 
   return (
@@ -77,7 +151,6 @@ export default function ArbiTraderLogin() {
             shadow-lg
             "></div>
 
-
         {/* Right Panel - Login Form */}
         <div className="flex flex-col justify-center p-8 lg:p-16">
           <div className="max-w-md mx-auto w-full">
@@ -87,31 +160,48 @@ export default function ArbiTraderLogin() {
               <p className="text-slate-400 text-lg">Access your comprehensive professional monitoring dashboard for real-time insights.</p>
             </div>
 
-            {/* Login Form */}
-            <form onSubmit={handleSignIn} className="space-y-6">
-              <Input
-                type="email"
-                label="Email Address"
-                placeholder="Enter your email address"
-                value=""
-                onChange={() => {}}
-                required
-              />
+            {/* Error Message */}
+            {errors.general && (
+              <div className="mb-6 p-4 bg-red-500/10 border border-red-500/20 rounded-lg">
+                <p className="text-red-400 text-sm">{errors.general}</p>
+              </div>
+            )}
 
-              <Input
-                type="password"
-                label="Password"
-                placeholder="Enter your password"
-                value=""
-                onChange={() => {}}
-                required
-              />
+            {/* Login Form */}
+            <form onSubmit={handleSubmit} className="space-y-6">
+              <div>
+                <Input
+                  type="email"
+                  label="Email Address"
+                  placeholder="Enter your email address"
+                  value={formData.email}
+                  onChange={handleInputChange('email')}
+                  required
+                />
+                {errors.email && (
+                  <p className="mt-1 text-sm text-red-400">{errors.email}</p>
+                )}
+              </div>
+
+              <div>
+                <Input
+                  type="password"
+                  label="Password"
+                  placeholder="Enter your password"
+                  value={formData.password}
+                  onChange={handleInputChange('password')}
+                  required
+                />
+                {errors.password && (
+                  <p className="mt-1 text-sm text-red-400">{errors.password}</p>
+                )}
+              </div>
 
               <Button
                 type="submit"
                 variant="primary"
                 size="lg"
-                loading={false}
+                loading={isLoading}
                 className="w-full"
               >
                 Sign In
@@ -122,8 +212,8 @@ export default function ArbiTraderLogin() {
                 <label className="flex items-center gap-2">
                   <input
                     type="checkbox"
-                    checked={false}
-                    onChange={() => {}}
+                    checked={rememberMe}
+                    onChange={(e) => setRememberMe(e.target.checked)}
                     className="w-4 h-4 bg-slate-800 border border-slate-600 rounded focus:ring-2 focus:ring-cyan-400/50 text-cyan-500"
                   />
                   <span className="text-sm text-slate-300">Remember Me</span>
@@ -137,11 +227,11 @@ export default function ArbiTraderLogin() {
               <div className="text-center pt-4">
                 <p className="text-slate-400">
                   New to ArbiTrader Pro?{' '}
-                  <a onClick={() => navigate("/register")} className="text-cyan-400 hover:text-cyan-300 hover:underline font-medium transition-colors cursor-pointer">
+                  <a onClick={() => navigate("/signUp")} className="text-cyan-400 hover:text-cyan-300 hover:underline font-medium transition-colors cursor-pointer">
                     Create an account
                   </a>
                 </p>
-                </div>
+              </div>
             </form>
           </div>
         </div>

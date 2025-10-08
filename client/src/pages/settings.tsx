@@ -1,13 +1,26 @@
 import { TrendingUp, BarChart3, Zap, User, Phone, HelpCircle, Settings, LogOut, Save, Info} from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { createPortal } from "react-dom";
+import { useState } from "react";
+import { useAuth } from "../context/AuthContext";
 
 const SettingsPage = () => {
     const navigate = useNavigate();
-    const activeTab = "Settings"; // Static
-    const sidebarOpen = false; // Static
-    const profileDropdownOpen = false; // Static
-    const notificationOpen = false; // Static
+    const { user, logout } = useAuth();
+    const [activeTab] = useState("Settings");
+    const [sidebarOpen] = useState(false);
+    const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
+    const [notificationOpen] = useState(false);
+    
+    const handleLogout = async () => {
+        try {
+            console.log('Logging out user:', user?.name);
+            await logout();
+            navigate('/');
+        } catch (error) {
+            console.error('Logout failed:', error);
+        }
+    };
     
     // General Settings - static values
     const themeMode = true; // Static - true = dark, false = light
@@ -256,12 +269,14 @@ const SettingsPage = () => {
                 {/* Profile */}
                 <div className="relative z-50">
                 <div className="flex items-center gap-3 bg-slate-800/50 border border-slate-700/50 rounded-xl px-3 py-2 cursor-pointer z-50"
-                    onClick={() => {}}>
+                    onClick={() => setProfileDropdownOpen(!profileDropdownOpen)}>
                     <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-cyan-400 to-purple-500 flex items-center justify-center">
-                    <span className="text-white font-bold text-xs">JW</span>
+                    <span className="text-white font-bold text-xs">
+                        {user?.name?.charAt(0).toUpperCase() || 'U'}
+                    </span>
                     </div>
                     <div className="hidden sm:block">
-                    <div className="text-sm font-medium text-slate-200">John Wayne</div>
+                    <div className="text-sm font-medium text-slate-200">{user?.name || 'User'}</div>
                     <div className="text-xs text-slate-400">Pro Trader</div>
                     </div>
                     <svg className="w-4 h-4 text-slate-400 transition-transform duration-200" style={{transform: profileDropdownOpen?'rotate(180deg)':'rotate(0deg)'}} fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -271,10 +286,10 @@ const SettingsPage = () => {
                 {profileDropdownOpen &&
                 createPortal(
                   <div className="fixed top-[85px] right-[39px] w-44 bg-slate-800/90 backdrop-blur border border-slate-700/50 rounded-xl shadow-lg z-50">
-                    <button onClick={() => navigate("/profile")} className="w-full flex items-center gap-2 px-4 py-2 text-sm text-slate-200 hover:bg-slate-700/50 transition-colors">
+                    <button onClick={() => { navigate("/profile"); setProfileDropdownOpen(false); }} className="w-full flex items-center gap-2 px-4 py-2 text-sm text-slate-200 hover:bg-slate-700/50 transition-colors">
                       <User className="w-4 h-4 text-cyan-400" /> Profile
                     </button>
-                    <button className="w-full flex items-center gap-2 px-4 py-2 text-sm text-slate-200 hover:bg-slate-700/50 transition-colors">
+                    <button onClick={() => { handleLogout(); setProfileDropdownOpen(false); }} className="w-full flex items-center gap-2 px-4 py-2 text-sm text-slate-200 hover:bg-slate-700/50 transition-colors">
                       <LogOut className="w-4 h-4 text-red-400" /> Logout
                     </button>
                   </div>,

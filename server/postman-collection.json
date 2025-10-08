@@ -1,0 +1,151 @@
+{
+  "collection_name": "MERN Stack Authentication API",
+  "description": "Complete authentication testing for MERN Stack application",
+  "requests": [
+    {
+      "name": "Register User",
+      "method": "POST",
+      "url": "http://localhost:5001/api/auth/register",
+      "headers": {
+        "Content-Type": "application/json"
+      },
+      "body": {
+        "name": "Test User",
+        "email": "test@example.com",
+        "password": "TestPass123!"
+      },
+      "description": "Register a new user with valid data"
+    },
+    {
+      "name": "Register User - Invalid Email",
+      "method": "POST",
+      "url": "http://localhost:5001/api/auth/register",
+      "headers": {
+        "Content-Type": "application/json"
+      },
+      "body": {
+        "name": "Test User",
+        "email": "invalid-email",
+        "password": "TestPass123!"
+      },
+      "description": "Test registration with invalid email format"
+    },
+    {
+      "name": "Register User - Weak Password",
+      "method": "POST",
+      "url": "http://localhost:5001/api/auth/register",
+      "headers": {
+        "Content-Type": "application/json"
+      },
+      "body": {
+        "name": "Test User",
+        "email": "test2@example.com",
+        "password": "weak"
+      },
+      "description": "Test registration with weak password"
+    },
+    {
+      "name": "Register User - Missing Fields",
+      "method": "POST",
+      "url": "http://localhost:5001/api/auth/register",
+      "headers": {
+        "Content-Type": "application/json"
+      },
+      "body": {
+        "name": "Test User"
+      },
+      "description": "Test registration with missing required fields"
+    },
+    {
+      "name": "Login User",
+      "method": "POST",
+      "url": "http://localhost:5001/api/auth/login",
+      "headers": {
+        "Content-Type": "application/json"
+      },
+      "body": {
+        "email": "test@example.com",
+        "password": "TestPass123!"
+      },
+      "description": "Login with valid credentials"
+    },
+    {
+      "name": "Login User - Wrong Password",
+      "method": "POST",
+      "url": "http://localhost:5001/api/auth/login",
+      "headers": {
+        "Content-Type": "application/json"
+      },
+      "body": {
+        "email": "test@example.com",
+        "password": "wrongpassword"
+      },
+      "description": "Test login with wrong password"
+    },
+    {
+      "name": "Login User - Non-existent Email",
+      "method": "POST",
+      "url": "http://localhost:5001/api/auth/login",
+      "headers": {
+        "Content-Type": "application/json"
+      },
+      "body": {
+        "email": "nonexistent@example.com",
+        "password": "TestPass123!"
+      },
+      "description": "Test login with non-existent email"
+    },
+    {
+      "name": "Get Current User",
+      "method": "GET",
+      "url": "http://localhost:5001/api/auth/me",
+      "headers": {
+        "Authorization": "Bearer YOUR_ACCESS_TOKEN_HERE"
+      },
+      "description": "Get current user data with valid token"
+    },
+    {
+      "name": "Get Current User - No Token",
+      "method": "GET",
+      "url": "http://localhost:5001/api/auth/me",
+      "description": "Test getting user data without token"
+    },
+    {
+      "name": "Get Current User - Invalid Token",
+      "method": "GET",
+      "url": "http://localhost:5001/api/auth/me",
+      "headers": {
+        "Authorization": "Bearer invalid-token"
+      },
+      "description": "Test getting user data with invalid token"
+    },
+    {
+      "name": "Refresh Token",
+      "method": "POST",
+      "url": "http://localhost:5001/api/auth/refresh",
+      "headers": {
+        "Content-Type": "application/json",
+        "X-CSRF-Token": "YOUR_CSRF_TOKEN_HERE"
+      },
+      "description": "Refresh access token using refresh token cookie"
+    },
+    {
+      "name": "Logout User",
+      "method": "POST",
+      "url": "http://localhost:5001/api/auth/logout",
+      "description": "Logout user and clear tokens"
+    },
+    {
+      "name": "Get System Status",
+      "method": "GET",
+      "url": "http://localhost:5001/api/system/status",
+      "description": "Get overall system status"
+    },
+    {
+      "name": "Get Health Check",
+      "method": "GET",
+      "url": "http://localhost:5001/api/system/health",
+      "description": "Get health check for all services"
+    }
+  ]
+}
