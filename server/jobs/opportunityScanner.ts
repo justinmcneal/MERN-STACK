@@ -13,7 +13,7 @@ interface ScanResult {
 class OpportunityScanner {
   private isRunning: boolean = false;
   private lastScanTime: Date | null = null;
-  private scanInterval: number = 30; // seconds
+  private scanInterval: number = 30; // minutes
 
   constructor() {
     this.startScheduledScans();
@@ -23,14 +23,14 @@ class OpportunityScanner {
    * Start the scheduled opportunity scanning
    */
   public startScheduledScans(): void {
-    // Run every 30 seconds
-    cron.schedule('*/30 * * * * *', async () => {
+    // Run every 30 minutes
+    cron.schedule('*/30 * * * *', async () => {
       if (!this.isRunning) {
         await this.scanAllOpportunities();
       }
     });
 
-    console.log('🔄 Opportunity scanner started - running every 30 seconds');
+    console.log('🔄 Opportunity scanner started - running every 30 minutes');
   }
 
   /**
@@ -313,7 +313,7 @@ class OpportunityScanner {
       isRunning: this.isRunning,
       lastScanTime: this.lastScanTime,
       scanInterval: this.scanInterval,
-      nextScanIn: this.isRunning ? 'Running now' : '30 seconds'
+      nextScanIn: this.isRunning ? 'Running now' : '30 minutes'
     };
   }
 

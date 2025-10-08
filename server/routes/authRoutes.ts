@@ -3,6 +3,7 @@ import { Router } from 'express';
 import rateLimit from 'express-rate-limit';
 import { registerUser, authUser, getMe, refreshToken, logoutUser } from '../controllers/authController';
 import { protect } from '../middleware/authMiddleware';
+import { validate, authSchemas } from '../middleware/validationMiddleware';
 
 const router = Router();
 
@@ -13,14 +14,11 @@ const authRateLimiter = rateLimit({
   message: 'Too many requests, please try again later.',
 });
 
-// Auth routes
-router.post('/register', authRateLimiter, registerUser);
-router.post('/login', authRateLimiter, authUser);
+// Auth routes with validation
+router.post('/register', authRateLimiter, validate(authSchemas.register), registerUser);
+router.post('/login', authRateLimiter, validate(authSchemas.login), authUser);
 router.post('/refresh', authRateLimiter, refreshToken);
 router.get('/me', protect, getMe);
-
-// Logout route to clear refresh token cookie
 router.post('/logout', logoutUser);
-router.post('/refresh', refreshToken); // optional endpoint to get new access token
 
 export default router;
