@@ -18,14 +18,12 @@ const tokenSchema: Schema<IToken> = new mongoose.Schema(
     symbol: { 
       type: String, 
       required: true, 
-      uppercase: true,
-      index: true 
+      uppercase: true
     },
     chain: { 
       type: String, 
       required: true,
-      lowercase: true,
-      index: true 
+      lowercase: true
     },
     currentPrice: { 
       type: Number, 
@@ -34,8 +32,7 @@ const tokenSchema: Schema<IToken> = new mongoose.Schema(
     },
     lastUpdated: { 
       type: Date, 
-      default: Date.now,
-      index: true 
+      default: Date.now
     },
     name: { 
       type: String 
