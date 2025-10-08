@@ -3,18 +3,18 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 
 // Update imports to match your actual directory structure
 import LandingPage from './pages/Landing';
-import Login from './pages/auth/Login';
-import SignUp from './pages/auth/Register';
-import MainDashboard from './pages/auth/main_dashboard';
-import Opportunities from './pages/auth/opportunities';
-import Profile from './pages/auth/profile';
-import ContactSupport from './pages/auth/contact_support';
-import FAQ from './pages/auth/faq';
-import AboutUs from './pages/auth/about_us';
-import AboutUsInside from './pages/auth/about_us_inside';
-import Settings from './pages/auth/settings';
-import AllNotifications from './pages/auth/all_notifications';
-import ChangePass from './pages/auth/change_password';
+import Login from './pages/Login';
+import SignUp from './pages/Register';
+import MainDashboard from './pages/main_dashboard';
+import Opportunities from './pages/opportunities';
+import Profile from './pages/profile';
+import ContactSupport from './pages/contact_support';
+import FAQ from './pages/faq';
+import AboutUs from './pages/about_us';
+import AboutUsInside from './pages/about_us_inside';
+import Settings from './pages/settings';
+import AllNotifications from './pages/all_notifications';
+import ChangePass from './pages/change_password';
 
 
 

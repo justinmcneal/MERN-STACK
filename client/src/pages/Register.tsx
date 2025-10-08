@@ -1,7 +1,7 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
-import Input from "../../components/ui/Input/Input";
-import Button from "../../components/ui/Button/Button";
+import Input from "../components/ui/Input/Input";
+import Button from "../components/ui/Button/Button";
 
 export default function ArbiTraderLogin() {
     const navigate = useNavigate();
