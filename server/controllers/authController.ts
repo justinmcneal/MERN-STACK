@@ -80,6 +80,25 @@ export const refreshToken = asyncHandler(async (req: Request, res: Response) => 
   }
 });
 
+// GET /api/auth/csrf - Get fresh CSRF token
+export const getCSRFToken = asyncHandler(async (req: Request, res: Response) => {
+  try {
+    const csrfToken = AuthService.generateCSRFToken();
+    
+    // Set CSRF token cookie
+    res.cookie('csrfToken', csrfToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'strict',
+      maxAge: 24 * 60 * 60 * 1000, // 24 hours
+    });
+    
+    res.json({ csrfToken });
+  } catch (error: any) {
+    throw error; // Let the error middleware handle it
+  }
+});
+
 // POST /api/auth/logout
 export const logoutUser = asyncHandler(async (req: Request, res: Response) => {
   const token = req.cookies.refreshToken;

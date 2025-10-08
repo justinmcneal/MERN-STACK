@@ -33,6 +33,7 @@ const Input: React.FC<InputProps> = ({
   const isPassword = type === 'password';
   const inputType = isPassword && showPassword ? 'text' : type;
   
+  
   const baseClasses = 'w-full px-4 py-3 bg-slate-800/50 border rounded-xl text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-cyan-400/50 focus:border-cyan-400/50 transition-all duration-300';
   const errorClasses = error ? 'border-red-500 focus:ring-red-400/50 focus:border-red-400' : 'border-slate-700/50';
   const disabledClasses = disabled ? 'opacity-50 cursor-not-allowed' : '';
@@ -68,7 +69,7 @@ const Input: React.FC<InputProps> = ({
           <button
             type="button"
             onClick={togglePasswordVisibility}
-            className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-300 transition-colors focus:outline-none focus:text-cyan-400"
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-black hover:text-gray-700 transition-colors focus:outline-none focus:text-gray-800"
             aria-label={showPassword ? 'Hide password' : 'Show password'}
             tabIndex={-1}
           >

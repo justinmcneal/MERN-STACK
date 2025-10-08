@@ -1,7 +1,7 @@
 // routes/authRoutes.ts
 import { Router } from 'express';
 import rateLimit from 'express-rate-limit';
-import { registerUser, authUser, getMe, refreshToken, logoutUser } from '../controllers/authController';
+import { registerUser, authUser, getMe, refreshToken, logoutUser, getCSRFToken } from '../controllers/authController';
 import { protect } from '../middleware/authMiddleware';
 import { validate, authSchemas } from '../middleware/validationMiddleware';
 
@@ -18,6 +18,7 @@ const authRateLimiter = rateLimit({
 router.post('/register', authRateLimiter, validate(authSchemas.register), registerUser);
 router.post('/login', authRateLimiter, validate(authSchemas.login), authUser);
 router.post('/refresh', authRateLimiter, refreshToken);
+router.get('/csrf', getCSRFToken);
 router.get('/me', protect, getMe);
 router.post('/logout', logoutUser);
 

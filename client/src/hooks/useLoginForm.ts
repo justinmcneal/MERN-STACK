@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import ErrorHandler from '../utils/errorHandler';
 
 export interface FormData {
   email: string;
@@ -24,20 +25,23 @@ export const useLoginForm = () => {
   
   const [errors, setErrors] = useState<FormErrors>({});
   const [rememberMe, setRememberMe] = useState(false);
+  const [attemptCount, setAttemptCount] = useState(0);
+  const [lastAttemptTime, setLastAttemptTime] = useState<number>(0);
+  const [isRateLimited, setIsRateLimited] = useState(false);
 
   const validateForm = (): boolean => {
     const newErrors: FormErrors = {};
 
-    // Email validation
-    if (!formData.email) {
-      newErrors.email = 'Email is required';
-    } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
-      newErrors.email = 'Please enter a valid email address';
+    // Validate email
+    const emailError = ErrorHandler.handleValidationError('email', formData.email);
+    if (emailError) {
+      newErrors.email = emailError;
     }
 
-    // Password validation
-    if (!formData.password) {
-      newErrors.password = 'Password is required';
+    // Validate password
+    const passwordError = ErrorHandler.handleValidationError('password', formData.password);
+    if (passwordError) {
+      newErrors.password = passwordError;
     }
 
     setErrors(newErrors);
@@ -45,9 +49,22 @@ export const useLoginForm = () => {
   };
 
   const handleInputChange = (field: keyof FormData) => (value: string) => {
+    // Sanitize input to prevent common errors
+    let sanitizedValue = value;
+    
+    if (field === 'email') {
+      // Remove extra spaces and convert to lowercase
+      sanitizedValue = value.trim().toLowerCase();
+      // Prevent multiple consecutive dots
+      sanitizedValue = sanitizedValue.replace(/\.{2,}/g, '.');
+    } else if (field === 'password') {
+      // Remove leading/trailing spaces
+      sanitizedValue = value.trim();
+    }
+    
     setFormData(prev => ({
       ...prev,
-      [field]: value
+      [field]: sanitizedValue
     }));
     
     // Clear error when user starts typing
@@ -57,37 +74,92 @@ export const useLoginForm = () => {
         [field]: undefined
       }));
     }
+    
+    // Real-time validation for better UX
+    if (sanitizedValue.length > 0) {
+      validateField(field, sanitizedValue);
+    }
+  };
+
+  const validateField = (field: keyof FormData, value: string) => {
+    const errorMessage = ErrorHandler.handleValidationError(field, value);
+    const newErrors: FormErrors = { ...errors };
+    
+    if (errorMessage) {
+      newErrors[field] = errorMessage;
+    } else {
+      delete newErrors[field];
+    }
+    
+    setErrors(newErrors);
   };
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    
+    // Rate limiting check
+    const now = Date.now();
+    const timeSinceLastAttempt = now - lastAttemptTime;
+    
+    if (attemptCount >= 5 && timeSinceLastAttempt < 300000) { // 5 minutes
+      setIsRateLimited(true);
+      setErrors({ general: 'Too many failed attempts. Please wait 5 minutes before trying again.' });
+      return;
+    }
+    
+    // Reset rate limiting if enough time has passed
+    if (timeSinceLastAttempt >= 300000) {
+      setAttemptCount(0);
+      setIsRateLimited(false);
+    }
     
     if (!validateForm()) {
       return;
     }
 
     try {
-      console.log('Login form submitted with:', formData.email);
-      const user = await login({
+      await login({
         email: formData.email,
         password: formData.password,
       });
       
-      console.log('Login successful, user:', user, 'navigating to dashboard');
-      // Navigate immediately since we have the user data
+      // Reset attempt count on successful login
+      setAttemptCount(0);
       navigate('/dashboard');
     } catch (error: any) {
-      // Enhanced error handling
-      if (error.message.includes('Invalid credentials') || error.message.includes('Invalid email or password')) {
-        setErrors({ general: 'Invalid email or password. Please check your credentials and try again.' });
-      } else if (error.message.includes('Account locked') || error.message.includes('too many attempts')) {
-        setErrors({ general: 'Account temporarily locked due to too many failed attempts. Please try again later.' });
-      } else if (error.message.includes('User not found')) {
-        setErrors({ general: 'No account found with this email address. Please check your email or sign up.' });
-      } else if (error.message.includes('Network') || error.message.includes('timeout')) {
-        setErrors({ general: 'Network error. Please check your connection and try again.' });
+      // Log error for debugging
+      ErrorHandler.logError(error, 'Login form submission');
+      
+      // Increment attempt count on failure
+      setAttemptCount(prev => prev + 1);
+      setLastAttemptTime(Date.now());
+      
+      // Get user-friendly error message
+      const errorMessage = ErrorHandler.createUserMessage(error, 'Login');
+      
+      // Ensure errorMessage is always a string
+      const safeErrorMessage = typeof errorMessage === 'string' ? errorMessage : 'An unexpected error occurred. Please try again.';
+      
+      // Enhanced error handling with specific guidance
+      if (safeErrorMessage.includes('Please refresh the page')) {
+        setErrors({ 
+          general: safeErrorMessage
+        });
+      } else if (safeErrorMessage.includes('Invalid email or password')) {
+        setErrors({ 
+          general: `${safeErrorMessage} ${attemptCount >= 3 ? `(${5 - attemptCount} attempts remaining)` : ''}` 
+        });
+      } else if (safeErrorMessage.includes('Account temporarily locked') || safeErrorMessage.includes('too many attempts')) {
+        setErrors({ general: safeErrorMessage });
+        setIsRateLimited(true);
+      } else if (safeErrorMessage.includes('No account found')) {
+        setErrors({ general: safeErrorMessage });
+      } else if (safeErrorMessage.includes('Network error') || safeErrorMessage.includes('timeout')) {
+        setErrors({ general: safeErrorMessage });
+      } else if (safeErrorMessage.includes('Server error')) {
+        setErrors({ general: safeErrorMessage });
       } else {
-        setErrors({ general: error.message || 'Login failed. Please try again.' });
+        setErrors({ general: safeErrorMessage });
       }
     }
   };
@@ -101,6 +173,8 @@ export const useLoginForm = () => {
     errors,
     rememberMe,
     isLoading,
+    isRateLimited,
+    attemptCount,
     setRememberMe,
     handleInputChange,
     handleSubmit,

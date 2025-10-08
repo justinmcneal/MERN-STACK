@@ -2,6 +2,7 @@ import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 import ProtectedRoute from './components/ProtectedRoute';
+import ErrorBoundary from './components/ErrorBoundary';
 
 // Update imports to match your actual directory structure
 import LandingPage from './pages/Landing';
@@ -23,8 +24,9 @@ import ChangePass from './pages/change_password';
 
 const App: React.FC = () => {
   return (
-    <AuthProvider>
-      <Router>
+    <ErrorBoundary>
+      <AuthProvider>
+        <Router>
         <Routes>
           {/* Public Routes */}
           <Route path="/" element={<LandingPage />} />
@@ -90,6 +92,7 @@ const App: React.FC = () => {
         </Routes>
       </Router>
     </AuthProvider>
+    </ErrorBoundary>
   );
 };
 

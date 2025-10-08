@@ -91,15 +91,11 @@ class AuthService {
    */
   static async logout(): Promise<void> {
     try {
-      console.log('Calling server logout endpoint');
       await apiClient.post('/auth/logout');
-      console.log('Server logout successful');
     } catch (error: any) {
       // Even if logout fails on server, clear local data
-      console.error('Logout error:', error);
     } finally {
       // Always clear local storage
-      console.log('Clearing local authentication data');
       localStorage.removeItem('accessToken');
     }
   }
@@ -139,15 +135,58 @@ class AuthService {
    * Handle API errors
    */
   private static handleError(error: any): Error {
-    if (error.response?.data?.error) {
-      return new Error(error.response.data.error);
+    
+    // Handle Axios errors
+    if (error.response) {
+      const { status, data } = error.response;
+      
+      // Server responded with error status - handle different error formats
+      
+      // Format 1: { error: { message: "..." } } - from error middleware
+      if (data?.error?.message) {
+        return new Error(data.error.message);
+      }
+      
+      // Format 2: { error: "Validation Error", message: "..." } - from validation middleware
+      if (data?.message && typeof data.message === 'string') {
+        return new Error(data.message);
+      }
+      
+      // Format 3: { error: "string" } - direct error string
+      if (data?.error && typeof data.error === 'string') {
+        return new Error(data.error);
+      }
+      
+      // Handle specific HTTP status codes
+      switch (status) {
+        case 400:
+          return new Error('Invalid request. Please check your input.');
+        case 401:
+          return new Error('Invalid email or password');
+        case 403:
+          return new Error('Access denied. Please contact support.');
+        case 404:
+          return new Error('User not found');
+        case 429:
+          return new Error('Too many attempts. Please try again later.');
+        case 500:
+          return new Error('Server error. Please try again later.');
+        default:
+          return new Error(`Server error (${status}). Please try again.`);
+      }
     }
     
+    // Handle network errors
+    if (error.request) {
+      return new Error('Network error. Please check your internet connection.');
+    }
+    
+    // Handle other errors
     if (error.message) {
       return new Error(error.message);
     }
     
-    return new Error('An unexpected error occurred');
+    return new Error('An unexpected error occurred. Please try again.');
   }
 }
 

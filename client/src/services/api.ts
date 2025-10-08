@@ -60,8 +60,10 @@ class ApiClient {
       async (error: AxiosError) => {
         const originalRequest = error.config as CustomAxiosRequestConfig;
 
-        // Handle token expiration
-        if (error.response?.status === 401 && !originalRequest?._retry) {
+        // Handle token expiration - but not for auth endpoints
+        const isAuthEndpoint = originalRequest?.url?.includes('/auth/login') || originalRequest?.url?.includes('/auth/register');
+        
+        if (error.response?.status === 401 && !originalRequest?._retry && !isAuthEndpoint) {
           originalRequest._retry = true;
 
           if (!this.isRefreshing) {
@@ -104,13 +106,18 @@ class ApiClient {
 
   private async refreshAccessToken(): Promise<{ accessToken: string }> {
     try {
+      const csrfToken = this.getCookie('csrfToken');
+      if (!csrfToken) {
+        throw new Error('CSRF token not found');
+      }
+
       const response = await axios.post(
         `${import.meta.env.VITE_API_URL || 'http://localhost:5001/api'}/auth/refresh`,
         {},
         {
           withCredentials: true,
           headers: {
-            'X-CSRF-Token': this.getCookie('csrfToken'),
+            'X-CSRF-Token': csrfToken,
           },
         }
       );
@@ -118,10 +125,8 @@ class ApiClient {
       localStorage.setItem('accessToken', accessToken);
       return { accessToken };
     } catch (error) {
-      console.error('Failed to refresh access token:', error);
       localStorage.removeItem('accessToken');
-      // Optionally redirect to login page
-      window.location.href = '/logIn';
+      // Don't redirect automatically - let the app handle it gracefully
       throw error;
     }
   }

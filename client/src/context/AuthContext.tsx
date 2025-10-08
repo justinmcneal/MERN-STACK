@@ -45,13 +45,17 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const login = async (credentials: LoginCredentials): Promise<User> => {
     try {
       setIsLoading(true);
-      console.log('Attempting login with:', credentials.email);
+      
+      // Validate credentials before sending
+      if (!credentials.email || !credentials.password) {
+        throw new Error('Email and password are required');
+      }
+      
       const response = await AuthService.login(credentials);
-      console.log('Login successful:', response);
       setUser(response.user);
       return response.user;
     } catch (error) {
-      console.error('Login failed:', error);
+      // Re-throw the error to be handled by the form
       throw error;
     } finally {
       setIsLoading(false);
@@ -61,13 +65,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const register = async (data: RegisterData): Promise<User> => {
     try {
       setIsLoading(true);
-      console.log('Attempting registration with:', data.email);
       const response = await AuthService.register(data);
-      console.log('Registration successful:', response);
       setUser(response.user);
       return response.user;
     } catch (error) {
-      console.error('Registration failed:', error);
       throw error;
     } finally {
       setIsLoading(false);
@@ -77,12 +78,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const logout = async (): Promise<void> => {
     try {
       setIsLoading(true);
-      console.log('AuthContext: Starting logout process');
       await AuthService.logout();
-      console.log('AuthContext: Logout successful, clearing user state');
       setUser(null);
     } catch (error) {
-      console.error('AuthContext: Logout error:', error);
       // Even if logout fails, clear user state
       setUser(null);
     } finally {
@@ -97,7 +95,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         setUser(userData);
       }
     } catch (error) {
-      console.error('Failed to refresh user:', error);
       setUser(null);
       AuthService.clearAuthData();
     }
