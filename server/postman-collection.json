@@ -1,6 +1,6 @@
 {
-  "collection_name": "MERN Stack Authentication API",
-  "description": "Complete authentication testing for MERN Stack application",
+  "collection_name": "MERN Stack API - Complete Collection",
+  "description": "Complete API testing for MERN Stack application including authentication, profile, and preferences",
   "requests": [
     {
       "name": "Register User",
@@ -146,6 +146,190 @@
       "method": "GET",
       "url": "http://localhost:5001/api/system/health",
       "description": "Get health check for all services"
+    },
+    {
+      "name": "Get User Profile",
+      "method": "GET",
+      "url": "http://localhost:5001/api/profile",
+      "headers": {
+        "Authorization": "Bearer YOUR_ACCESS_TOKEN_HERE"
+      },
+      "description": "Get user profile with preferences"
+    },
+    {
+      "name": "Update User Profile",
+      "method": "PUT",
+      "url": "http://localhost:5001/api/profile",
+      "headers": {
+        "Authorization": "Bearer YOUR_ACCESS_TOKEN_HERE",
+        "Content-Type": "application/json"
+      },
+      "body": {
+        "name": "Updated User Name"
+      },
+      "description": "Update user profile information"
+    },
+    {
+      "name": "Change Password",
+      "method": "PUT",
+      "url": "http://localhost:5001/api/profile/password",
+      "headers": {
+        "Authorization": "Bearer YOUR_ACCESS_TOKEN_HERE",
+        "Content-Type": "application/json"
+      },
+      "body": {
+        "currentPassword": "TestPass123!",
+        "newPassword": "NewPassword123!"
+      },
+      "description": "Change user password"
+    },
+    {
+      "name": "Get User Stats",
+      "method": "GET",
+      "url": "http://localhost:5001/api/profile/stats",
+      "headers": {
+        "Authorization": "Bearer YOUR_ACCESS_TOKEN_HERE"
+      },
+      "description": "Get user statistics"
+    },
+    {
+      "name": "Delete Account",
+      "method": "DELETE",
+      "url": "http://localhost:5001/api/profile",
+      "headers": {
+        "Authorization": "Bearer YOUR_ACCESS_TOKEN_HERE",
+        "Content-Type": "application/json"
+      },
+      "body": {
+        "password": "TestPass123!"
+      },
+      "description": "Delete user account"
+    },
+    {
+      "name": "Get User Preferences",
+      "method": "GET",
+      "url": "http://localhost:5001/api/preferences",
+      "headers": {
+        "Authorization": "Bearer YOUR_ACCESS_TOKEN_HERE"
+      },
+      "description": "Get user preferences"
+    },
+    {
+      "name": "Update User Preferences",
+      "method": "PUT",
+      "url": "http://localhost:5001/api/preferences",
+      "headers": {
+        "Authorization": "Bearer YOUR_ACCESS_TOKEN_HERE",
+        "Content-Type": "application/json"
+      },
+      "body": {
+        "tokensTracked": ["ETH", "BTC", "MATIC"],
+        "alertThresholds": {
+          "minProfit": 15,
+          "maxGasCost": 75,
+          "minROI": 8,
+          "minScore": 0.8
+        },
+        "notificationSettings": {
+          "email": true,
+          "dashboard": true,
+          "telegram": false,
+          "discord": false
+        },
+        "refreshInterval": 45,
+        "theme": "dark"
+      },
+      "description": "Update user preferences"
+    },
+    {
+      "name": "Update Tracked Tokens",
+      "method": "PUT",
+      "url": "http://localhost:5001/api/preferences/tokens",
+      "headers": {
+        "Authorization": "Bearer YOUR_ACCESS_TOKEN_HERE",
+        "Content-Type": "application/json"
+      },
+      "body": {
+        "tokens": ["ETH", "BTC", "USDT", "BNB"]
+      },
+      "description": "Update tracked tokens"
+    },
+    {
+      "name": "Update Alert Thresholds",
+      "method": "PUT",
+      "url": "http://localhost:5001/api/preferences/alerts",
+      "headers": {
+        "Authorization": "Bearer YOUR_ACCESS_TOKEN_HERE",
+        "Content-Type": "application/json"
+      },
+      "body": {
+        "alertThresholds": {
+          "minProfit": 20,
+          "maxGasCost": 100,
+          "minROI": 10,
+          "minScore": 0.9
+        }
+      },
+      "description": "Update alert thresholds"
+    },
+    {
+      "name": "Update Notification Settings",
+      "method": "PUT",
+      "url": "http://localhost:5001/api/preferences/notifications",
+      "headers": {
+        "Authorization": "Bearer YOUR_ACCESS_TOKEN_HERE",
+        "Content-Type": "application/json"
+      },
+      "body": {
+        "notificationSettings": {
+          "email": false,
+          "dashboard": true,
+          "telegram": true,
+          "discord": false
+        }
+      },
+      "description": "Update notification settings"
+    },
+    {
+      "name": "Update Appearance Settings",
+      "method": "PUT",
+      "url": "http://localhost:5001/api/preferences/appearance",
+      "headers": {
+        "Authorization": "Bearer YOUR_ACCESS_TOKEN_HERE",
+        "Content-Type": "application/json"
+      },
+      "body": {
+        "theme": "light",
+        "refreshInterval": 60
+      },
+      "description": "Update appearance settings"
+    },
+    {
+      "name": "Reset Preferences",
+      "method": "POST",
+      "url": "http://localhost:5001/api/preferences/reset",
+      "headers": {
+        "Authorization": "Bearer YOUR_ACCESS_TOKEN_HERE"
+      },
+      "description": "Reset preferences to defaults"
+    },
+    {
+      "name": "Get Supported Tokens",
+      "method": "GET",
+      "url": "http://localhost:5001/api/preferences/supported-tokens",
+      "headers": {
+        "Authorization": "Bearer YOUR_ACCESS_TOKEN_HERE"
+      },
+      "description": "Get list of supported tokens"
+    },
+    {
+      "name": "Get Available Themes",
+      "method": "GET",
+      "url": "http://localhost:5001/api/preferences/available-themes",
+      "headers": {
+        "Authorization": "Bearer YOUR_ACCESS_TOKEN_HERE"
+      },
+      "description": "Get available themes"
     }
   ]
 }
