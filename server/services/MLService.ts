@@ -50,7 +50,6 @@ export class MLService {
     return MLService.instance;
   }
 
-  // Get ML prediction for an opportunity
   async getPrediction(request: MLPredictionRequest): Promise<MLPredictionResponse> {
     try {
       const response = await axios.post<MLPredictionResponse>(
@@ -71,14 +70,13 @@ export class MLService {
     }
   }
 
-  // Get arbitrage opportunity analysis
   async getArbitrageOpportunity(request: ArbitrageRequest): Promise<ArbitrageResponse> {
     try {
       const response = await axios.post<ArbitrageResponse>(
         `${this.mlServiceUrl}/arbitrage_opportunity`,
         request,
         {
-          timeout: 15000, // Longer timeout for complex analysis
+          timeout: 15000, 
           headers: {
             'Content-Type': 'application/json'
           }
@@ -92,7 +90,6 @@ export class MLService {
     }
   }
 
-  // Check if ML service is healthy
   async isHealthy(): Promise<boolean> {
     try {
       await axios.get(`${this.mlServiceUrl}/health`, { timeout: 5000 });
@@ -103,7 +100,6 @@ export class MLService {
     }
   }
 
-  // Get ML service status
   async getStatus(): Promise<{ healthy: boolean; url: string }> {
     const healthy = await this.isHealthy();
     return {

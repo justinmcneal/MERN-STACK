@@ -9,6 +9,8 @@ import tokenRoutes from './routes/tokenRoutes';
 import opportunityRoutes from './routes/opportunityRoutes';
 import preferenceRoutes from './routes/preferenceRoutes';
 import alertRoutes from './routes/alertRoutes';
+import systemRoutes from './routes/systemRoutes';
+import websocketRoutes from './routes/websocketRoutes';
 import { notFound, errorHandler } from './middleware/errorMiddleware';
 import googleAuthRoutes from './routes/googleAuthRoutes';
 
@@ -46,6 +48,8 @@ app.use('/api/tokens', tokenRoutes);
 app.use('/api/opportunities', opportunityRoutes);
 app.use('/api/preferences', preferenceRoutes);
 app.use('/api/alerts', alertRoutes);
+app.use('/api/system', systemRoutes);
+app.use('/api/websocket', websocketRoutes);
 // Error handlers (must be last)
 app.use(notFound);
 app.use(errorHandler);

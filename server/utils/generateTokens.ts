@@ -2,8 +2,6 @@
 import jwt from 'jsonwebtoken';
 import ms from 'ms';
 
-// Type guard: ensures string is valid for ms()
-
 const parseExpire = (value: string): number => {
   const duration = ms(value as ms.StringValue);
   if (duration === undefined) throw new Error(`Invalid expire format: ${value}`);

@@ -1,10 +1,41 @@
-import { useState, useEffect } from "react";
+import React, { useState, useEffect,  } from "react";
 import { useNavigate } from "react-router-dom";
-import StatCard from "../components/features/trading/StatCard";
-import FeatureCard from "../components/features/trading/FeatureCard";
-import Button from "../components/ui/Button/Button";
+import type { ReactNode } from "react";
 
 // Enhanced ArbiTrader Pro with professional design and animations
+interface FeatureCardProps {
+    title: string;
+    children: ReactNode;
+    icon: ReactNode;
+  }
+  const FeatureCard: React.FC<FeatureCardProps> = ({ title, children, icon }) => (
+    <div className="group bg-gradient-to-br from-slate-900/80 via-slate-800/50 to-slate-900/80 backdrop-blur-sm border border-slate-700/50 hover:border-cyan-400/30 rounded-xl sm:rounded-2xl p-6 sm:p-8 shadow-2xl hover:shadow-cyan-500/10 transition-all duration-500 hover:-translate-y-2">
+      <div className="flex flex-col sm:flex-row items-start gap-4 sm:gap-6">
+        <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-xl sm:rounded-2xl bg-gradient-to-br from-cyan-400/20 to-purple-500/20 flex items-center justify-center border border-cyan-400/20 group-hover:border-cyan-400/40 transition-all duration-300 flex-shrink-0">
+          {icon}
+        </div>
+        <div className="flex-1">
+          <h4 className="text-base sm:text-lg font-bold text-cyan-200 mb-2 sm:mb-3 group-hover:text-cyan-100 transition-colors">{title}</h4>
+          <p className="text-sm sm:text-base text-slate-300 leading-relaxed">{children}</p>
+        </div>
+      </div>
+    </div>
+  );
+  
+  // Define props for StatCard
+  interface StatCardProps {
+    value: string | number;
+    label: string;
+    trend: string;
+  }
+  
+  const StatCard: React.FC<StatCardProps> = ({ value, label, trend }) => (
+    <div className="bg-gradient-to-br from-slate-800/60 to-slate-900/60 backdrop-blur border border-slate-700/50 rounded-lg sm:rounded-xl p-4 sm:p-6 text-center">
+      <div className="text-xl sm:text-2xl lg:text-3xl font-bold text-cyan-400 mb-1">{value}</div>
+      <div className="text-slate-400 text-xs sm:text-sm mb-2">{label}</div>
+      <div className="text-emerald-400 text-xs font-medium">{trend}</div>
+    </div>
+  );
 const TradingChart = () => {
   const [activePoint, setActivePoint] = useState(0);
   
@@ -86,6 +117,7 @@ const TradingChart = () => {
 export default function ArbiTraderPro() {
   const [scrollY, setScrollY] = useState(0);
   const navigate = useNavigate();
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   useEffect(() => {
     const handleScroll = () => setScrollY(window.scrollY);
@@ -106,56 +138,86 @@ export default function ArbiTraderPro() {
       ></div>
 
       {/* Header */}
-      <header className="relative z-50 w-full px-4 sm:px-6 lg:px-8 py-4 sm:py-6 backdrop-blur-lg bg-slate-950/80 border-b border-slate-800/50">
-        <div className="max-w-7xl mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-4 sm:gap-8">
-            <div className="flex items-center gap-2 sm:gap-3 pr-3 sm:pr-6 border-r border-slate-700">
-              <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-gradient-to-br from-cyan-400 to-purple-500 flex items-center justify-center">
-                <svg className="w-4 h-4 sm:w-6 sm:h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
-                </svg>
-              </div>
-              <div className="text-lg sm:text-2xl font-bold">
-                <span className="text-cyan-400">Arbi</span>
-                <span className="text-white">Trader</span>
-                <span className="text-purple-400 ml-1">Pro</span>
-              </div>
-            </div>
-            
-            <nav className="hidden lg:flex gap-14 text-slate-300">
-              <a className="hover:text-cyan-400 transition-colors font-medium" href="#features">Features</a>
-              <a className="hover:text-cyan-400 transition-colors font-medium" href="#dashboard">Dashboard</a>
-              <a className="hover:text-cyan-400 transition-colors font-medium" href="#pricing">Pricing</a>
-              <a className="hover:text-cyan-400 transition-colors font-medium" href="#about">About</a>
-            </nav>
-          </div>
-          
-          <div className="flex items-center gap-2 sm:gap-4">
-            {/* Mobile menu button */}
-            <button className="lg:hidden p-2 text-slate-300 hover:text-white transition-colors">
-              <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+      <header className="relative z-50 w-full px-6 lg:px-8 py-6 backdrop-blur-lg bg-slate-950/80 border-b border-slate-800/50">
+      <div className="max-w-7xl mx-auto flex items-center justify-between">
+        {/* Logo */}
+        <div className="flex items-center gap-8">
+          <div className="flex items-center gap-3 pr-6 border-r border-slate-700">
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-cyan-400 to-purple-500 flex items-center justify-center">
+              <svg className="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
               </svg>
-            </button>
-            
-            <Button 
-              variant="secondary" 
-              size="md" 
-              onClick={() => navigate("/login")}
-              className="hidden sm:inline-flex"
+            </div>
+            <div className="text-2xl font-bold">
+              <span className="text-cyan-400">Arbi</span>
+              <span className="text-white">Trage</span>
+              <span className="text-purple-400 ml-1">Pro</span>
+            </div>
+          </div>
+
+          {/* Desktop Nav */}
+          <nav className="hidden lg:flex gap-14 text-slate-300">
+            <a className="hover:text-cyan-400 transition-colors font-medium" href="#features">Features</a>
+            <a className="hover:text-cyan-400 transition-colors font-medium" href="#dashboard">Dashboard</a>
+            <a className="hover:text-cyan-400 transition-colors font-medium" href="#pricing">Pricing</a>
+            <a className="hover:text-cyan-400 transition-colors font-medium" href="about-us">About</a>
+          </nav>
+        </div>
+
+        {/* Right side (Buttons + Mobile toggle) */}
+        <div className="flex items-center gap-4">
+          {/* Login/Signup */}
+          <div className="hidden sm:flex gap-4">
+            <button 
+              onClick={() => navigate("/logIn")} 
+              className="px-5 py-2 border border-slate-600 hover:border-cyan-400 rounded-lg 
+                        text-slate-300 hover:text-white transition-all duration-300 font-medium 
+                        text-sm sm:text-base"
             >
               Login
-            </Button>
-            <Button 
-              variant="primary" 
-              size="md" 
-              onClick={() => navigate("/register")}
+            </button>
+            <button 
+              onClick={() => navigate("/signUp")} 
+              className="px-6 py-2.5 rounded-lg bg-gradient-to-r from-cyan-500 to-purple-600 
+                        hover:from-cyan-400 hover:to-purple-500 shadow-lg hover:shadow-cyan-500/25 
+                        transition-all duration-300 font-semibold"
             >
               Sign Up
-            </Button>
+            </button>
           </div>
+
+          {/* Mobile Hamburger */}
+          <button 
+            className="lg:hidden text-slate-300 hover:text-cyan-400"
+            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+          >
+            ☰
+          </button>
         </div>
-      </header>
+      </div>
+
+      {/* Mobile Menu */}
+      {mobileMenuOpen && (
+        <div className="lg:hidden mt-4 px-4 py-3 bg-slate-900/95 backdrop-blur-xl rounded-xl shadow-xl flex flex-col gap-4 text-slate-200">
+          <a href="#features" className="hover:text-cyan-400">Features</a>
+          <a href="#dashboard" className="hover:text-cyan-400">Dashboard</a>
+          <a href="#pricing" className="hover:text-cyan-400">Pricing</a>
+          <a href="about-us" className="hover:text-cyan-400">About</a>
+          <button 
+            onClick={() => navigate("/logIn")} 
+            className="w-full px-4 py-2 border border-slate-600 hover:border-cyan-400 rounded-lg "
+          >
+            Login
+          </button>
+          <button 
+            onClick={() => navigate("/signUp")} 
+            className="w-full px-4 py-2 rounded-lg bg-gradient-to-r from-cyan-500 to-purple-600 hover:from-cyan-400 hover:to-purple-500"
+          >
+            Sign Up
+          </button>
+        </div>
+      )}
+    </header>
 
       {/* Hero Section */}
       <section className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-12 sm:pt-16 lg:pt-20 pb-16 sm:pb-24 lg:pb-32">
@@ -183,27 +245,20 @@ export default function ArbiTraderPro() {
               </p>
               
               <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
-                <Button 
-                  variant="primary" 
-                  size="lg" 
-                  className="transform hover:scale-105"
-                >
+                <button className="inline-flex items-center justify-center gap-2 sm:gap-3 px-6 sm:px-8 py-3 sm:py-4 rounded-xl bg-gradient-to-r from-cyan-500 to-purple-600 hover:from-cyan-400 hover:to-purple-500 font-bold text-sm sm:text-base lg:text-lg shadow-2xl hover:shadow-cyan-500/30 transition-all duration-300 transform hover:scale-105">
                   <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
                   </svg>
                   <span className="hidden sm:inline">START MONITORING NOW</span>
                   <span className="sm:hidden">START NOW</span>
-                </Button>
-                <Button 
-                  variant="secondary" 
-                  size="lg"
-                >
+                </button>
+                <button className="inline-flex items-center justify-center gap-2 px-6 sm:px-8 py-3 sm:py-4 rounded-xl border border-slate-600 hover:border-cyan-400 text-slate-300 hover:text-white font-semibold transition-all duration-300 text-sm sm:text-base lg:text-lg">
                   <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.828 14.828a4 4 0 01-5.656 0M9 10h1.586a1 1 0 01.707.293l2.414 2.414a1 1 0 00.707.293H15M9 10V9a2 2 0 012-2h2a2 2 0 012 2v1.586a1 1 0 01-.293.707L12 14" />
                   </svg>
                   <span className="hidden sm:inline">Watch Demo</span>
                   <span className="sm:hidden">Demo</span>
-                </Button>
+                </button>
               </div>
             </div>
           </div>
@@ -218,10 +273,10 @@ export default function ArbiTraderPro() {
 
         {/* Stats */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mt-12 sm:mt-16 lg:mt-20">
-          <StatCard value="$2.4M+" label="Total Volume Tracked" trend="+127% this month" trendDirection="up" />
-          <StatCard value="156" label="Active Opportunities" trend="Real-time updates" trendDirection="neutral" />
-          <StatCard value="18.4%" label="Avg ROI Potential" trend="+2.1% vs last week" trendDirection="up" />
-          <StatCard value="12" label="Supported Chains" trend="Expanding weekly" trendDirection="up" />
+          <StatCard value="$2.4M+" label="Total Volume Tracked" trend="+127% this month" />
+          <StatCard value="156" label="Active Opportunities" trend="Real-time updates" />
+          <StatCard value="18.4%" label="Avg ROI Potential" trend="+2.1% vs last week" />
+          <StatCard value="12" label="Supported Chains" trend="Expanding weekly" />
         </div>
       </section>
 
@@ -229,73 +284,79 @@ export default function ArbiTraderPro() {
       <section id="features" className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16 lg:py-20">
         <div className="text-center mb-12 sm:mb-16">
           <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-cyan-200 to-purple-200 mb-4 sm:mb-6">
-            Professional Trading Arsenal
+            Real-Time Monitoring for Market Professionals
           </h2>
           <p className="text-base sm:text-lg lg:text-xl text-slate-400 max-w-3xl mx-auto px-4">
-            Cutting-edge tools and AI-driven insights designed for serious traders who demand precision and performance.
+            Cutting-edge monitoring tools and AI-driven insights designed for professionals who require accuracy and actionable data.
           </p>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-8">
           <FeatureCard
             title="Real-Time Multi-Chain Monitoring"
-            description="Track token prices across 12+ blockchains with sub-second latency. Our enterprise-grade infrastructure processes over 10,000 price feeds simultaneously."
             icon={
               <svg className="w-8 h-8 text-cyan-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
               </svg>
             }
-          />
+          >
+            Track token prices across 12+ blockchains with sub-second latency. Our enterprise-grade infrastructure processes over 10,000 price feeds simultaneously.
+          </FeatureCard>
 
           <FeatureCard
             title="AI-Powered Opportunity Scoring"
-            description="Machine learning algorithms analyze liquidity depth, slippage tolerance, gas costs, and historical patterns to rank opportunities by profit potential."
             icon={
               <svg className="w-8 h-8 text-purple-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
               </svg>
             }
-          />
+          >
+            Machine learning algorithms analyze liquidity depth, slippage tolerance, gas costs, and historical patterns to rank opportunities by profit potential.
+          </FeatureCard>
 
           <FeatureCard
             title="Advanced Risk Management"
-            description="Comprehensive risk assessment including MEV protection, front-running detection, and automated position sizing based on your risk tolerance."
             icon={
               <svg className="w-8 h-8 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
               </svg>
             }
-          />
+          >
+            Comprehensive risk assessment including MEV protection, front-running detection, and automated position sizing based on your risk tolerance.
+          </FeatureCard>
 
           <FeatureCard
             title="Professional Analytics Suite"
-            description="Detailed performance tracking, P&L analysis, success rate metrics, and customizable reporting for tax compliance and strategy optimization."
             icon={
               <svg className="w-8 h-8 text-cyan-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M16 8v8m-4-5v5m-4-2v2m-2 4h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
               </svg>
             }
-          />
+          >
+            Detailed performance tracking, P&L analysis, success rate metrics, and customizable reporting for tax compliance and strategy optimization.
+          </FeatureCard>
 
           <FeatureCard
             title="Institutional API Access"
-            description="RESTful APIs and WebSocket feeds for algorithmic trading, with rate limits up to 1000 requests/second for professional trading firms."
             icon={
               <svg className="w-8 h-8 text-purple-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8.111 16.404a5.5 5.5 0 017.778 0M12 20h.01m-7.08-7.071c3.904-3.905 10.236-3.905 14.141 0M1.394 9.393c5.857-5.857 15.355-5.857 21.213 0" />
               </svg>
             }
-          />
+          >
+            RESTful APIs and WebSocket feeds for real-time monitoring, supporting up to 1000 requests/second for professional use.
+          </FeatureCard>
 
           <FeatureCard
             title="Smart Alert System"
-            description="Customizable notifications via Telegram, Discord, email, and webhooks. Set complex conditions and receive instant alerts for high-value opportunities."
             icon={
               <svg className="w-8 h-8 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 17h5l-5 5v-5zM4.464 19.536l9.536-9.536m0 0L9.464 4.464M14 10l4.536 4.536" />
               </svg>
             }
-          />
+          >
+            Customizable notifications via Telegram, Discord, email, and webhooks. Set complex conditions and receive instant alerts for high-value opportunities.
+          </FeatureCard>
         </div>
       </section>
 
@@ -303,10 +364,10 @@ export default function ArbiTraderPro() {
       <section id="dashboard" className="relative z-10 max-w-7xl mx-auto px-6 lg:px-8 py-20">
         <div className="text-center mb-16">
           <h3 className="text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-cyan-200 to-purple-200 mb-6">
-            Professional Trading Interface
+            Professional Monitoring Interface
           </h3>
           <p className="text-lg text-slate-400 max-w-2xl mx-auto">
-            A comprehensive dashboard built for professional traders who need real-time insights and lightning-fast execution.
+            A comprehensive monitoring dashboard designed for professionals seeking real-time insights and actionable data.
           </p>
         </div>
 
@@ -381,12 +442,12 @@ export default function ArbiTraderPro() {
                 </div>
                 <div className="text-2xl font-bold">
                   <span className="text-cyan-400">Arbi</span>
-                  <span className="text-white">Trader</span>
+                  <span className="text-white">Trage</span>
                   <span className="text-purple-400 ml-1">Pro</span>
                 </div>
               </div>
               <p className="text-slate-400 mb-6 max-w-md">
-                Professional-grade arbitrage trading platform powered by AI and real-time multi-chain data analysis.
+                  Professional-grade monitoring platform powered by AI and real-time multi-chain data insights.
               </p>
               <div className="flex gap-4">
                 <a href="#" className="w-10 h-10 bg-slate-800 hover:bg-slate-700 rounded-lg flex items-center justify-center transition-colors">
@@ -432,7 +493,7 @@ export default function ArbiTraderPro() {
           
           
           <div className="border-t border-slate-800/50 mt-12 pt-8 text-center text-slate-500">
-            <p>© {new Date().getFullYear()} ArbiTrader Pro. All rights reserved. Trading involves substantial risk of loss.</p>
+            <p>© {new Date().getFullYear()} ArbiTrage Pro. All rights reserved.  Monitoring is for informational purposes only.</p>
           </div>
         </div>
       </footer>
