@@ -109,7 +109,7 @@ export const ErrorHandler = {
   /**
    * Create a user-friendly error message
    */
-  createUserMessage(error: unknown, context?: string): string {
+  createUserMessage(error: unknown): string {
     const message = this.extractMessage(error);
     
     // Ensure message is always a string
@@ -136,6 +136,8 @@ export const ErrorHandler = {
       'Please provide a valid email address': 'Please enter a valid email address.',
       'Password must be at least 8 characters long': 'Password must be at least 8 characters long.',
       'Password must include uppercase, lowercase, number, and special character': 'Password must include uppercase, lowercase, number, and special character.',
+      'User already exists': 'An account with this email already exists. Please try logging in instead.',
+      'Email already exists': 'An account with this email already exists. Please try logging in instead.',
     };
 
     // Check for exact matches first
@@ -179,6 +181,13 @@ export const ErrorHandler = {
    */
   handleValidationError(field: string, value: string): string {
     switch (field) {
+      case 'name':
+        if (!value) return 'Full name is required';
+        if (value.trim().length < 10) return 'Name must be at least 10 characters long';
+        if (value.trim().length > 50) return 'Name must not exceed 50 characters';
+        if (!/^[a-zA-Z\s'-]+$/.test(value)) return 'Name can only contain letters, spaces, hyphens, and apostrophes';
+        return '';
+      
       case 'email':
         if (!value) return 'Email is required';
         if (!/\S+@\S+\.\S+/.test(value)) return 'Please enter a valid email address';
@@ -187,9 +196,12 @@ export const ErrorHandler = {
       
       case 'password':
         if (!value) return 'Password is required';
-        if (value.length < 6) return 'Password must be at least 6 characters';
+        if (value.length < 8) return 'Password must be at least 8 characters long';
         if (value.length > 128) return 'Password is too long';
-        if (value.includes(' ')) return 'Password cannot contain spaces';
+        if (!/(?=.*[a-z])/.test(value)) return 'Password must include at least one lowercase letter';
+        if (!/(?=.*[A-Z])/.test(value)) return 'Password must include at least one uppercase letter';
+        if (!/(?=.*\d)/.test(value)) return 'Password must include at least one number';
+        if (!/(?=.*[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?])/.test(value)) return 'Password must include at least one special character';
         return '';
       
       default:

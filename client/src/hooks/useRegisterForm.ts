@@ -4,44 +4,66 @@ import { useAuth } from '../context/AuthContext';
 import ErrorHandler from '../utils/errorHandler';
 
 export interface FormData {
+  name: string;
   email: string;
   password: string;
+  confirmPassword: string;
 }
 
 export interface FormErrors {
+  name?: string;
   email?: string;
   password?: string;
+  confirmPassword?: string;
   general?: string;
 }
 
-export const useLoginForm = () => {
+export const useRegisterForm = () => {
   const navigate = useNavigate();
-  const { login, isLoading } = useAuth();
+  const { register, isLoading } = useAuth();
   
   const [formData, setFormData] = useState<FormData>({
+    name: '',
     email: '',
     password: '',
+    confirmPassword: '',
   });
   
   const [errors, setErrors] = useState<FormErrors>({});
-  const [rememberMe, setRememberMe] = useState(false);
-  const [attemptCount, setAttemptCount] = useState(0);
-  const [lastAttemptTime, setLastAttemptTime] = useState<number>(0);
-  const [isRateLimited, setIsRateLimited] = useState(false);
+  const [agreeToTerms, setAgreeToTerms] = useState(false);
+  const [subscribeToUpdates, setSubscribeToUpdates] = useState(false);
 
   const validateForm = (): boolean => {
     const newErrors: FormErrors = {};
 
-    // Validate email
+    // Name validation
+    const nameError = ErrorHandler.handleValidationError('name', formData.name);
+    if (nameError) {
+      newErrors.name = nameError;
+    }
+
+    // Email validation
     const emailError = ErrorHandler.handleValidationError('email', formData.email);
     if (emailError) {
       newErrors.email = emailError;
     }
 
-    // Validate password
+    // Password validation
     const passwordError = ErrorHandler.handleValidationError('password', formData.password);
     if (passwordError) {
       newErrors.password = passwordError;
+    }
+
+    // Confirm password validation
+    if (!formData.confirmPassword) {
+      newErrors.confirmPassword = 'Please confirm your password';
+    } else if (formData.password !== formData.confirmPassword) {
+      newErrors.confirmPassword = 'Passwords do not match';
+    }
+
+    // Terms agreement validation
+    if (!agreeToTerms) {
+      newErrors.general = 'You must agree to the Terms of Service and Privacy Policy';
     }
 
     setErrors(newErrors);
@@ -52,12 +74,16 @@ export const useLoginForm = () => {
     // Sanitize input to prevent common errors
     let sanitizedValue = value;
     
-    if (field === 'email') {
+    if (field === 'name') {
+      // Remove extra spaces and capitalize first letter of each word
+      sanitizedValue = value.trim().replace(/\s+/g, ' ');
+      sanitizedValue = sanitizedValue.replace(/\b\w/g, l => l.toUpperCase());
+    } else if (field === 'email') {
       // Remove extra spaces and convert to lowercase
       sanitizedValue = value.trim().toLowerCase();
       // Prevent multiple consecutive dots
       sanitizedValue = sanitizedValue.replace(/\.{2,}/g, '.');
-    } else if (field === 'password') {
+    } else if (field === 'password' || field === 'confirmPassword') {
       // Remove leading/trailing spaces
       sanitizedValue = value.trim();
     }
@@ -91,69 +117,65 @@ export const useLoginForm = () => {
       delete newErrors[field];
     }
     
+    // Special handling for confirm password
+    if (field === 'password' && formData.confirmPassword) {
+      if (value !== formData.confirmPassword) {
+        newErrors.confirmPassword = 'Passwords do not match';
+      } else {
+        delete newErrors.confirmPassword;
+      }
+    }
+    
+    if (field === 'confirmPassword') {
+      if (value !== formData.password) {
+        newErrors.confirmPassword = 'Passwords do not match';
+      } else {
+        delete newErrors.confirmPassword;
+      }
+    }
+    
     setErrors(newErrors);
   };
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     
-    // Rate limiting check
-    const now = Date.now();
-    const timeSinceLastAttempt = now - lastAttemptTime;
-    
-    if (attemptCount >= 5 && timeSinceLastAttempt < 300000) { // 5 minutes
-      setIsRateLimited(true);
-      setErrors({ general: 'Too many failed attempts. Please wait 5 minutes before trying again.' });
-      return;
-    }
-    
-    // Reset rate limiting if enough time has passed
-    if (timeSinceLastAttempt >= 300000) {
-      setAttemptCount(0);
-      setIsRateLimited(false);
-    }
-    
     if (!validateForm()) {
       return;
     }
 
     try {
-      await login({
+      await register({
+        name: formData.name.trim(),
         email: formData.email,
         password: formData.password,
       });
       
-      // Reset attempt count on successful login
-      setAttemptCount(0);
+      // Redirect to dashboard on successful registration
       navigate('/dashboard');
     } catch (error: any) {
       // Log error for debugging
-      ErrorHandler.logError(error, 'Login form submission');
-      
-      // Increment attempt count on failure
-      setAttemptCount(prev => prev + 1);
-      setLastAttemptTime(Date.now());
+      ErrorHandler.logError(error, 'Registration form submission');
       
       // Get user-friendly error message
       const errorMessage = ErrorHandler.createUserMessage(error);
       
       // Ensure errorMessage is always a string
-      const safeErrorMessage = typeof errorMessage === 'string' ? errorMessage : 'An unexpected error occurred. Please try again.';
+      const safeErrorMessage = typeof errorMessage === 'string' ? errorMessage : 'Registration failed. Please try again.';
       
       // Enhanced error handling with specific guidance
-      if (safeErrorMessage.includes('Please refresh the page')) {
+      if (safeErrorMessage.includes('Email already exists') || safeErrorMessage.includes('User already exists')) {
         setErrors({ 
-          general: safeErrorMessage
+          general: 'An account with this email already exists. Please try logging in instead.' 
         });
-      } else if (safeErrorMessage.includes('Invalid email or password')) {
+      } else if (safeErrorMessage.includes('Invalid email')) {
         setErrors({ 
-          general: `${safeErrorMessage} ${attemptCount >= 3 ? `(${5 - attemptCount} attempts remaining)` : ''}` 
+          general: 'Please enter a valid email address.' 
         });
-      } else if (safeErrorMessage.includes('Account temporarily locked') || safeErrorMessage.includes('too many attempts')) {
-        setErrors({ general: safeErrorMessage });
-        setIsRateLimited(true);
-      } else if (safeErrorMessage.includes('No account found')) {
-        setErrors({ general: safeErrorMessage });
+      } else if (safeErrorMessage.includes('Password')) {
+        setErrors({ 
+          general: 'Password does not meet requirements. Please check the password criteria.' 
+        });
       } else if (safeErrorMessage.includes('Network error') || safeErrorMessage.includes('timeout')) {
         setErrors({ general: safeErrorMessage });
       } else if (safeErrorMessage.includes('Server error')) {
@@ -171,11 +193,11 @@ export const useLoginForm = () => {
   return {
     formData,
     errors,
-    rememberMe,
+    agreeToTerms,
+    subscribeToUpdates,
     isLoading,
-    isRateLimited,
-    attemptCount,
-    setRememberMe,
+    setAgreeToTerms,
+    setSubscribeToUpdates,
     handleInputChange,
     handleSubmit,
     clearErrors,
