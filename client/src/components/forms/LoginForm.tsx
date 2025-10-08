@@ -80,11 +80,7 @@ const LoginForm: React.FC<LoginFormProps> = ({ className = "" }) => {
             aria-describedby={errors.email ? "email-error" : "email-help"}
             autoComplete="email"
           />
-          {errors.email ? (
-            <p id="email-error" className="mt-1 text-sm text-red-400" role="alert">
-              {errors.email}
-            </p>
-          ) : (
+          {!errors.email && (
             <p id="email-help" className="mt-1 text-xs text-slate-500">
               Enter your registered email address
             </p>
@@ -105,11 +101,7 @@ const LoginForm: React.FC<LoginFormProps> = ({ className = "" }) => {
             aria-describedby={errors.password ? "password-error" : "password-help"}
             autoComplete="current-password"
           />
-          {errors.password ? (
-            <p id="password-error" className="mt-1 text-sm text-red-400" role="alert">
-              {errors.password}
-            </p>
-          ) : (
+          {!errors.password && (
             <p id="password-help" className="mt-1 text-xs text-slate-500">
               Minimum 6 characters, no spaces allowed
             </p>
