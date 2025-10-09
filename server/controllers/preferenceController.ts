@@ -18,7 +18,7 @@ export const getUserPreferences = asyncHandler(async (req: Request, res: Respons
       alertThresholds: {
         minProfit: 10,
         maxGasCost: 50,
-        minROI: 5,
+        minROI: 1, // More realistic default: 1% instead of 5%
         minScore: 0.7
       },
       notificationSettings: {
@@ -161,8 +161,12 @@ export const updateAlertThresholds = asyncHandler(async (req: Request, res: Resp
   if (alertThresholds.maxGasCost !== undefined && alertThresholds.maxGasCost < 0) {
     alertThresholds.maxGasCost = 1000;
   }
-  if (alertThresholds.minROI !== undefined && alertThresholds.minROI < 0) {
-    alertThresholds.minROI = 0;
+  if (alertThresholds.minROI !== undefined) {
+    if (alertThresholds.minROI < 0) {
+      alertThresholds.minROI = 0;
+    } else if (alertThresholds.minROI > 50) {
+      alertThresholds.minROI = 50; // Cap at 50% for realistic arbitrage
+    }
   }
   if (alertThresholds.minScore !== undefined && 
       (alertThresholds.minScore < 0 || alertThresholds.minScore > 1)) {
@@ -253,7 +257,7 @@ export const resetPreferences = asyncHandler(async (req: Request, res: Response)
     alertThresholds: {
       minProfit: 10,
       maxGasCost: 50,
-      minROI: 5,
+      minROI: 1, // More realistic default: 1% instead of 5%
       minScore: 0.7
     },
     notificationSettings: {

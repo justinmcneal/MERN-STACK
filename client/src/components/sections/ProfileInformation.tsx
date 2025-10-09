@@ -1,5 +1,5 @@
 // components/sections/ProfileInformation.tsx
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { User } from "lucide-react";
 
 interface ProfileInformationProps {
@@ -27,6 +27,14 @@ const ProfileInformation: React.FC<ProfileInformationProps> = ({
   const [localEmail] = useState(email); // Email is read-only
   const [localAvatar, setLocalAvatar] = useState(selectedAvatar);
   const [nameError, setNameError] = useState<string>('');
+
+  useEffect(() => {
+    setLocalName(fullName);
+  }, [fullName]);
+
+  useEffect(() => {
+    setLocalAvatar(selectedAvatar);
+  }, [selectedAvatar]);
 
   const validateName = (name: string): boolean => {
     if (!name || name.length < 10) {
