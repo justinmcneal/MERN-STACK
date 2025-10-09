@@ -1,5 +1,15 @@
 import React from 'react';
-import type { ButtonProps } from '../../../types/common';
+
+interface ButtonProps {
+  variant?: 'primary' | 'secondary' | 'outline' | 'ghost';
+  size?: 'sm' | 'md' | 'lg';
+  disabled?: boolean;
+  loading?: boolean;
+  children: React.ReactNode;
+  onClick?: () => void;
+  type?: 'button' | 'submit' | 'reset';
+  className?: string;
+}
 
 const Button: React.FC<ButtonProps> = ({
   variant = 'primary',

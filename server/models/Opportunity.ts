@@ -23,20 +23,17 @@ const opportunitySchema: Schema<IOpportunity> = new mongoose.Schema(
     tokenId: { 
       type: Schema.Types.ObjectId, 
       ref: 'Token', 
-      required: true,
-      index: true 
+      required: true
     },
     chainFrom: { 
       type: String, 
       required: true,
-      lowercase: true,
-      index: true 
+      lowercase: true
     },
     chainTo: { 
       type: String, 
       required: true,
-      lowercase: true,
-      index: true 
+      lowercase: true
     },
     priceDiff: { 
       type: Number, 
@@ -59,14 +56,12 @@ const opportunitySchema: Schema<IOpportunity> = new mongoose.Schema(
     },
     timestamp: { 
       type: Date, 
-      default: Date.now,
-      index: true 
+      default: Date.now
     },
     status: { 
       type: String, 
       enum: ['active', 'expired', 'executed'],
-      default: 'active',
-      index: true 
+      default: 'active'
     },
     volume: { 
       type: Number,

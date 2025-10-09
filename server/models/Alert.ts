@@ -30,8 +30,7 @@ const alertSchema: Schema<IAlert> = new mongoose.Schema(
     },
     opportunityId: { 
       type: Schema.Types.ObjectId, 
-      ref: 'Opportunity',
-      index: true 
+      ref: 'Opportunity'
     },
     message: { 
       type: String, 

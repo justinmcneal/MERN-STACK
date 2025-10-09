@@ -1,63 +1,26 @@
-import React, { useState, useContext } from 'react';
-import type { FormEvent } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import AuthContext from '../context/AuthContext';
+import BrandingPanel from '../components/sections/BrandingPanel';
+import LoginForm from '../components/forms/LoginForm';
+import VerticalSeparator from '../components/ui/VerticalSeparator/VerticalSeparator';
 
-const Login: React.FC = () => {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
-  const googleLogin = () => {window.location.href = "http://localhost:5001/api/auth/google"; };
-  const { login } = useContext(AuthContext);
-  const navigate = useNavigate();
-
-  const submit = async (e: FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    try {
-      await login(email, password);
-      navigate('/home');
-    } catch (err: any) {
-      let message = 'Login failed.';
-      if (err?.response?.data?.message) message = err.response.data.message;
-      else if (err?.message) message = err.message;
-      else if (typeof err === 'string') message = err;
-      setError(message);
-    }
-  };
-
+export default function Login() {
   return (
-    <div style={{ maxWidth: 420, margin: '40px auto' }}>
-      <h2>Login</h2>
-      {error && <p style={{ color: 'red' }}>{error}</p>}
-      <form onSubmit={submit}>
-        <div>
-          <input
-            placeholder="Email"
-            type="email"
-            value={email}
-            onChange={e => setEmail(e.target.value)}
-            required
-          />
+    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 text-white font-inter antialiased">
+      {/* Background Elements */}
+      <div className="fixed inset-0 bg-[radial-gradient(ellipse_at_top_left,_var(--tw-gradient-stops))] from-cyan-900/20 via-slate-950 to-purple-900/20"></div>
+      <div className="fixed inset-0 bg-[radial-gradient(circle_at_bottom_right,_var(--tw-gradient-stops))] from-purple-900/20 via-transparent to-cyan-900/10"></div>
+      
+      <div className="relative z-10 min-h-screen grid grid-cols-1 lg:grid-cols-2">
+        {/* Left Panel - Branding */}
+        <BrandingPanel />
+
+        {/* Vertical Separator */}
+        <VerticalSeparator />
+
+        {/* Right Panel - Login Form */}
+        <div className="flex flex-col justify-center p-8 lg:p-16">
+          <LoginForm />
         </div>
-        <div>
-          <input
-            placeholder="Password"
-            type="password"
-            value={password}
-            onChange={e => setPassword(e.target.value)}
-            required
-          />
-        </div>
-        <button type="submit">Login</button>
-      </form>
-      <p>
-        Don't have an account? <Link to="/register">Register</Link>
-      </p>
-      <button onClick={googleLogin} style={{ marginTop: "1rem" }}>
-        Login with Google
-      </button>
+      </div>
     </div>
   );
-};
-
-export default Login;
+}
