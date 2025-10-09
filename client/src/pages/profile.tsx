@@ -101,12 +101,13 @@ const ProfilePage = () => {
       return;
     }
 
-    if (data.name || data.email) {
+    // Only handle name changes - email changes are disabled
+    if (data.name) {
       setPendingChanges(prev => ({
         ...prev,
         profile: {
-          name: data.name !== undefined ? data.name : prev.profile.name,
-          email: data.email !== undefined ? data.email : prev.profile.email
+          name: data.name || prev.profile.name,
+          email: prev.profile.email // Keep existing email, don't allow changes
         },
         hasChanges: true
       }));
@@ -186,10 +187,10 @@ const ProfilePage = () => {
 
     try {
       // Save profile changes
-      if (pendingChanges.profile.name || pendingChanges.profile.email) {
-        const profileData: { name?: string; email?: string } = {};
-        if (pendingChanges.profile.name) profileData.name = pendingChanges.profile.name;
-        if (pendingChanges.profile.email) profileData.email = pendingChanges.profile.email;
+      if (pendingChanges.profile.name) {
+        const profileData: { name: string } = {
+          name: pendingChanges.profile.name
+        };
         
         await updateProfile(profileData);
       }

@@ -55,13 +55,13 @@ export const authSchemas = {
 // Profile validation schemas
 export const profileSchemas = {
   updateProfile: Joi.object({
-    name: Joi.string().min(2).max(50).optional().messages({
-      'string.min': 'Name must be at least 2 characters long',
+    name: Joi.string().min(10).max(50).optional().messages({
+      'string.min': 'Name must be at least 10 characters long',
       'string.max': 'Name must not exceed 50 characters',
     }),
-    email: Joi.string().email().optional().messages({
-      'string.email': 'Please provide a valid email address',
-    }),
+    // email: Joi.string().email().optional().messages({
+    //   'string.email': 'Please provide a valid email address',
+    // }), // Email changes are disabled for security
   }).min(1).messages({
     'object.min': 'At least one field must be provided for update',
   }),

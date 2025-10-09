@@ -43,7 +43,7 @@ export interface UserStats {
 
 export interface UpdateProfileData {
   name?: string;
-  email?: string;
+  // email?: string; // Email changes are disabled for security
 }
 
 export interface ChangePasswordData {

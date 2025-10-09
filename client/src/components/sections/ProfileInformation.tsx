@@ -24,10 +24,9 @@ const ProfileInformation: React.FC<ProfileInformationProps> = ({
   className = ""
 }) => {
   const [localName, setLocalName] = useState(fullName);
-  const [localEmail, setLocalEmail] = useState(email);
+  const [localEmail] = useState(email); // Email is read-only
   const [localAvatar, setLocalAvatar] = useState(selectedAvatar);
   const [nameError, setNameError] = useState<string>('');
-  const [emailError, setEmailError] = useState<string>('');
 
   const validateName = (name: string): boolean => {
     if (!name || name.length < 10) {
@@ -46,15 +45,7 @@ const ProfileInformation: React.FC<ProfileInformationProps> = ({
     return true;
   };
 
-  const validateEmail = (email: string): boolean => {
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!email || !emailRegex.test(email)) {
-      setEmailError('Please provide a valid email address');
-      return false;
-    }
-    setEmailError('');
-    return true;
-  };
+  // Email validation removed - email changes are disabled
 
   const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
@@ -67,15 +58,10 @@ const ProfileInformation: React.FC<ProfileInformationProps> = ({
     }
   };
 
-  const handleEmailChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value;
-    setLocalEmail(value);
-    validateEmail(value);
-    
-    // Update pending changes immediately on change
-    if (value !== email && validateEmail(value)) {
-      onUpdate?.({ email: value });
-    }
+  const handleEmailChange = () => {
+    // Email changes are disabled for security reasons
+    // Do nothing - prevent any changes to email
+    return;
   };
 
   const handleAvatarChange = (avatarId: number) => {
@@ -90,9 +76,9 @@ const ProfileInformation: React.FC<ProfileInformationProps> = ({
   };
 
   const handleEmailBlur = () => {
-    if (localEmail !== email && validateEmail(localEmail)) {
-      onUpdate?.({ email: localEmail });
-    }
+    // Email changes are disabled for security reasons
+    // Do nothing - prevent any changes to email
+    return;
   };
   return (
     <div className={`bg-slate-800/50 backdrop-blur border border-slate-700/50 rounded-2xl p-6 ${className}`}>
@@ -123,17 +109,25 @@ const ProfileInformation: React.FC<ProfileInformationProps> = ({
         {/* Email */}
         <div>
           <label className="block text-sm text-slate-400 mb-2">Email Address</label>
-          <input
-            type="email"
-            value={localEmail}
-            onChange={handleEmailChange}
-            onBlur={handleEmailBlur}
-            disabled={isUpdating}
-            className={`w-full px-4 py-3 bg-slate-700/50 border rounded-xl text-slate-200 placeholder-slate-400 focus:outline-none focus:ring-2 transition-all disabled:opacity-50 ${
-              emailError ? 'border-red-500 focus:ring-red-400/50' : 'border-slate-600/50 focus:ring-cyan-400/50'
-            }`}
-          />
-          {emailError && <p className="text-red-400 text-xs mt-1">{emailError}</p>}
+          <div className="relative">
+            <input
+              type="email"
+              value={localEmail}
+              onChange={handleEmailChange}
+              onBlur={handleEmailBlur}
+              disabled={true}
+              className="w-full px-4 py-3 bg-slate-700/30 border border-slate-600/30 rounded-xl text-slate-300 cursor-not-allowed opacity-75"
+              title="Email address cannot be changed for security reasons"
+            />
+            <div className="absolute inset-y-0 right-0 flex items-center pr-3">
+              <svg className="w-5 h-5 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+              </svg>
+            </div>
+          </div>
+          <p className="text-xs text-slate-500 mt-1">
+            Email address cannot be changed for security reasons
+          </p>
         </div>
 
         {/* Join Date */}
