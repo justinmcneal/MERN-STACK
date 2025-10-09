@@ -53,6 +53,13 @@ export const authSchemas = {
       'boolean.base': 'Remember Me must be true or false',
     }),
   }),
+
+  resendVerification: Joi.object({
+    email: Joi.string().email().required().messages({
+      'string.email': 'Please provide a valid email address',
+      'any.required': 'Email is required',
+    }),
+  }),
 };
 
 // Profile validation schemas

@@ -4,12 +4,14 @@ export interface User {
   _id: string;
   name: string;
   email: string;
+  isEmailVerified?: boolean;
 }
 
 export interface AuthResponse {
   user: User;
   accessToken: string;
   csrfToken: string;
+  message?: string;
 }
 
 export interface LoginCredentials {

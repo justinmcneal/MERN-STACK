@@ -8,6 +8,7 @@ import ErrorBoundary from './components/ErrorBoundary';
 import LandingPage from './pages/Landing';
 import Login from './pages/Login';
 import SignUp from './pages/Register';
+import VerifyEmail from './pages/VerifyEmail';
 import Dashboard from './pages/main_dashboard';
 import Opportunities from './pages/opportunities';
 import Profile from './pages/profile';
@@ -34,6 +35,7 @@ const App: React.FC = () => {
           <Route path="/landing_page-in" element={<LandingPage />} />
           <Route path="/logIn" element={<Login />} />
           <Route path="/signUp" element={<SignUp />} />
+          <Route path="/verify-email" element={<VerifyEmail />} />
           
           {/* Protected Routes */}
           <Route path="/dashboard" element={

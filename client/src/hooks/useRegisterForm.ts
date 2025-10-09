@@ -145,13 +145,23 @@ export const useRegisterForm = () => {
     }
 
     try {
-      await register({
+      const response = await register({
         name: formData.name.trim(),
         email: formData.email,
         password: formData.password,
       });
       
-      // Redirect to dashboard on successful registration
+      // Check if email verification is required
+      if (response.message && response.message.includes('check your email')) {
+        // Show success message and redirect to verification page
+        setErrors({ 
+          general: 'Registration successful! Please check your email to verify your account before logging in.' 
+        });
+        // Don't navigate to dashboard, let user know to check email
+        return;
+      }
+      
+      // If email is already verified, redirect to dashboard
       navigate('/dashboard');
     } catch (error: any) {
       // Log error for debugging
