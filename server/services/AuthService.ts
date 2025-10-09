@@ -14,6 +14,7 @@ export interface RegisterData {
 export interface LoginData {
   email: string;
   password: string;
+  rememberMe?: boolean;
 }
 
 export interface AuthResponse {
@@ -23,6 +24,7 @@ export interface AuthResponse {
     email: string;
   };
   accessToken: string;
+  refreshToken: string;
   csrfToken: string;
 }
 
@@ -46,21 +48,29 @@ export class AuthService {
   }
 
   /**
-   * Set authentication cookies
+   * Set authentication cookies with remember me support
    */
-  static setAuthCookies(res: any, refreshToken: string, csrfToken: string): void {
-    res.cookie('refreshToken', refreshToken, {
+  static setAuthCookies(res: any, refreshToken: string, csrfToken: string, rememberMe: boolean = false): void {
+    const cookieOptions = {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
-      sameSite: process.env.NODE_ENV === 'production' ? 'strict' : 'lax',
-      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+      sameSite: process.env.NODE_ENV === 'production' ? 'strict' : 'lax' as const,
+    };
+
+    // Extended expiry for remember me: 30 days vs 7 days
+    const refreshTokenMaxAge = rememberMe 
+      ? 30 * 24 * 60 * 60 * 1000 // 30 days
+      : 7 * 24 * 60 * 60 * 1000; // 7 days
+
+    res.cookie('refreshToken', refreshToken, {
+      ...cookieOptions,
+      maxAge: refreshTokenMaxAge,
     });
 
     res.cookie('csrfToken', csrfToken, {
+      ...cookieOptions,
       httpOnly: false,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: process.env.NODE_ENV === 'production' ? 'strict' : 'lax',
-      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+      maxAge: refreshTokenMaxAge,
     });
   }
 
@@ -131,15 +141,16 @@ export class AuthService {
         email: user.email,
       },
       accessToken,
+      refreshToken,
       csrfToken,
     };
   }
 
   /**
-   * Login user
+   * Login user with remember me support
    */
   static async login(data: LoginData): Promise<AuthResponse> {
-    const { email, password } = data;
+    const { email, password, rememberMe = false } = data;
 
     if (!email || !password) {
       throw createError('Please provide email and password', 400);
@@ -176,6 +187,11 @@ export class AuthService {
     user.failedLoginAttempts = 0;
     user.lockUntil = null;
 
+    // Clean up old refresh tokens (keep only last 5)
+    if (user.refreshTokens.length >= 5) {
+      user.refreshTokens = user.refreshTokens.slice(-4); // Keep last 4, we'll add 1 more
+    }
+
     // Generate tokens
     const refreshToken = generateRefreshToken(user._id.toString());
     const accessToken = generateAccessToken(user._id.toString());
@@ -192,6 +208,7 @@ export class AuthService {
         email: user.email,
       },
       accessToken,
+      refreshToken,
       csrfToken,
     };
   }

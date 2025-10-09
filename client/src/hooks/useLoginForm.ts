@@ -3,7 +3,13 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import ErrorHandler from '../utils/errorHandler';
 
-export interface FormData {
+export interface LoginCredentials {
+  email: string;
+  password: string;
+  rememberMe?: boolean;
+}
+
+export interface LoginFormData {
   email: string;
   password: string;
 }
@@ -18,7 +24,7 @@ export const useLoginForm = () => {
   const navigate = useNavigate();
   const { login, isLoading } = useAuth();
   
-  const [formData, setFormData] = useState<FormData>({
+  const [formData, setFormData] = useState<LoginFormData>({
     email: '',
     password: '',
   });
@@ -48,7 +54,7 @@ export const useLoginForm = () => {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleInputChange = (field: keyof FormData) => (value: string) => {
+  const handleInputChange = (field: keyof LoginFormData) => (value: string) => {
     // Sanitize input to prevent common errors
     let sanitizedValue = value;
     
@@ -81,7 +87,7 @@ export const useLoginForm = () => {
     }
   };
 
-  const validateField = (field: keyof FormData, value: string) => {
+  const validateField = (field: keyof LoginFormData, value: string) => {
     const errorMessage = ErrorHandler.handleValidationError(field, value);
     const newErrors: FormErrors = { ...errors };
     
@@ -121,6 +127,7 @@ export const useLoginForm = () => {
       await login({
         email: formData.email,
         password: formData.password,
+        rememberMe: rememberMe,
       });
       
       // Reset attempt count on successful login

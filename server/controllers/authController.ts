@@ -29,8 +29,8 @@ export const authUser = asyncHandler(async (req: Request, res: Response) => {
   try {
     const authResponse = await AuthService.login(req.body);
     
-    // Set cookies
-    AuthService.setAuthCookies(res, req.cookies.refreshToken || '', authResponse.csrfToken);
+    // Set cookies with remember me support
+    AuthService.setAuthCookies(res, authResponse.refreshToken || '', authResponse.csrfToken, req.body.rememberMe || false);
     
     res.json({
       _id: authResponse.user._id,
