@@ -49,6 +49,9 @@ export const authSchemas = {
     password: Joi.string().required().messages({
       'any.required': 'Password is required',
     }),
+    rememberMe: Joi.boolean().optional().messages({
+      'boolean.base': 'Remember Me must be true or false',
+    }),
   }),
 };
 
