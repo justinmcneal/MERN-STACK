@@ -1,12 +1,12 @@
 import React, { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
-import AuthService, { type User, type LoginCredentials, type RegisterData, type AuthResponse } from '../services/authService';
+import AuthService, { type User, type LoginCredentials, type RegisterData, type LoginResponse, type RegistrationResponse } from '../services/authService';
 
 interface AuthContextType {
   user: User | null;
   isAuthenticated: boolean;
   isLoading: boolean;
   login: (credentials: LoginCredentials & { rememberMe?: boolean }) => Promise<User>;
-  register: (data: RegisterData) => Promise<AuthResponse>;
+  register: (data: RegisterData) => Promise<RegistrationResponse>;
   logout: () => Promise<void>;
   refreshUser: () => Promise<void>;
 }
@@ -51,8 +51,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         throw new Error('Email and password are required');
       }
       
-      const response = await AuthService.login(credentials);
-      setUser(response.user);
+      const response: LoginResponse = await AuthService.login(credentials);
+      // Only set user if email is verified
+      if (response.user.isEmailVerified) {
+        setUser(response.user);
+      } else {
+        setUser(null);
+      }
       return response.user;
     } catch (error) {
       // Re-throw the error to be handled by the form
@@ -62,11 +67,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   };
 
-  const register = async (data: RegisterData): Promise<AuthResponse> => {
+  const register = async (data: RegisterData): Promise<RegistrationResponse> => {
     try {
       setIsLoading(true);
       const response = await AuthService.register(data);
-      setUser(response.user);
+      // Don't set user in context until email is verified
+      // This prevents access to protected routes until verification
+      setUser(null);
       return response;
     } catch (error) {
       throw error;

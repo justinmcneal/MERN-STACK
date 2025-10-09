@@ -19,7 +19,7 @@ export class EmailService {
       // For development, use Ethereal Email (fake SMTP)
       if (process.env.NODE_ENV === 'development') {
         const testAccount = await nodemailer.createTestAccount();
-        this.transporter = nodemailer.createTransporter({
+        this.transporter = nodemailer.createTransport({
           host: 'smtp.ethereal.email',
           port: 587,
           secure: false,
@@ -28,9 +28,14 @@ export class EmailService {
             pass: testAccount.pass,
           },
         });
+      } else if (process.env.NODE_ENV === 'test') {
+        // For tests, use a noop transport that logs to memory
+        this.transporter = nodemailer.createTransport({
+          jsonTransport: true,
+        });
       } else {
         // For production, use real SMTP
-        this.transporter = nodemailer.createTransporter({
+        this.transporter = nodemailer.createTransport({
           host: process.env.EMAIL_HOST || 'smtp.gmail.com',
           port: parseInt(process.env.EMAIL_PORT || '587'),
           secure: process.env.EMAIL_SECURE === 'true',
@@ -75,7 +80,8 @@ export class EmailService {
    * Send email verification email
    */
   static async sendVerificationEmail(email: string, name: string, verificationToken: string): Promise<void> {
-    const verificationUrl = `${process.env.CLIENT_URL}/verify-email?token=${verificationToken}`;
+  const clientUrl = process.env.CLIENT_URL || 'http://localhost:5173';
+  const verificationUrl = `${clientUrl}/verify-email?token=${verificationToken}`;
     
     const html = `
       <!DOCTYPE html>
@@ -151,7 +157,8 @@ export class EmailService {
    * Send password reset email
    */
   static async sendPasswordResetEmail(email: string, name: string, resetToken: string): Promise<void> {
-    const resetUrl = `${process.env.CLIENT_URL}/reset-password?token=${resetToken}`;
+  const clientUrl = process.env.CLIENT_URL || 'http://localhost:5173';
+  const resetUrl = `${clientUrl}/reset-password?token=${resetToken}`;
     
     const html = `
       <!DOCTYPE html>

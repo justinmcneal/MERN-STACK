@@ -1,3 +1,4 @@
+import type { AxiosError } from 'axios';
 import { apiClient } from './api';
 
 export interface User {
@@ -7,11 +8,18 @@ export interface User {
   isEmailVerified?: boolean;
 }
 
-export interface AuthResponse {
+export interface LoginResponse {
   user: User;
   accessToken: string;
   csrfToken: string;
   message?: string;
+}
+
+export interface RegistrationResponse {
+  success: boolean;
+  message: string;
+  email: string;
+  expiresAt: string;
 }
 
 export interface LoginCredentials {
@@ -35,15 +43,11 @@ class AuthService {
   /**
    * Register a new user
    */
-  static async register(data: RegisterData): Promise<AuthResponse> {
+  static async register(data: RegisterData): Promise<RegistrationResponse> {
     try {
-      const response = await apiClient.post<AuthResponse>('/auth/register', data);
-      
-      // Store access token in localStorage
-      localStorage.setItem('accessToken', response.data.accessToken);
-      
+      const response = await apiClient.post<RegistrationResponse>('/auth/register', data);
       return response.data;
-    } catch (error: any) {
+    } catch (error: unknown) {
       throw this.handleError(error);
     }
   }
@@ -51,15 +55,32 @@ class AuthService {
   /**
    * Login user
    */
-  static async login(credentials: LoginCredentials): Promise<AuthResponse> {
+  static async login(credentials: LoginCredentials): Promise<LoginResponse> {
     try {
-      const response = await apiClient.post<AuthResponse>('/auth/login', credentials);
-      
-      // Store access token in localStorage
-      localStorage.setItem('accessToken', response.data.accessToken);
-      
-      return response.data;
-    } catch (error: any) {
+      const response = await apiClient.post<LoginResponse>('/auth/login', credentials);
+      const { data: responseData } = response;
+      const user = responseData?.user;
+
+      if (!user) {
+        throw new Error('Login failed: missing user data in response.');
+      }
+
+      const normalizedUser: User = {
+        ...user,
+        isEmailVerified: Boolean(user.isEmailVerified),
+      };
+
+      if (normalizedUser.isEmailVerified) {
+        localStorage.setItem('accessToken', responseData.accessToken);
+      } else {
+        localStorage.removeItem('accessToken');
+      }
+
+      return {
+        ...responseData,
+        user: normalizedUser,
+      };
+    } catch (error: unknown) {
       throw this.handleError(error);
     }
   }
@@ -71,7 +92,7 @@ class AuthService {
     try {
       const response = await apiClient.get<User>('/auth/me');
       return response.data;
-    } catch (error: any) {
+    } catch (error: unknown) {
       throw this.handleError(error);
     }
   }
@@ -84,7 +105,7 @@ class AuthService {
       const response = await apiClient.post<{ accessToken: string }>('/auth/refresh');
       localStorage.setItem('accessToken', response.data.accessToken);
       return response.data;
-    } catch (error: any) {
+    } catch (error: unknown) {
       throw this.handleError(error);
     }
   }
@@ -95,7 +116,7 @@ class AuthService {
   static async logout(): Promise<void> {
     try {
       await apiClient.post('/auth/logout');
-    } catch (error: any) {
+    } catch {
       // Even if logout fails on server, clear local data
     } finally {
       // Always clear local storage
@@ -137,59 +158,73 @@ class AuthService {
   /**
    * Handle API errors
    */
-  private static handleError(error: any): Error {
-    
-    // Handle Axios errors
-    if (error.response) {
-      const { status, data } = error.response;
-      
-      // Server responded with error status - handle different error formats
-      
-      // Format 1: { error: { message: "..." } } - from error middleware
-      if (data?.error?.message) {
-        return new Error(data.error.message);
+  private static handleError(error: unknown): Error {
+    if (this.isAxiosError(error)) {
+      const { response, request, message } = error;
+
+      if (response) {
+        const { status, data } = response;
+
+        if (data && typeof data === 'object') {
+          const nestedError = (data as { error?: { message?: string } }).error;
+          if (nestedError?.message) {
+            return new Error(nestedError.message);
+          }
+
+          const messageField = (data as { message?: string }).message;
+          if (typeof messageField === 'string') {
+            return new Error(messageField);
+          }
+
+          const topLevelError = (data as ApiError).error;
+          if (typeof topLevelError === 'string') {
+            return new Error(topLevelError);
+          }
+        }
+
+        if (typeof status === 'number') {
+          switch (status) {
+            case 400:
+              return new Error('Invalid request. Please check your input.');
+            case 401:
+              return new Error('Invalid email or password');
+            case 403:
+              return new Error('Access denied. Please contact support.');
+            case 404:
+              return new Error('User not found');
+            case 429:
+              return new Error('Too many attempts. Please try again later.');
+            case 500:
+              return new Error('Server error. Please try again later.');
+            default:
+              return new Error(`Server error (${status}). Please try again.`);
+          }
+        }
       }
-      
-      // Format 2: { error: "Validation Error", message: "..." } - from validation middleware
-      if (data?.message && typeof data.message === 'string') {
-        return new Error(data.message);
+
+      if (request && !response) {
+        return new Error('Network error. Please check your internet connection.');
       }
-      
-      // Format 3: { error: "string" } - direct error string
-      if (data?.error && typeof data.error === 'string') {
-        return new Error(data.error);
-      }
-      
-      // Handle specific HTTP status codes
-      switch (status) {
-        case 400:
-          return new Error('Invalid request. Please check your input.');
-        case 401:
-          return new Error('Invalid email or password');
-        case 403:
-          return new Error('Access denied. Please contact support.');
-        case 404:
-          return new Error('User not found');
-        case 429:
-          return new Error('Too many attempts. Please try again later.');
-        case 500:
-          return new Error('Server error. Please try again later.');
-        default:
-          return new Error(`Server error (${status}). Please try again.`);
+
+      if (message) {
+        return new Error(message);
       }
     }
-    
-    // Handle network errors
-    if (error.request) {
-      return new Error('Network error. Please check your internet connection.');
-    }
-    
-    // Handle other errors
-    if (error.message) {
+
+    if (error instanceof Error && error.message) {
       return new Error(error.message);
     }
-    
+
     return new Error('An unexpected error occurred. Please try again.');
+  }
+
+  private static isAxiosError(error: unknown): error is AxiosError<ApiError> {
+    return (
+      typeof error === 'object' &&
+      error !== null &&
+      'isAxiosError' in error &&
+      (error as { isAxiosError?: boolean }).isAxiosError === true
+    );
   }
 }
 

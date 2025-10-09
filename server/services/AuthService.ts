@@ -1,7 +1,9 @@
 // services/AuthService.ts
 import crypto from 'crypto';
 import jwt from 'jsonwebtoken';
+import bcrypt from 'bcryptjs';
 import User, { IUser } from '../models/User';
+import PendingUser from '../models/PendingUser';
 import { generateAccessToken, generateRefreshToken } from '../utils/generateTokens';
 import { createError } from '../middleware/errorMiddleware';
 import { EmailService } from './EmailService';
@@ -30,6 +32,13 @@ export interface AuthResponse {
   refreshToken: string;
   csrfToken: string;
   message?: string;
+}
+
+export interface RegistrationResponse {
+  success: boolean;
+  message: string;
+  email: string;
+  expiresAt: Date;
 }
 
 export class AuthService {
@@ -97,10 +106,9 @@ export class AuthService {
   /**
    * Register a new user with email verification
    */
-  static async register(data: RegisterData): Promise<AuthResponse> {
+  static async register(data: RegisterData): Promise<RegistrationResponse> {
     const { name, email, password } = data;
 
-    // Validate input
     if (!name || !email || !password) {
       throw createError('Please provide name, email and password', 400);
     }
@@ -109,62 +117,43 @@ export class AuthService {
       throw createError('Password must be at least 8 characters long and include uppercase, lowercase, number, and special character.', 400);
     }
 
-    // Check if user exists
-    const existingUser = await User.findOne({ email });
+    const normalizedEmail = email.trim().toLowerCase();
+    const normalizedName = name.trim();
+
+    const existingUser = await User.findOne({ email: normalizedEmail });
     if (existingUser) {
       throw createError('User already exists', 400);
     }
 
-    // Generate email verification token
+    const passwordHash = await bcrypt.hash(password, 10);
     const emailVerificationToken = TokenService.generateEmailVerificationToken();
     const emailVerificationExpires = TokenService.getEmailVerificationExpiry();
+    const hashedToken = TokenService.hashToken(emailVerificationToken);
 
-    // Create user (unverified)
-    const user = await User.create({ 
-      name, 
-      email, 
-      password, 
-      refreshTokens: [],
-      failedLoginAttempts: 0,
-      lockUntil: null,
-      isEmailVerified: false,
-      emailVerificationToken: TokenService.hashToken(emailVerificationToken),
-      emailVerificationExpires,
-    });
+    await PendingUser.findOneAndUpdate(
+      { email: normalizedEmail },
+      {
+        name: normalizedName,
+        email: normalizedEmail,
+        passwordHash,
+        verificationToken: hashedToken,
+        verificationExpires: emailVerificationExpires,
+      },
+      { upsert: true, new: true, setDefaultsOnInsert: true }
+    );
 
-    if (!user) {
-      throw createError('Invalid user data', 400);
-    }
-
-    // Send verification email
     try {
-      await EmailService.sendVerificationEmail(email, name, emailVerificationToken);
+      await EmailService.sendVerificationEmail(normalizedEmail, normalizedName, emailVerificationToken);
     } catch (error) {
-      // If email fails, delete the user and throw error
-      await User.findByIdAndDelete(user._id);
+      await PendingUser.deleteOne({ email: normalizedEmail });
       throw createError('Failed to send verification email. Please try again.', 500);
     }
 
-    // Generate tokens (user can login but with limited access)
-    const refreshToken = generateRefreshToken(user._id.toString());
-    const accessToken = generateAccessToken(user._id.toString());
-    const csrfToken = this.generateCSRFToken();
-
-    // Save refresh token to user
-    user.refreshTokens.push(refreshToken);
-    await user.save();
-
     return {
-      user: {
-        _id: user._id,
-        name: user.name,
-        email: user.email,
-        isEmailVerified: false,
-      },
-      accessToken,
-      refreshToken,
-      csrfToken,
-      message: 'Registration successful! Please check your email to verify your account.',
+      success: true,
+        message: 'A LINK HAS BEEN SENT TO YOUR EMAIL',
+      email: normalizedEmail,
+      expiresAt: emailVerificationExpires,
     };
   }
 
@@ -298,6 +287,52 @@ export class AuthService {
 
     // Find user by verification token
     const hashedToken = TokenService.hashToken(token);
+    const pendingUser = await PendingUser.findOne({
+      verificationToken: hashedToken,
+      verificationExpires: { $gt: new Date() },
+    });
+
+    if (pendingUser) {
+      const existingUser = await User.findOne({ email: pendingUser.email });
+
+      if (existingUser) {
+        if (!existingUser.isEmailVerified) {
+          existingUser.isEmailVerified = true;
+          existingUser.emailVerificationToken = null;
+          existingUser.emailVerificationExpires = null;
+          await existingUser.save();
+        }
+
+        await PendingUser.deleteOne({ _id: pendingUser._id });
+
+        return {
+          success: true,
+          message: 'Email verified successfully! You can now log in.',
+        };
+      }
+
+      const user = new User({
+        name: pendingUser.name,
+        email: pendingUser.email,
+        password: pendingUser.passwordHash,
+        refreshTokens: [],
+        failedLoginAttempts: 0,
+        lockUntil: null,
+        isEmailVerified: true,
+      });
+
+      user.emailVerificationToken = null;
+      user.emailVerificationExpires = null;
+      await user.save();
+
+      await PendingUser.deleteOne({ _id: pendingUser._id });
+
+      return {
+        success: true,
+        message: 'Email verified successfully! You can now log in.',
+      };
+    }
+
     const user = await User.findOne({
       emailVerificationToken: hashedToken,
       emailVerificationExpires: { $gt: new Date() },
@@ -307,7 +342,6 @@ export class AuthService {
       throw createError('Invalid or expired verification token', 400);
     }
 
-    // Verify the user
     user.isEmailVerified = true;
     user.emailVerificationToken = null;
     user.emailVerificationExpires = null;
@@ -315,7 +349,7 @@ export class AuthService {
 
     return {
       success: true,
-      message: 'Email verified successfully! You can now access all features.',
+      message: 'Email verified successfully! You can now log in.',
     };
   }
 
@@ -327,7 +361,30 @@ export class AuthService {
       throw createError('Email is required', 400);
     }
 
-    const user = await User.findOne({ email });
+    const normalizedEmail = email.trim().toLowerCase();
+    const emailVerificationToken = TokenService.generateEmailVerificationToken();
+    const hashedToken = TokenService.hashToken(emailVerificationToken);
+    const emailVerificationExpires = TokenService.getEmailVerificationExpiry();
+
+    const pendingUser = await PendingUser.findOne({ email: normalizedEmail });
+    if (pendingUser) {
+      pendingUser.verificationToken = hashedToken;
+      pendingUser.verificationExpires = emailVerificationExpires;
+      await pendingUser.save();
+
+      try {
+        await EmailService.sendVerificationEmail(normalizedEmail, pendingUser.name, emailVerificationToken);
+      } catch (error) {
+        throw createError('Failed to send verification email. Please try again.', 500);
+      }
+
+      return {
+        success: true,
+        message: 'Verification email sent! Please check your inbox.',
+      };
+    }
+
+    const user = await User.findOne({ email: normalizedEmail });
     if (!user) {
       throw createError('User not found', 404);
     }
@@ -336,18 +393,12 @@ export class AuthService {
       throw createError('Email is already verified', 400);
     }
 
-    // Generate new verification token
-    const emailVerificationToken = TokenService.generateEmailVerificationToken();
-    const emailVerificationExpires = TokenService.getEmailVerificationExpiry();
-
-    // Update user with new token
-    user.emailVerificationToken = TokenService.hashToken(emailVerificationToken);
+    user.emailVerificationToken = hashedToken;
     user.emailVerificationExpires = emailVerificationExpires;
     await user.save();
 
-    // Send verification email
     try {
-      await EmailService.sendVerificationEmail(email, user.name, emailVerificationToken);
+      await EmailService.sendVerificationEmail(normalizedEmail, user.name, emailVerificationToken);
     } catch (error) {
       throw createError('Failed to send verification email. Please try again.', 500);
     }

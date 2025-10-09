@@ -12,7 +12,7 @@ describe('Profile API', () => {
   beforeAll(async () => {
     // Create test user
     testUser = await User.create({
-      name: 'Test User',
+      name: 'Test User 1',
       email: 'test@example.com',
       password: 'TestPassword123!',
       refreshTokens: [],

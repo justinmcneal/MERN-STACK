@@ -7,18 +7,8 @@ import { createError } from '../middleware/errorMiddleware';
 // POST /api/auth/register
 export const registerUser = asyncHandler(async (req: Request, res: Response) => {
   try {
-    const authResponse = await AuthService.register(req.body);
-    
-    // Set cookies
-    AuthService.setAuthCookies(res, req.cookies.refreshToken || '', authResponse.csrfToken);
-    
-    res.status(201).json({
-      _id: authResponse.user._id,
-      name: authResponse.user.name,
-      email: authResponse.user.email,
-      accessToken: authResponse.accessToken,
-      csrfToken: authResponse.csrfToken,
-    });
+    const registrationResponse = await AuthService.register(req.body);
+    res.status(201).json(registrationResponse);
   } catch (error: any) {
     throw error; // Let the error middleware handle it
   }
@@ -33,11 +23,15 @@ export const authUser = asyncHandler(async (req: Request, res: Response) => {
     AuthService.setAuthCookies(res, authResponse.refreshToken || '', authResponse.csrfToken, req.body.rememberMe || false);
     
     res.json({
-      _id: authResponse.user._id,
-      name: authResponse.user.name,
-      email: authResponse.user.email,
+      user: {
+        _id: authResponse.user._id,
+        name: authResponse.user.name,
+        email: authResponse.user.email,
+        isEmailVerified: authResponse.user.isEmailVerified,
+      },
       accessToken: authResponse.accessToken,
       csrfToken: authResponse.csrfToken,
+      message: authResponse.message,
     });
   } catch (error: any) {
     throw error; // Let the error middleware handle it
