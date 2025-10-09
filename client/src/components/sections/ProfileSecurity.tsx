@@ -1,16 +1,28 @@
 // components/sections/ProfileSecurity.tsx
+import { useState } from "react";
 import { Shield } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 interface ProfileSecurityProps {
   twoFactorAuth: boolean;
+  onUpdate?: (data: { twoFactorAuth?: boolean }) => void;
+  isUpdating?: boolean;
   className?: string;
 }
 
-const ToggleSwitch = ({ enabled, onChange }: { enabled: boolean, onChange: () => void }) => (
+const ToggleSwitch = ({ 
+  enabled, 
+  onChange, 
+  disabled 
+}: { 
+  enabled: boolean; 
+  onChange: () => void;
+  disabled?: boolean;
+}) => (
   <button
     onClick={onChange}
-    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+    disabled={disabled}
+    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors disabled:opacity-50 ${
       enabled ? 'bg-cyan-500' : 'bg-slate-600'
     }`}
   >
@@ -24,9 +36,20 @@ const ToggleSwitch = ({ enabled, onChange }: { enabled: boolean, onChange: () =>
 
 const ProfileSecurity: React.FC<ProfileSecurityProps> = ({
   twoFactorAuth,
+  onUpdate,
+  isUpdating = false,
   className = ""
 }) => {
   const navigate = useNavigate();
+  const [localTwoFactorAuth, setLocalTwoFactorAuth] = useState(twoFactorAuth);
+
+  const handleTwoFactorToggle = () => {
+    const newValue = !localTwoFactorAuth;
+    setLocalTwoFactorAuth(newValue);
+    
+    // Update pending changes immediately
+    onUpdate?.({ twoFactorAuth: newValue });
+  };
 
   return (
     <div className={`bg-slate-800/50 backdrop-blur border border-slate-700/50 rounded-2xl p-6 ${className}`}>
@@ -47,7 +70,8 @@ const ProfileSecurity: React.FC<ProfileSecurityProps> = ({
             </div>
             <button 
               onClick={() => navigate("/change-password")} 
-              className="px-4 py-2 bg-slate-600/50 hover:bg-slate-600 border border-slate-500/50 rounded-lg text-sm text-slate-200 transition-all"
+              disabled={isUpdating}
+              className="px-4 py-2 bg-slate-600/50 hover:bg-slate-600 border border-slate-500/50 rounded-lg text-sm text-slate-200 transition-all disabled:opacity-50"
             >
               Change Password
             </button>
@@ -62,8 +86,9 @@ const ProfileSecurity: React.FC<ProfileSecurityProps> = ({
               <p className="text-xs text-slate-400">Enhancing account security with multi-layer authentication.</p>
             </div>
             <ToggleSwitch 
-              enabled={twoFactorAuth}
-              onChange={() => {}}
+              enabled={localTwoFactorAuth}
+              onChange={handleTwoFactorToggle}
+              disabled={isUpdating}
             />
           </div>
         </div>

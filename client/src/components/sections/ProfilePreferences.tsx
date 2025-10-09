@@ -1,20 +1,40 @@
 // components/sections/ProfilePreferences.tsx
+import { useState, useEffect } from "react";
 
 interface ProfilePreferencesProps {
   tokensTracked: Record<string, boolean>;
   dashboardPopup: boolean;
   emailNotifications: boolean;
   profitThreshold: number;
+  availableTokens?: string[];
+  onUpdate?: (data: { 
+    tokensTracked?: Record<string, boolean>;
+    dashboardPopup?: boolean;
+    emailNotifications?: boolean;
+    profitThreshold?: number;
+  }) => void;
+  isUpdating?: boolean;
   className?: string;
 }
 
-const TokenCheckbox = ({ token, checked, onChange }: { token: string, checked: boolean, onChange: () => void }) => (
+const TokenCheckbox = ({ 
+  token, 
+  checked, 
+  onChange, 
+  disabled 
+}: { 
+  token: string; 
+  checked: boolean; 
+  onChange: () => void;
+  disabled?: boolean;
+}) => (
   <label className="flex items-center gap-2 cursor-pointer">
     <input
       type="checkbox"
       checked={checked}
       onChange={onChange}
-      className="w-4 h-4 rounded bg-slate-700 border-slate-600 text-cyan-500 focus:ring-2 focus:ring-cyan-400/50"
+      disabled={disabled}
+      className="w-4 h-4 rounded bg-slate-700 border-slate-600 text-cyan-500 focus:ring-2 focus:ring-cyan-400/50 disabled:opacity-50"
     />
     <span className={`px-3 py-1 rounded-lg text-xs font-medium ${
       checked ? 'bg-cyan-500/20 text-cyan-400 border border-cyan-500/30' : 'bg-slate-700/50 text-slate-400 border border-slate-600/50'
@@ -24,10 +44,19 @@ const TokenCheckbox = ({ token, checked, onChange }: { token: string, checked: b
   </label>
 );
 
-const ToggleSwitch = ({ enabled, onChange }: { enabled: boolean, onChange: () => void }) => (
+const ToggleSwitch = ({ 
+  enabled, 
+  onChange, 
+  disabled 
+}: { 
+  enabled: boolean; 
+  onChange: () => void;
+  disabled?: boolean;
+}) => (
   <button
     onClick={onChange}
-    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+    disabled={disabled}
+    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors disabled:opacity-50 ${
       enabled ? 'bg-cyan-500' : 'bg-slate-600'
     }`}
   >
@@ -44,8 +73,77 @@ const ProfilePreferences: React.FC<ProfilePreferencesProps> = ({
   dashboardPopup,
   emailNotifications,
   profitThreshold,
+  availableTokens = [],
+  onUpdate,
+  isUpdating = false,
   className = ""
 }) => {
+  const [localTokensTracked, setLocalTokensTracked] = useState(tokensTracked);
+  const [localDashboardPopup, setLocalDashboardPopup] = useState(dashboardPopup);
+  const [localEmailNotifications, setLocalEmailNotifications] = useState(emailNotifications);
+  const [localProfitThreshold, setLocalProfitThreshold] = useState(profitThreshold);
+  const [profitThresholdError, setProfitThresholdError] = useState<string>('');
+
+  // Update local state when props change
+  useEffect(() => {
+    setLocalTokensTracked(tokensTracked);
+    setLocalDashboardPopup(dashboardPopup);
+    setLocalEmailNotifications(emailNotifications);
+    setLocalProfitThreshold(profitThreshold);
+  }, [tokensTracked, dashboardPopup, emailNotifications, profitThreshold]);
+
+  const validateProfitThreshold = (value: number): boolean => {
+    if (value < 0 || value > 100) {
+      setProfitThresholdError('Profit threshold must be between 0 and 100%');
+      return false;
+    }
+    setProfitThresholdError('');
+    return true;
+  };
+
+  const handleTokenToggle = (token: string) => {
+    const newTokensTracked = {
+      ...localTokensTracked,
+      [token]: !localTokensTracked[token]
+    };
+    setLocalTokensTracked(newTokensTracked);
+    
+    // Update pending changes immediately
+    onUpdate?.({ tokensTracked: newTokensTracked });
+  };
+
+  const handleDashboardToggle = () => {
+    const newValue = !localDashboardPopup;
+    setLocalDashboardPopup(newValue);
+    
+    // Update pending changes immediately
+    onUpdate?.({ dashboardPopup: newValue });
+  };
+
+  const handleEmailToggle = () => {
+    const newValue = !localEmailNotifications;
+    setLocalEmailNotifications(newValue);
+    
+    // Update pending changes immediately
+    onUpdate?.({ emailNotifications: newValue });
+  };
+
+  const handleProfitThresholdChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = parseFloat(e.target.value);
+    setLocalProfitThreshold(value);
+    validateProfitThreshold(value);
+    
+    // Update pending changes immediately if valid
+    if (validateProfitThreshold(value)) {
+      onUpdate?.({ profitThreshold: value });
+    }
+  };
+
+  const handleProfitThresholdBlur = () => {
+    if (localProfitThreshold !== profitThreshold && validateProfitThreshold(localProfitThreshold)) {
+      onUpdate?.({ profitThreshold: localProfitThreshold });
+    }
+  };
   return (
     <div className={`bg-slate-800/50 backdrop-blur border border-slate-700/30 rounded-2xl p-6 ${className}`}>
       <div className="flex items-center gap-3 mb-6">
@@ -64,14 +162,27 @@ const ProfilePreferences: React.FC<ProfilePreferencesProps> = ({
           <label className="block text-sm text-slate-400 mb-2">Tokens Tracked</label>
           <p className="text-xs text-slate-500 mb-3">Select which tokens to monitor for arbitrage opportunities.</p>
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-            {Object.entries(tokensTracked).map(([token, checked]) => (
-              <TokenCheckbox
-                key={token}
-                token={token}
-                checked={checked}
-                onChange={() => {}}
-              />
-            ))}
+            {availableTokens.length > 0 ? (
+              availableTokens.map((token) => (
+                <TokenCheckbox
+                  key={token}
+                  token={token}
+                  checked={localTokensTracked[token] || false}
+                  onChange={() => handleTokenToggle(token)}
+                  disabled={isUpdating}
+                />
+              ))
+            ) : (
+              Object.entries(localTokensTracked).map(([token, checked]) => (
+                <TokenCheckbox
+                  key={token}
+                  token={token}
+                  checked={checked}
+                  onChange={() => handleTokenToggle(token)}
+                  disabled={isUpdating}
+                />
+              ))
+            )}
           </div>
         </div>
 
@@ -84,16 +195,18 @@ const ProfilePreferences: React.FC<ProfilePreferencesProps> = ({
             <div className="flex items-center justify-between p-3 bg-slate-700/30 rounded-lg">
               <span className="text-sm text-slate-300">Dashboard Popup</span>
               <ToggleSwitch 
-                enabled={dashboardPopup}
-                onChange={() => {}}
+                enabled={localDashboardPopup}
+                onChange={handleDashboardToggle}
+                disabled={isUpdating}
               />
             </div>
             
             <div className="flex items-center justify-between p-3 bg-slate-700/30 rounded-lg">
               <span className="text-sm text-slate-300">Email</span>
               <ToggleSwitch 
-                enabled={emailNotifications}
-                onChange={() => {}}
+                enabled={localEmailNotifications}
+                onChange={handleEmailToggle}
+                disabled={isUpdating}
               />
             </div>
           </div>
@@ -111,13 +224,18 @@ const ProfilePreferences: React.FC<ProfilePreferencesProps> = ({
                 <span className="flex items-center text-cyan-400 font-medium">&gt;</span>
                 <input
                   type="number"
-                  value={profitThreshold}
-                  onChange={() => {}}
-                  className="w-16 px-3 py-1.5 bg-slate-700/50 border border-slate-600/50 rounded-lg text-slate-200 text-center focus:outline-none focus:ring-2 focus:ring-cyan-400/50"
+                  value={localProfitThreshold}
+                  onChange={handleProfitThresholdChange}
+                  onBlur={handleProfitThresholdBlur}
+                  disabled={isUpdating}
+                  className={`w-16 px-3 py-1.5 bg-slate-700/50 border rounded-lg text-slate-200 text-center focus:outline-none focus:ring-2 disabled:opacity-50 ${
+                    profitThresholdError ? 'border-red-500 focus:ring-red-400/50' : 'border-slate-600/50 focus:ring-cyan-400/50'
+                  }`}
                 />
                 <span className="text-slate-400">%</span>
               </div>
             </div>
+            {profitThresholdError && <p className="text-red-400 text-xs mt-1">{profitThresholdError}</p>}
             
             <div className="relative pt-1">
               <input
@@ -125,9 +243,24 @@ const ProfilePreferences: React.FC<ProfilePreferencesProps> = ({
                 min="0"
                 max="10"
                 step="0.5"
-                value={profitThreshold}
-                onChange={() => {}}
-                className="w-full h-2 bg-slate-600 rounded-lg appearance-none cursor-pointer"
+                value={localProfitThreshold}
+                onChange={(e) => {
+                  const value = parseFloat(e.target.value);
+                  setLocalProfitThreshold(value);
+                  validateProfitThreshold(value);
+                  
+                  // Update pending changes immediately if valid
+                  if (validateProfitThreshold(value)) {
+                    onUpdate?.({ profitThreshold: value });
+                  }
+                }}
+                onMouseUp={() => {
+                  if (localProfitThreshold !== profitThreshold) {
+                    onUpdate?.({ profitThreshold: localProfitThreshold });
+                  }
+                }}
+                disabled={isUpdating}
+                className="w-full h-2 bg-slate-600 rounded-lg appearance-none cursor-pointer disabled:opacity-50"
               />
               <div className="flex justify-between text-xs text-slate-500 mt-1">
                 <span>0%</span>
