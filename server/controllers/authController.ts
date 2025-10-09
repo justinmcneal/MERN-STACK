@@ -29,8 +29,8 @@ export const authUser = asyncHandler(async (req: Request, res: Response) => {
   try {
     const authResponse = await AuthService.login(req.body);
     
-    // Set cookies
-    AuthService.setAuthCookies(res, req.cookies.refreshToken || '', authResponse.csrfToken);
+    // Set cookies with remember me support
+    AuthService.setAuthCookies(res, authResponse.refreshToken || '', authResponse.csrfToken, req.body.rememberMe || false);
     
     res.json({
       _id: authResponse.user._id,
@@ -109,4 +109,44 @@ export const logoutUser = asyncHandler(async (req: Request, res: Response) => {
   
   AuthService.clearAuthCookies(res);
   res.status(200).json({ message: 'Logged out' });
+});
+
+// GET /api/auth/verify-email
+export const verifyEmail = asyncHandler(async (req: Request, res: Response) => {
+  try {
+    const { token } = req.query;
+    
+    if (!token || typeof token !== 'string') {
+      throw createError('Verification token is required', 400);
+    }
+
+    const result = await AuthService.verifyEmail(token);
+    
+    res.json({
+      success: true,
+      message: result.message,
+    });
+  } catch (error: any) {
+    throw error;
+  }
+});
+
+// POST /api/auth/resend-verification
+export const resendVerification = asyncHandler(async (req: Request, res: Response) => {
+  try {
+    const { email } = req.body;
+    
+    if (!email) {
+      throw createError('Email is required', 400);
+    }
+
+    const result = await AuthService.resendVerificationEmail(email);
+    
+    res.json({
+      success: true,
+      message: result.message,
+    });
+  } catch (error: any) {
+    throw error;
+  }
 });

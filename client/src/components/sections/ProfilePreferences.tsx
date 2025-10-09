@@ -93,8 +93,8 @@ const ProfilePreferences: React.FC<ProfilePreferencesProps> = ({
   }, [tokensTracked, dashboardPopup, emailNotifications, profitThreshold]);
 
   const validateProfitThreshold = (value: number): boolean => {
-    if (value < 0 || value > 100) {
-      setProfitThresholdError('Profit threshold must be between 0 and 100%');
+    if (value < 0 || value > 50) {
+      setProfitThresholdError('Profit threshold must be between 0 and 50%');
       return false;
     }
     setProfitThresholdError('');
@@ -215,7 +215,7 @@ const ProfilePreferences: React.FC<ProfilePreferencesProps> = ({
         {/* Alert Thresholds */}
         <div>
           <label className="block text-sm text-slate-400 mb-2">Alert Thresholds</label>
-          <p className="text-xs text-slate-500 mb-3">Set minimum profit percentage for notifications.</p>
+          <p className="text-xs text-slate-500 mb-3">Set minimum profit percentage for notifications. Typical arbitrage opportunities range from 0.1% to 5%.</p>
           
           <div className="space-y-3">
             <div className="flex items-center justify-between">
@@ -224,11 +224,14 @@ const ProfilePreferences: React.FC<ProfilePreferencesProps> = ({
                 <span className="flex items-center text-cyan-400 font-medium">&gt;</span>
                 <input
                   type="number"
+                  min="0"
+                  max="50"
+                  step="0.1"
                   value={localProfitThreshold}
                   onChange={handleProfitThresholdChange}
                   onBlur={handleProfitThresholdBlur}
                   disabled={isUpdating}
-                  className={`w-16 px-3 py-1.5 bg-slate-700/50 border rounded-lg text-slate-200 text-center focus:outline-none focus:ring-2 disabled:opacity-50 ${
+                  className={`w-20 px-3 py-1.5 bg-slate-700/50 border rounded-lg text-slate-200 text-center focus:outline-none focus:ring-2 disabled:opacity-50 ${
                     profitThresholdError ? 'border-red-500 focus:ring-red-400/50' : 'border-slate-600/50 focus:ring-cyan-400/50'
                   }`}
                 />
@@ -242,7 +245,7 @@ const ProfilePreferences: React.FC<ProfilePreferencesProps> = ({
                 type="range"
                 min="0"
                 max="10"
-                step="0.5"
+                step="0.1"
                 value={localProfitThreshold}
                 onChange={(e) => {
                   const value = parseFloat(e.target.value);
@@ -264,9 +267,33 @@ const ProfilePreferences: React.FC<ProfilePreferencesProps> = ({
               />
               <div className="flex justify-between text-xs text-slate-500 mt-1">
                 <span>0%</span>
+                <span>2.5%</span>
                 <span>5%</span>
                 <span>10%</span>
               </div>
+            </div>
+            
+            {/* Quick preset buttons */}
+            <div className="flex flex-wrap gap-2 mt-3">
+              <span className="text-xs text-slate-500 mr-2">Quick presets:</span>
+              {[0.5, 1, 2, 5].map((preset) => (
+                <button
+                  key={preset}
+                  onClick={() => {
+                    setLocalProfitThreshold(preset);
+                    validateProfitThreshold(preset);
+                    onUpdate?.({ profitThreshold: preset });
+                  }}
+                  disabled={isUpdating}
+                  className={`px-3 py-1 text-xs rounded-lg border transition-all disabled:opacity-50 ${
+                    Math.abs(localProfitThreshold - preset) < 0.1
+                      ? 'bg-cyan-500/20 text-cyan-400 border-cyan-500/50'
+                      : 'bg-slate-700/50 text-slate-400 border-slate-600/50 hover:bg-slate-600/50'
+                  }`}
+                >
+                  {preset}%
+                </button>
+              ))}
             </div>
           </div>
         </div>

@@ -1,5 +1,5 @@
 // pages/profile.tsx
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Save } from "lucide-react";
 import ProfileSidebar from "../components/sections/ProfileSidebar";
 import ProfileHeader from "../components/sections/ProfileHeader";
@@ -8,6 +8,7 @@ import ProfilePreferences from "../components/sections/ProfilePreferences";
 import ProfileSecurity from "../components/sections/ProfileSecurity";
 import { useProfile } from "../hooks/useProfile";
 import { usePreferences } from "../hooks/usePreferences";
+import type { UpdatePreferencesData } from "../services/profileService";
 
 const ProfilePage = () => {
     const [activeTab] = useState("Profile");
@@ -32,27 +33,28 @@ const ProfilePage = () => {
     updatePreferences
   } = usePreferences();
 
+  // Original state for comparison
+  const [originalState, setOriginalState] = useState({
+    profile: { name: '', email: '' },
+    preferences: {
+      tokensTracked: [] as string[],
+      dashboardPopup: false,
+      emailNotifications: false,
+      profitThreshold: 1
+    }
+  });
+
+  const [localName, setLocalName] = useState('');
+
   // Local state for form data
   const [localTokensTracked, setLocalTokensTracked] = useState<Record<string, boolean>>({});
   const [localDashboardPopup, setLocalDashboardPopup] = useState(false);
   const [localEmailNotifications, setLocalEmailNotifications] = useState(false);
-  const [localProfitThreshold, setLocalProfitThreshold] = useState(5);
+  const [localProfitThreshold, setLocalProfitThreshold] = useState(1);
   const [localTwoFactorAuth, setLocalTwoFactorAuth] = useState(false);
   const [selectedAvatar, setSelectedAvatar] = useState(0);
   const [availableTokens, setAvailableTokens] = useState<string[]>([]);
   
-  // Track pending changes
-  const [pendingChanges, setPendingChanges] = useState({
-    profile: { name: '', email: '' },
-    preferences: { 
-      tokensTracked: [] as string[], 
-      dashboardPopup: undefined as boolean | undefined, 
-      emailNotifications: undefined as boolean | undefined, 
-      profitThreshold: undefined as number | undefined 
-    },
-    hasChanges: false
-  });
-
   // Update local state when preferences change
   useEffect(() => {
     if (preferences) {
@@ -65,8 +67,29 @@ const ProfilePage = () => {
       setLocalDashboardPopup(preferences.notificationSettings.dashboard);
       setLocalEmailNotifications(preferences.notificationSettings.email);
       setLocalProfitThreshold(preferences.alertThresholds.minROI);
+      setLocalName(profile?.user.name || '');
+
+      // Set original state for comparison
+      setOriginalState({
+        profile: {
+          name: profile?.user.name || '',
+          email: profile?.user.email || ''
+        },
+        preferences: {
+          tokensTracked: [...preferences.tokensTracked],
+          dashboardPopup: preferences.notificationSettings.dashboard,
+          emailNotifications: preferences.notificationSettings.email,
+          profitThreshold: preferences.alertThresholds.minROI
+        }
+      });
     }
-  }, [preferences]);
+  }, [preferences, profile]);
+
+  useEffect(() => {
+    if (profile?.user.name) {
+      setLocalName(prev => (prev === '' ? profile.user.name : prev));
+    }
+  }, [profile]);
 
   // Fetch available tokens on component mount
   useEffect(() => {
@@ -78,13 +101,18 @@ const ProfilePage = () => {
         setAvailableTokens(defaultTokens);
         
         // Initialize localTokensTracked with all available tokens
-        if (Object.keys(localTokensTracked).length === 0) {
+        setLocalTokensTracked(prev => {
+          if (Object.keys(prev).length > 0) {
+            return prev;
+          }
+
           const initialTokensTracked = defaultTokens.reduce((acc, token) => {
             acc[token] = false; // Start with all unchecked
             return acc;
           }, {} as Record<string, boolean>);
-          setLocalTokensTracked(initialTokensTracked);
-        }
+
+          return initialTokensTracked;
+        });
       } catch (error) {
         console.error('Failed to fetch available tokens:', error);
       }
@@ -92,6 +120,25 @@ const ProfilePage = () => {
 
     fetchAvailableTokens();
   }, []);
+
+  // Function to check if current state differs from original state
+  const hasActualChanges = useMemo(() => {
+  const trimmedLocalName = localName.trim();
+  const profileChanged = trimmedLocalName !== originalState.profile.name;
+
+    const localTokensSelected = Object.entries(localTokensTracked)
+      .filter(([, selected]) => selected)
+      .map(([token]) => token)
+      .sort();
+    const originalTokensSelected = [...originalState.preferences.tokensTracked].sort();
+    const tokensChanged = JSON.stringify(localTokensSelected) !== JSON.stringify(originalTokensSelected);
+
+    const dashboardChanged = localDashboardPopup !== originalState.preferences.dashboardPopup;
+    const emailChanged = localEmailNotifications !== originalState.preferences.emailNotifications;
+    const profitChanged = localProfitThreshold !== originalState.preferences.profitThreshold;
+
+    return profileChanged || tokensChanged || dashboardChanged || emailChanged || profitChanged;
+  }, [localName, localTokensTracked, localDashboardPopup, localEmailNotifications, localProfitThreshold, originalState]);
 
   // Handle profile updates (store locally, don't save immediately)
   const handleProfileUpdate = (data: { name?: string; email?: string; avatar?: number }) => {
@@ -101,15 +148,9 @@ const ProfilePage = () => {
       return;
     }
 
-    if (data.name || data.email) {
-      setPendingChanges(prev => ({
-        ...prev,
-        profile: {
-          name: data.name !== undefined ? data.name : prev.profile.name,
-          email: data.email !== undefined ? data.email : prev.profile.email
-        },
-        hasChanges: true
-      }));
+    // Only handle name changes - email changes are disabled
+    if (data.name) {
+      setLocalName(data.name);
     }
   };
 
@@ -123,51 +164,18 @@ const ProfilePage = () => {
   }) => {
     if (data.tokensTracked) {
       setLocalTokensTracked(data.tokensTracked);
-      const tokensArray = Object.keys(data.tokensTracked).filter(token => data.tokensTracked![token]);
-      setPendingChanges(prev => ({
-        ...prev,
-        preferences: {
-          ...prev.preferences,
-          tokensTracked: tokensArray
-        },
-        hasChanges: true
-      }));
     }
 
     if (data.dashboardPopup !== undefined) {
       setLocalDashboardPopup(data.dashboardPopup);
-      setPendingChanges(prev => ({
-        ...prev,
-        preferences: {
-          ...prev.preferences,
-          dashboardPopup: data.dashboardPopup
-        },
-        hasChanges: true
-      }));
     }
 
     if (data.emailNotifications !== undefined) {
       setLocalEmailNotifications(data.emailNotifications);
-      setPendingChanges(prev => ({
-        ...prev,
-        preferences: {
-          ...prev.preferences,
-          emailNotifications: data.emailNotifications
-        },
-        hasChanges: true
-      }));
     }
 
     if (data.profitThreshold !== undefined) {
       setLocalProfitThreshold(data.profitThreshold);
-      setPendingChanges(prev => ({
-        ...prev,
-        preferences: {
-          ...prev.preferences,
-          profitThreshold: data.profitThreshold
-        },
-        hasChanges: true
-      }));
     }
 
     if (data.twoFactorAuth !== undefined) {
@@ -179,64 +187,73 @@ const ProfilePage = () => {
 
   // Handle save all changes
   const handleSaveChanges = async () => {
-    if (!pendingChanges.hasChanges) {
-      console.log('No changes to save');
+    if (!hasActualChanges) {
+      console.log('No actual changes to save');
       return;
     }
 
     try {
+      const trimmedLocalName = localName.trim();
+      const profileData: { name?: string } = {};
+      if (trimmedLocalName && trimmedLocalName !== originalState.profile.name) {
+        profileData.name = trimmedLocalName;
+      }
+
+      const localTokensSelected = Object.entries(localTokensTracked)
+        .filter(([, selected]) => selected)
+        .map(([token]) => token);
+      const originalTokensSelected = [...originalState.preferences.tokensTracked];
+      const tokensChanged = JSON.stringify(localTokensSelected.sort()) !== JSON.stringify(originalTokensSelected.sort());
+
+      const dashboardChanged = localDashboardPopup !== originalState.preferences.dashboardPopup;
+      const emailChanged = localEmailNotifications !== originalState.preferences.emailNotifications;
+      const profitChanged = localProfitThreshold !== originalState.preferences.profitThreshold;
+
       // Save profile changes
-      if (pendingChanges.profile.name || pendingChanges.profile.email) {
-        const profileData: { name?: string; email?: string } = {};
-        if (pendingChanges.profile.name) profileData.name = pendingChanges.profile.name;
-        if (pendingChanges.profile.email) profileData.email = pendingChanges.profile.email;
-        
+      if (profileData.name) {
         await updateProfile(profileData);
       }
 
       // Save preferences changes
-      if (pendingChanges.preferences.tokensTracked.length > 0 || 
-          pendingChanges.preferences.dashboardPopup !== undefined ||
-          pendingChanges.preferences.emailNotifications !== undefined ||
-          pendingChanges.preferences.profitThreshold !== undefined) {
-        
-        const preferencesData: any = {};
-        
-        if (pendingChanges.preferences.tokensTracked.length > 0) {
-          preferencesData.tokensTracked = pendingChanges.preferences.tokensTracked;
+      if (tokensChanged || dashboardChanged || emailChanged || profitChanged) {
+  const preferencesData: UpdatePreferencesData = {};
+
+        if (tokensChanged) {
+          preferencesData.tokensTracked = localTokensSelected;
         }
-        
-        if (pendingChanges.preferences.dashboardPopup !== undefined || 
-            pendingChanges.preferences.emailNotifications !== undefined) {
+
+        if (dashboardChanged || emailChanged) {
           preferencesData.notificationSettings = {
-            dashboard: pendingChanges.preferences.dashboardPopup,
-            email: pendingChanges.preferences.emailNotifications
+            dashboard: localDashboardPopup,
+            email: localEmailNotifications
           };
         }
-        
-        if (pendingChanges.preferences.profitThreshold !== undefined) {
+
+        if (profitChanged) {
           preferencesData.alertThresholds = {
-            minROI: pendingChanges.preferences.profitThreshold,
+            minROI: localProfitThreshold,
             minProfit: preferences?.alertThresholds.minProfit || 100,
             maxGasCost: preferences?.alertThresholds.maxGasCost || 50,
             minScore: preferences?.alertThresholds.minScore || 80
           };
         }
-        
+
         await updatePreferences(preferencesData);
       }
 
-      // Clear pending changes
-      setPendingChanges({
-        profile: { name: '', email: '' },
-        preferences: { 
-          tokensTracked: [], 
-          dashboardPopup: undefined, 
-          emailNotifications: undefined, 
-          profitThreshold: undefined 
+      // Update original state to reflect saved changes
+      setOriginalState(prev => ({
+        profile: {
+          ...prev.profile,
+          name: profileData.name ?? prev.profile.name
         },
-        hasChanges: false
-      });
+        preferences: {
+          tokensTracked: tokensChanged ? [...localTokensSelected] : [...prev.preferences.tokensTracked],
+          dashboardPopup: localDashboardPopup,
+          emailNotifications: localEmailNotifications,
+          profitThreshold: localProfitThreshold
+        }
+      }));
 
       console.log('All changes saved successfully');
     } catch (error) {
@@ -361,7 +378,7 @@ const ProfilePage = () => {
             <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
               {/* Profile Information */}
               <ProfileInformation
-                fullName={profile?.user.name || ''}
+                fullName={localName}
                 email={profile?.user.email || ''}
                 joinDate={profile?.user.createdAt ? new Date(profile.user.createdAt).toLocaleDateString() : ''}
                 selectedAvatar={selectedAvatar}
@@ -395,9 +412,9 @@ const ProfilePage = () => {
               <div className="flex flex-col items-center gap-4">
                 <button
                   onClick={handleSaveChanges}
-                  disabled={!pendingChanges.hasChanges || profileUpdating || preferencesUpdating}
+                  disabled={!hasActualChanges || profileUpdating || preferencesUpdating}
                   className={`w-full sm:w-auto inline-flex items-center justify-center gap-3 px-8 py-4 rounded-xl font-semibold shadow-lg transition-all duration-300 ${
-                    !pendingChanges.hasChanges || profileUpdating || preferencesUpdating
+                    !hasActualChanges || profileUpdating || preferencesUpdating
                       ? 'bg-slate-600 text-slate-400 cursor-default opacity-50'
                       : 'bg-gradient-to-r from-cyan-500 to-purple-600 hover:from-cyan-400 hover:to-purple-500 text-white hover:shadow-cyan-500/25 transform hover:scale-105 cursor-pointer'
                   }`}
@@ -406,9 +423,9 @@ const ProfilePage = () => {
                   {profileUpdating || preferencesUpdating ? 'Saving...' : 'Save All Changes'}
                 </button>
                 <p className="text-sm text-slate-400 text-center">
-                  {pendingChanges.hasChanges 
+                  {hasActualChanges 
                     ? 'You have unsaved changes' 
-                    : 'Changes will be applied immediately to your account'
+                    : 'No changes detected'
                   }
                 </p>
               </div>

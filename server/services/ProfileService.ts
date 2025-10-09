@@ -10,7 +10,7 @@ export interface ProfileData {
 
 export interface ProfileUpdateData {
   name?: string;
-  email?: string;
+  // email?: string; // Email changes are disabled for security
 }
 
 export interface PasswordChangeData {
@@ -71,17 +71,13 @@ export class ProfileService {
       throw createError('User not found', 404);
     }
 
-    // Check if email is being changed and if it's already taken
-    if (data.email && data.email !== user.email) {
-      const existingUser = await User.findOne({ email: data.email });
-      if (existingUser) {
-        throw createError('Email already exists', 400);
-      }
+    // Email changes are disabled for security reasons
+    if ('email' in data && data.email !== undefined) {
+      throw createError('Email address cannot be changed. Please contact support if you need to update your email.', 400);
     }
 
     // Update user fields
     if (data.name) user.name = data.name;
-    if (data.email) user.email = data.email;
 
     await user.save();
 

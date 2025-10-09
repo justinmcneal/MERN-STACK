@@ -13,6 +13,9 @@ export interface IUser extends Document {
   failedLoginAttempts: number;
   lockUntil: number | null;
   isLocked(): boolean;
+  isEmailVerified: boolean;
+  emailVerificationToken: string | null;
+  emailVerificationExpires: Date | null;
 }
 
 const userSchema: Schema<IUser> = new mongoose.Schema(
@@ -23,6 +26,9 @@ const userSchema: Schema<IUser> = new mongoose.Schema(
     refreshTokens: [{ type: String }],
     failedLoginAttempts: { type: Number, default: 0 },
     lockUntil: { type: Number, default: null },
+    isEmailVerified: { type: Boolean, default: false },
+    emailVerificationToken: { type: String, default: null },
+    emailVerificationExpires: { type: Date, default: null },
   },
   { timestamps: true }
 );

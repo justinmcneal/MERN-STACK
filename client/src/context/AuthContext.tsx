@@ -1,12 +1,12 @@
 import React, { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
-import AuthService, { type User, type LoginCredentials, type RegisterData } from '../services/authService';
+import AuthService, { type User, type LoginCredentials, type RegisterData, type AuthResponse } from '../services/authService';
 
 interface AuthContextType {
   user: User | null;
   isAuthenticated: boolean;
   isLoading: boolean;
-  login: (credentials: LoginCredentials) => Promise<User>;
-  register: (data: RegisterData) => Promise<User>;
+  login: (credentials: LoginCredentials & { rememberMe?: boolean }) => Promise<User>;
+  register: (data: RegisterData) => Promise<AuthResponse>;
   logout: () => Promise<void>;
   refreshUser: () => Promise<void>;
 }
@@ -42,7 +42,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     initializeAuth();
   }, []);
 
-  const login = async (credentials: LoginCredentials): Promise<User> => {
+  const login = async (credentials: LoginCredentials & { rememberMe?: boolean }): Promise<User> => {
     try {
       setIsLoading(true);
       
@@ -62,12 +62,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   };
 
-  const register = async (data: RegisterData): Promise<User> => {
+  const register = async (data: RegisterData): Promise<AuthResponse> => {
     try {
       setIsLoading(true);
       const response = await AuthService.register(data);
       setUser(response.user);
-      return response.user;
+      return response;
     } catch (error) {
       throw error;
     } finally {

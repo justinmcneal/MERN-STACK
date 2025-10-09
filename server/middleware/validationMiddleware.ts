@@ -49,19 +49,29 @@ export const authSchemas = {
     password: Joi.string().required().messages({
       'any.required': 'Password is required',
     }),
+    rememberMe: Joi.boolean().optional().messages({
+      'boolean.base': 'Remember Me must be true or false',
+    }),
+  }),
+
+  resendVerification: Joi.object({
+    email: Joi.string().email().required().messages({
+      'string.email': 'Please provide a valid email address',
+      'any.required': 'Email is required',
+    }),
   }),
 };
 
 // Profile validation schemas
 export const profileSchemas = {
   updateProfile: Joi.object({
-    name: Joi.string().min(2).max(50).optional().messages({
-      'string.min': 'Name must be at least 2 characters long',
+    name: Joi.string().min(10).max(50).optional().messages({
+      'string.min': 'Name must be at least 10 characters long',
       'string.max': 'Name must not exceed 50 characters',
     }),
-    email: Joi.string().email().optional().messages({
-      'string.email': 'Please provide a valid email address',
-    }),
+    // email: Joi.string().email().optional().messages({
+    //   'string.email': 'Please provide a valid email address',
+    // }), // Email changes are disabled for security
   }).min(1).messages({
     'object.min': 'At least one field must be provided for update',
   }),
