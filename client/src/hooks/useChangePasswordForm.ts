@@ -1,27 +1,33 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import AuthService from '../services/authService';
 import { ErrorHandler } from '../utils/errorHandler';
+import apiClient from '../services/api';
 
 interface FormData {
-  email: string;
+  currentPassword: string;
+  newPassword: string;
+  confirmPassword: string;
 }
 
 interface FormErrors {
-  email?: string;
+  currentPassword?: string;
+  newPassword?: string;
+  confirmPassword?: string;
   general?: string;
 }
 
 // Rate limiting constants
-const FORGOT_PASSWORD_ATTEMPT_COUNT_KEY = 'forgotPasswordAttemptCount';
-const FORGOT_PASSWORD_LAST_ATTEMPT_KEY = 'forgotPasswordLastAttempt';
-const MAX_FORGOT_PASSWORD_ATTEMPTS = 3;
+const CHANGE_PASSWORD_ATTEMPT_COUNT_KEY = 'changePasswordAttemptCount';
+const CHANGE_PASSWORD_LAST_ATTEMPT_KEY = 'changePasswordLastAttempt';
+const MAX_CHANGE_PASSWORD_ATTEMPTS = 3;
 const RATE_LIMIT_DURATION = 300000; // 5 minutes
 
-export const useForgotPasswordForm = () => {
+export const useChangePasswordForm = () => {
   const navigate = useNavigate();
   const [formData, setFormData] = useState<FormData>({
-    email: '',
+    currentPassword: '',
+    newPassword: '',
+    confirmPassword: '',
   });
   const [errors, setErrors] = useState<FormErrors>({});
   const [isLoading, setIsLoading] = useState(false);
@@ -34,8 +40,8 @@ export const useForgotPasswordForm = () => {
   useEffect(() => {
     const loadRateLimitState = () => {
       try {
-        const storedAttemptCount = localStorage.getItem(FORGOT_PASSWORD_ATTEMPT_COUNT_KEY);
-        const storedLastAttempt = localStorage.getItem(FORGOT_PASSWORD_LAST_ATTEMPT_KEY);
+        const storedAttemptCount = localStorage.getItem(CHANGE_PASSWORD_ATTEMPT_COUNT_KEY);
+        const storedLastAttempt = localStorage.getItem(CHANGE_PASSWORD_LAST_ATTEMPT_KEY);
         
         if (storedAttemptCount && storedLastAttempt) {
           const count = parseInt(storedAttemptCount, 10);
@@ -45,8 +51,8 @@ export const useForgotPasswordForm = () => {
           
           // If rate limit duration has passed, reset the rate limiting
           if (timeSinceLastAttempt >= RATE_LIMIT_DURATION) {
-            localStorage.removeItem(FORGOT_PASSWORD_ATTEMPT_COUNT_KEY);
-            localStorage.removeItem(FORGOT_PASSWORD_LAST_ATTEMPT_KEY);
+            localStorage.removeItem(CHANGE_PASSWORD_ATTEMPT_COUNT_KEY);
+            localStorage.removeItem(CHANGE_PASSWORD_LAST_ATTEMPT_KEY);
             setAttemptCount(0);
             setLastAttemptTime(0);
             setIsRateLimited(false);
@@ -54,22 +60,58 @@ export const useForgotPasswordForm = () => {
             // Restore the rate limiting state
             setAttemptCount(count);
             setLastAttemptTime(lastAttempt);
-            setIsRateLimited(count >= MAX_FORGOT_PASSWORD_ATTEMPTS);
+            setIsRateLimited(count >= MAX_CHANGE_PASSWORD_ATTEMPTS);
           }
         }
       } catch (error) {
         console.error('Failed to load rate limit state from localStorage:', error);
         // Clear corrupted data
-        localStorage.removeItem(FORGOT_PASSWORD_ATTEMPT_COUNT_KEY);
-        localStorage.removeItem(FORGOT_PASSWORD_LAST_ATTEMPT_KEY);
+        localStorage.removeItem(CHANGE_PASSWORD_ATTEMPT_COUNT_KEY);
+        localStorage.removeItem(CHANGE_PASSWORD_LAST_ATTEMPT_KEY);
       }
     };
 
     loadRateLimitState();
   }, []);
 
-  const validateEmail = (email: string): string | undefined => {
-    return ErrorHandler.handleValidationError('email', email) || undefined;
+  const validateCurrentPassword = (password: string): string | undefined => {
+    if (!password) {
+      return 'Current password is required';
+    }
+    return undefined;
+  };
+
+  const validateNewPassword = (password: string): string | undefined => {
+    const error = ErrorHandler.handleValidationError('password', password);
+    if (error) return error;
+    
+    // Additional password-specific validations
+    if (password.includes(' ')) {
+      return 'Password cannot contain spaces';
+    }
+    
+    // Check for common weak passwords
+    const commonPasswords = ['password', '123456', 'qwerty', 'abc123', 'password123'];
+    if (commonPasswords.some(weak => password.toLowerCase().includes(weak))) {
+      return 'Password is too common. Please choose a more secure password.';
+    }
+    
+    // Check for repeated characters
+    if (/(.)\1{2,}/.test(password)) {
+      return 'Password cannot contain more than 2 consecutive identical characters';
+    }
+    
+    return undefined;
+  };
+
+  const validateConfirmPassword = (confirmPassword: string, newPassword: string): string | undefined => {
+    if (!confirmPassword) {
+      return 'Please confirm your new password';
+    }
+    if (confirmPassword !== newPassword) {
+      return 'Passwords do not match';
+    }
+    return undefined;
   };
 
   const handleInputChange = (field: keyof FormData) => {
@@ -77,11 +119,9 @@ export const useForgotPasswordForm = () => {
       // Sanitize input to prevent common errors
       let sanitizedValue = value;
       
-      if (field === 'email') {
-        // Remove extra spaces and convert to lowercase
-        sanitizedValue = value.trim().toLowerCase();
-        // Prevent multiple consecutive dots
-        sanitizedValue = sanitizedValue.replace(/\.{2,}/g, '.');
+      if (field === 'currentPassword' || field === 'newPassword' || field === 'confirmPassword') {
+        // Remove leading/trailing spaces
+        sanitizedValue = value.trim();
       }
       
       setFormData(prev => ({ ...prev, [field]: sanitizedValue }));
@@ -104,7 +144,16 @@ export const useForgotPasswordForm = () => {
   };
 
   const validateField = (field: keyof FormData, value: string) => {
-    const errorMessage = ErrorHandler.handleValidationError(field, value);
+    let errorMessage = '';
+    
+    if (field === 'currentPassword') {
+      errorMessage = validateCurrentPassword(value) || '';
+    } else if (field === 'newPassword') {
+      errorMessage = validateNewPassword(value) || '';
+    } else if (field === 'confirmPassword') {
+      errorMessage = validateConfirmPassword(value, formData.newPassword) || '';
+    }
+    
     const newErrors: FormErrors = { ...errors };
     
     if (errorMessage) {
@@ -127,12 +176,22 @@ export const useForgotPasswordForm = () => {
       });
       return;
     }
-    
+
     // Validate form
     const newErrors: FormErrors = {};
-    const emailError = validateEmail(formData.email);
-    if (emailError) {
-      newErrors.email = emailError;
+    const currentPasswordError = validateCurrentPassword(formData.currentPassword);
+    if (currentPasswordError) {
+      newErrors.currentPassword = currentPasswordError;
+    }
+    
+    const newPasswordError = validateNewPassword(formData.newPassword);
+    if (newPasswordError) {
+      newErrors.newPassword = newPasswordError;
+    }
+    
+    const confirmPasswordError = validateConfirmPassword(formData.confirmPassword, formData.newPassword);
+    if (confirmPasswordError) {
+      newErrors.confirmPassword = confirmPasswordError;
     }
 
     if (Object.keys(newErrors).length > 0) {
@@ -144,14 +203,17 @@ export const useForgotPasswordForm = () => {
     setErrors({});
 
     try {
-      const result = await AuthService.forgotPassword(formData.email);
+      const response = await apiClient.put('/profile/password', {
+        currentPassword: formData.currentPassword,
+        newPassword: formData.newPassword,
+      });
       
-      if (result.success) {
+      if (response.data.success) {
         setIsSuccess(true);
         // Clear form data and rate limiting on success
-        setFormData({ email: '' });
-        localStorage.removeItem(FORGOT_PASSWORD_ATTEMPT_COUNT_KEY);
-        localStorage.removeItem(FORGOT_PASSWORD_LAST_ATTEMPT_KEY);
+        setFormData({ currentPassword: '', newPassword: '', confirmPassword: '' });
+        localStorage.removeItem(CHANGE_PASSWORD_ATTEMPT_COUNT_KEY);
+        localStorage.removeItem(CHANGE_PASSWORD_LAST_ATTEMPT_KEY);
         setAttemptCount(0);
         setLastAttemptTime(0);
         setIsRateLimited(false);
@@ -164,20 +226,20 @@ export const useForgotPasswordForm = () => {
         setLastAttemptTime(now);
         
         // Store in localStorage
-        localStorage.setItem(FORGOT_PASSWORD_ATTEMPT_COUNT_KEY, newAttemptCount.toString());
-        localStorage.setItem(FORGOT_PASSWORD_LAST_ATTEMPT_KEY, now.toString());
+        localStorage.setItem(CHANGE_PASSWORD_ATTEMPT_COUNT_KEY, newAttemptCount.toString());
+        localStorage.setItem(CHANGE_PASSWORD_LAST_ATTEMPT_KEY, now.toString());
         
-        if (newAttemptCount >= MAX_FORGOT_PASSWORD_ATTEMPTS) {
+        if (newAttemptCount >= MAX_CHANGE_PASSWORD_ATTEMPTS) {
           setIsRateLimited(true);
           setErrors({ 
             general: `Too many failed attempts. Please wait 5 minutes before trying again.` 
           });
         } else {
-          setErrors({ general: result.message || 'Failed to send password reset email' });
+          setErrors({ general: response.data.message || 'Failed to change password' });
         }
       }
     } catch (error) {
-      console.error('Forgot password error:', error);
+      console.error('Change password error:', error);
       
       // Handle failed attempt
       const newAttemptCount = attemptCount + 1;
@@ -187,10 +249,10 @@ export const useForgotPasswordForm = () => {
       setLastAttemptTime(now);
       
       // Store in localStorage
-      localStorage.setItem(FORGOT_PASSWORD_ATTEMPT_COUNT_KEY, newAttemptCount.toString());
-      localStorage.setItem(FORGOT_PASSWORD_LAST_ATTEMPT_KEY, now.toString());
+      localStorage.setItem(CHANGE_PASSWORD_ATTEMPT_COUNT_KEY, newAttemptCount.toString());
+      localStorage.setItem(CHANGE_PASSWORD_LAST_ATTEMPT_KEY, now.toString());
       
-      if (newAttemptCount >= MAX_FORGOT_PASSWORD_ATTEMPTS) {
+      if (newAttemptCount >= MAX_CHANGE_PASSWORD_ATTEMPTS) {
         setIsRateLimited(true);
         setErrors({ 
           general: `Too many failed attempts. Please wait 5 minutes before trying again.` 
@@ -204,8 +266,8 @@ export const useForgotPasswordForm = () => {
     }
   };
 
-  const handleBackToLogin = () => {
-    navigate('/login');
+  const handleBackToProfile = () => {
+    navigate('/profile');
   };
 
   return {
@@ -217,6 +279,6 @@ export const useForgotPasswordForm = () => {
     isRateLimited,
     handleInputChange,
     handleSubmit,
-    handleBackToLogin,
+    handleBackToProfile,
   };
 };
