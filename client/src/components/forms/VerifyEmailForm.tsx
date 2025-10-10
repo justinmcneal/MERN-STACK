@@ -21,6 +21,9 @@ const VerifyEmailForm: React.FC<VerifyEmailFormProps> = ({ className = "" }) => 
     isLoading,
   } = useVerifyEmailForm();
 
+  // Debug logging
+  console.log('🔐 [VerifyEmailForm] Current status:', status, 'Message:', message);
+
   return (
     <div className={`max-w-md mx-auto w-full ${className}`}>
       {/* Status Display */}

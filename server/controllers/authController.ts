@@ -146,6 +146,51 @@ export const verifyEmail = asyncHandler(async (req: Request, res: Response) => {
   }
 });
 
+// POST /api/auth/regenerate-verification
+export const regenerateVerification = asyncHandler(async (req: Request, res: Response) => {
+  try {
+    const { email } = req.body;
+    
+    if (!email) {
+      throw createError('Email is required', 400);
+    }
+
+    const result = await AuthService.regenerateVerificationToken(email);
+    
+    res.json({
+      success: true,
+      message: result.message,
+    });
+  } catch (error: any) {
+    throw error;
+  }
+});
+
+// GET /api/auth/debug-token (DEBUG ONLY - remove in production)
+export const getDebugToken = asyncHandler(async (req: Request, res: Response) => {
+  try {
+    const { email } = req.query;
+    
+    if (!email || typeof email !== 'string') {
+      throw createError('Email is required', 400);
+    }
+
+    const debugTokens = (global as any).debugTokens || {};
+    const tokenData = debugTokens[email.toLowerCase()];
+    
+    if (!tokenData) {
+      throw createError('No debug token found for this email', 404);
+    }
+
+    res.json({
+      success: true,
+      data: tokenData,
+    });
+  } catch (error: any) {
+    throw error;
+  }
+});
+
 // POST /api/auth/resend-verification
 export const resendVerification = asyncHandler(async (req: Request, res: Response) => {
   try {

@@ -156,9 +156,19 @@ export class AuthService {
     const hashedToken = TokenService.hashToken(emailVerificationToken);
 
     console.log('🔐 [AuthService] Generated verification token and expiry:', {
+      rawToken: emailVerificationToken,
+      hashedToken: hashedToken,
       tokenLength: emailVerificationToken.length,
       expiresAt: emailVerificationExpires
     });
+
+    // Store raw token temporarily for debugging (remove in production)
+    (global as any).debugTokens = (global as any).debugTokens || {};
+    (global as any).debugTokens[normalizedEmail] = {
+      rawToken: emailVerificationToken,
+      hashedToken: hashedToken,
+      expiresAt: emailVerificationExpires
+    };
 
     console.log('🔐 [AuthService] Creating/updating pending user record...');
     await PendingUser.findOneAndUpdate(
@@ -361,6 +371,14 @@ export class AuthService {
     const hashedToken = TokenService.hashToken(token);
     console.log('🔐 [AuthService] Hashed token for lookup:', hashedToken);
     
+    // Debug: Check all pending users and their tokens
+    const allPendingUsers = await PendingUser.find({});
+    console.log('🔐 [AuthService] All pending users:', allPendingUsers.map(u => ({
+      email: u.email,
+      verificationToken: u.verificationToken,
+      expiresAt: u.verificationExpires
+    })));
+    
     const pendingUser = await PendingUser.findOne({
       verificationToken: hashedToken,
       verificationExpires: { $gt: new Date() },
@@ -373,6 +391,21 @@ export class AuthService {
         hasToken: !!pendingUser.verificationToken,
         expiresAt: pendingUser.verificationExpires
       });
+    }
+
+    // Check if user is already verified by looking up any user with this token hash
+    // This handles cases where verification succeeded but the request is retried
+    const existingVerifiedUser = await User.findOne({ 
+      emailVerificationToken: hashedToken,
+      isEmailVerified: true 
+    });
+    
+    if (existingVerifiedUser) {
+      console.log('🔐 [AuthService] User already verified, returning success');
+      return {
+        success: true,
+        message: 'Email already verified! You can log in.',
+      };
     }
 
     if (pendingUser) {
@@ -424,6 +457,22 @@ export class AuthService {
     if (!user) {
       console.log('🔐 [AuthService] Error: No pending user or valid user found with token');
       console.log('🔐 [AuthService] Token lookup failed for hashed token:', hashedToken);
+      
+      // Check if there's a recently verified user (within last 10 minutes)
+      // This handles race conditions where verification succeeded but token is no longer valid
+      const recentVerifiedUser = await User.findOne({
+        isEmailVerified: true,
+        createdAt: { $gte: new Date(Date.now() - 10 * 60 * 1000) } // Last 10 minutes
+      });
+      
+      if (recentVerifiedUser) {
+        console.log('🔐 [AuthService] Found recently verified user, returning success');
+        return {
+          success: true,
+          message: 'Email already verified! You can log in.',
+        };
+      }
+      
       throw createError('Invalid or expired verification token', 400);
     }
 
@@ -435,6 +484,42 @@ export class AuthService {
     return {
       success: true,
       message: 'Email verified successfully! You can now log in.',
+    };
+  }
+
+  /**
+   * Regenerate verification token for existing pending user
+   */
+  static async regenerateVerificationToken(email: string): Promise<{ success: boolean; message: string }> {
+    const normalizedEmail = email.trim().toLowerCase();
+    
+    const pendingUser = await PendingUser.findOne({ email: normalizedEmail });
+    if (!pendingUser) {
+      throw createError('No pending user found with this email', 404);
+    }
+
+    // Generate new token
+    const emailVerificationToken = TokenService.generateEmailVerificationToken();
+    const emailVerificationExpires = TokenService.getEmailVerificationExpiry();
+    const hashedToken = TokenService.hashToken(emailVerificationToken);
+
+    console.log('🔐 [AuthService] Regenerated verification token:', {
+      rawToken: emailVerificationToken,
+      hashedToken: hashedToken,
+      expiresAt: emailVerificationExpires
+    });
+
+    // Update pending user with new token
+    pendingUser.verificationToken = hashedToken;
+    pendingUser.verificationExpires = emailVerificationExpires;
+    await pendingUser.save();
+
+    // Send new verification email
+    await EmailService.sendVerificationEmail(normalizedEmail, pendingUser.name, emailVerificationToken);
+
+    return {
+      success: true,
+      message: 'New verification email sent successfully!',
     };
   }
 

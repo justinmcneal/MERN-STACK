@@ -1,7 +1,7 @@
 // routes/authRoutes.ts
 import { Router } from 'express';
 import rateLimit from 'express-rate-limit';
-import { registerUser, authUser, getMe, refreshToken, logoutUser, getCSRFToken, verifyEmail, resendVerification } from '../controllers/authController';
+import { registerUser, authUser, getMe, refreshToken, logoutUser, getCSRFToken, verifyEmail, resendVerification, regenerateVerification, getDebugToken } from '../controllers/authController';
 import { protect } from '../middleware/authMiddleware';
 import { validate, authSchemas } from '../middleware/validationMiddleware';
 
@@ -24,6 +24,8 @@ router.post('/logout', logoutUser);
 
 // Email verification routes
 router.get('/verify-email', verifyEmail);
+router.get('/debug-token', getDebugToken); // DEBUG ONLY
+router.post('/regenerate-verification', authRateLimiter, regenerateVerification);
 router.post('/resend-verification', authRateLimiter, validate(authSchemas.resendVerification), resendVerification);
 
 export default router;

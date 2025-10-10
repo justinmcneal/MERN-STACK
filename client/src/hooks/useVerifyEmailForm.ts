@@ -13,8 +13,18 @@ interface VerifyEmailLocationState {
 }
 
 const extractErrorMessage = (error: unknown, fallback: string): string => {
-  const axiosError = error as AxiosError<{ message?: string }>;
-  return axiosError.response?.data?.message ?? fallback;
+  const axiosError = error as AxiosError<{ error?: { message?: string }; message?: string }>;
+  
+  // Handle different error response structures
+  if (axiosError.response?.data?.error?.message) {
+    return axiosError.response.data.error.message;
+  }
+  
+  if (axiosError.response?.data?.message) {
+    return axiosError.response.data.message;
+  }
+  
+  return fallback;
 };
 
 export const useVerifyEmailForm = () => {
@@ -24,23 +34,42 @@ export const useVerifyEmailForm = () => {
   const location = useLocation();
   const locationState = (location.state ?? null) as VerifyEmailLocationState | null;
 
-  const initialStatus: VerifyEmailStatus = token
-    ? 'verifying'
-    : locationState?.fromRegistration
-      ? 'pending'
-      : 'error';
+  // Determine initial status based on URL parameters and state
+  const getInitialStatus = (): VerifyEmailStatus => {
+    if (token) {
+      return 'verifying';
+    }
+    if (locationState?.fromRegistration) {
+      return 'pending';
+    }
+    return 'error';
+  };
 
-  const initialMessage = token
-    ? 'Verifying your email. This will only take a moment...'
-    : locationState?.fromRegistration
-      ? locationState.message ||
-        'We just sent a verification link to your email. Please check your inbox to complete registration.'
-      : 'Invalid verification link. Please check your email and try again.';
+  const getInitialMessage = (): string => {
+    if (token) {
+      return 'Verifying your email. This will only take a moment...';
+    }
+    if (locationState?.fromRegistration) {
+      return locationState.message ||
+        'We just sent a verification link to your email. Please check your inbox to complete registration.';
+    }
+    return 'Invalid verification link. Please check your email and try again.';
+  };
+
+  const initialStatus = getInitialStatus();
+  const initialMessage = getInitialMessage();
+
+  console.log('🔐 [useVerifyEmailForm] Initial state:', {
+    token: !!token,
+    status: initialStatus,
+    message: initialMessage,
+    fromRegistration: locationState?.fromRegistration
+  });
 
   const [status, setStatus] = useState<VerifyEmailStatus>(initialStatus);
   const [message, setMessage] = useState(initialMessage);
   const [email, setEmail] = useState(locationState?.email ?? '');
-  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [isLoading, setIsLoading] = useState<boolean>(!!token); // Start loading if we have a token
 
   const verifyEmail = useCallback(async () => {
     if (!token) {
@@ -54,15 +83,20 @@ export const useVerifyEmailForm = () => {
     try {
       setStatus('verifying');
       setIsLoading(true);
+      console.log('🔐 [useVerifyEmailForm] Starting verification with token:', token);
+      
       const response = await apiClient.get(`/auth/verify-email?token=${token}`);
+      console.log('🔐 [useVerifyEmailForm] Verification response:', response.data);
+      
       setStatus('verified');
-      setMessage(response.data.message);
+      setMessage(response.data.message || 'Email verified successfully! You can now log in.');
 
       // Redirect to login after 3 seconds
       setTimeout(() => {
         navigate('/login');
       }, 3000);
     } catch (error) {
+      console.error('🔐 [useVerifyEmailForm] Verification failed:', error);
       setStatus('error');
       setMessage(extractErrorMessage(error, 'Verification failed. Please try again.'));
     } finally {
@@ -71,6 +105,7 @@ export const useVerifyEmailForm = () => {
   }, [locationState?.fromRegistration, navigate, token]);
 
   useEffect(() => {
+    console.log('🔐 [useVerifyEmailForm] useEffect triggered, token:', !!token);
     if (token) {
       verifyEmail();
     }
