@@ -5,6 +5,7 @@ import {
   setupTwoFactor, 
   verifyTwoFactorSetup, 
   verifyTwoFactorToken, 
+  verifyTwoFactorLogin,
   disableTwoFactor, 
   regenerateBackupCodes, 
   getTwoFactorStatus,
@@ -22,7 +23,10 @@ const twoFactorRateLimiter = rateLimit({
   message: 'Too many two-factor authentication attempts, please try again later.',
 });
 
-// All 2FA routes require authentication
+// 2FA login verification (no auth required)
+router.post('/verify-login', twoFactorRateLimiter, validate(twoFactorSchemas.verifyLogin), verifyTwoFactorLogin);
+
+// All other 2FA routes require authentication
 router.use(protect);
 
 // 2FA setup and management routes

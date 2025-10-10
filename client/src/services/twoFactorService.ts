@@ -44,6 +44,19 @@ export class TwoFactorService {
   }
 
   /**
+   * Verify two-factor authentication for login
+   */
+  static async verifyLogin(email: string, token: string): Promise<{
+    user: any;
+    accessToken: string;
+    refreshToken: string;
+    message: string;
+  }> {
+    const response = await apiClient.post('/auth/2fa/verify-login', { email, token });
+    return response.data;
+  }
+
+  /**
    * Disable two-factor authentication
    */
   static async disable(password: string): Promise<void> {

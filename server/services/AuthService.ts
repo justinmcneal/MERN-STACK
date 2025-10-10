@@ -28,9 +28,10 @@ export interface AuthResponse {
     email: string;
     isEmailVerified: boolean;
   };
-  accessToken: string;
-  refreshToken: string;
-  csrfToken: string;
+  accessToken?: string;
+  refreshToken?: string;
+  csrfToken?: string;
+  requiresTwoFactor?: boolean;
   message?: string;
 }
 
@@ -272,6 +273,24 @@ export class AuthService {
     // Reset failed attempts and lock
     user.failedLoginAttempts = 0;
     user.lockUntil = null;
+
+    // Check if user has 2FA enabled
+    if (user.twoFactorEnabled) {
+      console.log('🔐 [AuthService] User has 2FA enabled, requiring verification');
+      await user.save();
+      
+      // Return a special response indicating 2FA is required
+      return {
+        user: {
+          _id: user._id,
+          name: user.name,
+          email: user.email,
+          isEmailVerified: user.isEmailVerified,
+        },
+        requiresTwoFactor: true,
+        message: 'Two-factor authentication required'
+      };
+    }
 
     // Clean up old refresh tokens (keep only last 5)
     if (user.refreshTokens.length >= 5) {

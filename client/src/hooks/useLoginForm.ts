@@ -145,7 +145,18 @@ export const useLoginForm = () => {
   };
 
   const validateField = (field: keyof LoginFormData, value: string) => {
-    const errorMessage = ErrorHandler.handleValidationError(field, value);
+    let errorMessage = '';
+    
+    // For login form, only validate email format and basic password presence
+    if (field === 'email') {
+      errorMessage = ErrorHandler.handleValidationError(field, value);
+    } else if (field === 'password') {
+      // Only check if password is provided for login
+      if (!value) {
+        errorMessage = 'Password is required';
+      }
+    }
+    
     const newErrors: FormErrors = { ...errors };
     
     if (errorMessage) {
@@ -206,6 +217,11 @@ export const useLoginForm = () => {
       navigate('/dashboard');
     } catch (error: any) {
       console.error('📝 [useLoginForm] Login failed:', error);
+      
+      // Check if error indicates 2FA is required - don't treat as failure
+      if (error.message && (error.message.includes('2FA') || error.message.includes('verification required'))) {
+        throw error; // Re-throw to let LoginForm handle it
+      }
       
       // Log error for debugging
       ErrorHandler.logError(error, 'Login form submission');

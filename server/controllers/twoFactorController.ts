@@ -26,6 +26,19 @@ const verifyTokenSchema = Joi.object({
     })
 });
 
+const verifyLoginSchema = Joi.object({
+  email: Joi.string().email().required()
+    .messages({
+      'string.email': 'Please provide a valid email address',
+      'any.required': 'Email is required'
+    }),
+  token: Joi.string().min(6).max(8).required()
+    .messages({
+      'string.min': 'Token must be at least 6 characters',
+      'string.max': 'Token must be at most 8 characters'
+    })
+});
+
 const disableSchema = Joi.object({
   password: Joi.string().required()
     .messages({
@@ -86,6 +99,59 @@ export const verifyTwoFactorToken = asyncHandler(async (req: Request, res: Respo
   });
 });
 
+// POST /api/auth/2fa/verify-login
+export const verifyTwoFactorLogin = asyncHandler(async (req: Request, res: Response) => {
+  const { email, token } = req.body;
+  
+  if (!email || !token) {
+    res.status(400);
+    throw new Error('Email and token are required');
+  }
+
+  // Find user by email
+  const User = require('../models/User').default;
+  const user = await User.findOne({ email });
+  if (!user) {
+    res.status(401);
+    throw new Error('Invalid credentials');
+  }
+
+  if (!user.twoFactorEnabled) {
+    res.status(400);
+    throw new Error('Two-factor authentication is not enabled');
+  }
+
+  // Verify 2FA token
+  const result = await TwoFactorService.verifyTwoFactorToken(user._id.toString(), token);
+  
+  if (!result.success) {
+    res.status(401);
+    throw new Error('Invalid verification code');
+  }
+
+  // Generate tokens for successful login
+  const { generateAccessToken, generateRefreshToken } = require('../utils/generateTokens');
+  const refreshToken = generateRefreshToken(user._id.toString());
+  const accessToken = generateAccessToken(user._id.toString());
+  
+  // Save refresh token
+  user.refreshTokens.push(refreshToken);
+  await user.save();
+
+  res.json({
+    success: true,
+    user: {
+      _id: user._id,
+      name: user.name,
+      email: user.email,
+      isEmailVerified: user.isEmailVerified,
+    },
+    accessToken,
+    refreshToken,
+    message: result.backupCodeUsed ? 'Login successful using backup code' : 'Login successful'
+  });
+});
+
 // POST /api/auth/2fa/disable
 export const disableTwoFactor = asyncHandler(async (req: Request, res: Response) => {
   const userId = req.user?._id;
@@ -141,5 +207,6 @@ export const twoFactorSchemas = {
   setup: setupSchema,
   verifySetup: verifySetupSchema,
   verifyToken: verifyTokenSchema,
+  verifyLogin: verifyLoginSchema,
   disable: disableSchema
 };

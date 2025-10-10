@@ -1,8 +1,10 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Input from '../ui/Input/Input';
 import Button from '../ui/Button/Button';
 import { useLoginForm } from '../../hooks/useLoginForm';
+import TwoFactorLoginForm from './TwoFactorLoginForm';
+import { useAuth } from '../../context/AuthContext';
 
 interface LoginFormProps {
   className?: string;
@@ -10,6 +12,10 @@ interface LoginFormProps {
 
 const LoginForm: React.FC<LoginFormProps> = ({ className = "" }) => {
   const navigate = useNavigate();
+  const { refreshUser } = useAuth();
+  const [showTwoFactor, setShowTwoFactor] = useState(false);
+  const [userEmail, setUserEmail] = useState('');
+  
   const {
     formData,
     errors,
@@ -21,6 +27,63 @@ const LoginForm: React.FC<LoginFormProps> = ({ className = "" }) => {
     handleInputChange,
     handleSubmit,
   } = useLoginForm();
+
+  const handleLoginSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    
+    try {
+      await handleSubmit(e);
+      // If we get here, login was successful
+      navigate('/profile');
+    } catch (error: any) {
+      // Check if error indicates 2FA is required
+      if (error.message && (error.message.includes('2FA') || error.message.includes('verification required'))) {
+        setUserEmail(formData.email);
+        setShowTwoFactor(true);
+        return; // Don't let the error propagate
+      }
+      // Other errors will be handled by the existing error handling
+    }
+  };
+
+  const handleTwoFactorSuccess = async () => {
+    console.log('🔐 [LoginForm] 2FA verification successful, updating auth state');
+    try {
+      // Refresh user data in auth context
+      await refreshUser();
+      console.log('🔐 [LoginForm] Auth state refreshed, navigating to profile');
+      
+      // Navigate to profile page
+      navigate('/profile');
+    } catch (error) {
+      console.error('🔐 [LoginForm] Failed to refresh auth state after 2FA:', error);
+      // Fallback to page reload if something goes wrong
+      window.location.reload();
+    }
+  };
+
+  const handleTwoFactorError = (error: string) => {
+    console.error('2FA verification failed:', error);
+  };
+
+  const handleBackToLogin = () => {
+    setShowTwoFactor(false);
+    setUserEmail('');
+  };
+
+  // Show 2FA form if needed
+  if (showTwoFactor) {
+    return (
+      <div className={`max-w-md mx-auto w-full ${className}`}>
+        <TwoFactorLoginForm
+          email={userEmail}
+          onSuccess={handleTwoFactorSuccess}
+          onBack={handleBackToLogin}
+          onError={handleTwoFactorError}
+        />
+      </div>
+    );
+  }
 
   return (
     <div className={`max-w-md mx-auto w-full ${className}`}>
@@ -61,7 +124,7 @@ const LoginForm: React.FC<LoginFormProps> = ({ className = "" }) => {
 
       {/* Login Form */}
       <form 
-        onSubmit={handleSubmit} 
+        onSubmit={handleLoginSubmit} 
         className="space-y-6" 
         role="form" 
         aria-label="Login form"

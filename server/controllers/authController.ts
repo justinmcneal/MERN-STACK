@@ -39,8 +39,10 @@ export const authUser = asyncHandler(async (req: Request, res: Response) => {
     const authResponse = await AuthService.login(req.body);
     console.log('🔐 [AuthController] Login successful, sending response');
     
-    // Set cookies with remember me support
-    AuthService.setAuthCookies(res, authResponse.refreshToken || '', authResponse.csrfToken, req.body.rememberMe || false);
+    // Set cookies with remember me support (only if not requiring 2FA)
+    if (!authResponse.requiresTwoFactor && authResponse.refreshToken && authResponse.csrfToken) {
+      AuthService.setAuthCookies(res, authResponse.refreshToken, authResponse.csrfToken, req.body.rememberMe || false);
+    }
     
     res.json({
       user: {
@@ -52,6 +54,7 @@ export const authUser = asyncHandler(async (req: Request, res: Response) => {
       accessToken: authResponse.accessToken,
       csrfToken: authResponse.csrfToken,
       message: authResponse.message,
+      requiresTwoFactor: authResponse.requiresTwoFactor,
     });
   } catch (error: any) {
     console.error('🔐 [AuthController] Login failed:', error);

@@ -10,8 +10,9 @@ export interface User {
 
 export interface LoginResponse {
   user: User;
-  accessToken: string;
-  csrfToken: string;
+  accessToken?: string;
+  csrfToken?: string;
+  requiresTwoFactor?: boolean;
   message?: string;
 }
 
@@ -92,7 +93,15 @@ class AuthService {
         isEmailVerified: Boolean(user.isEmailVerified),
       };
 
-      if (normalizedUser.isEmailVerified) {
+      // Check if 2FA is required
+      if (responseData.requiresTwoFactor) {
+        console.log('🌐 [AuthService] 2FA required for user:', user.email);
+        // Don't store tokens yet - wait for 2FA completion
+        localStorage.removeItem('accessToken');
+        throw new Error('2FA verification required');
+      }
+
+      if (normalizedUser.isEmailVerified && responseData.accessToken) {
         localStorage.setItem('accessToken', responseData.accessToken);
       } else {
         localStorage.removeItem('accessToken');

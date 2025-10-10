@@ -52,8 +52,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       }
       
       const response: LoginResponse = await AuthService.login(credentials);
-      // Only set user if email is verified
-      if (response.user.isEmailVerified) {
+      // Only set user if email is verified and not requiring 2FA
+      if (response.user.isEmailVerified && !response.requiresTwoFactor) {
         setUser(response.user);
       } else {
         setUser(null);
