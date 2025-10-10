@@ -19,9 +19,40 @@ export class EmailService {
     console.log('📧 [EmailService] NODE_ENV:', process.env.NODE_ENV);
     
     if (!this.transporter) {
-      // For development, use Ethereal Email (fake SMTP)
-      if (process.env.NODE_ENV === 'development') {
-        console.log('📧 [EmailService] Using Ethereal Email for development');
+      // Check if email credentials are configured
+      const hasEmailConfig = process.env.EMAIL_USER && process.env.EMAIL_PASS;
+      
+      if (hasEmailConfig) {
+        console.log('📧 [EmailService] Using configured SMTP for email sending');
+        console.log('📧 [EmailService] Email config:', {
+          host: process.env.EMAIL_HOST || 'smtp.gmail.com',
+          port: process.env.EMAIL_PORT || '587',
+          secure: process.env.EMAIL_SECURE === 'true',
+          user: process.env.EMAIL_USER ? '***hidden***' : 'NOT_SET',
+          pass: process.env.EMAIL_PASS ? '***hidden***' : 'NOT_SET',
+          from: process.env.EMAIL_FROM || process.env.EMAIL_USER || 'noreply@arbitrader.com'
+        });
+        
+        // Use configured SMTP (works for both development and production)
+        this.transporter = nodemailer.createTransport({
+          host: process.env.EMAIL_HOST || 'smtp.gmail.com',
+          port: parseInt(process.env.EMAIL_PORT || '587'),
+          secure: process.env.EMAIL_SECURE === 'true',
+          auth: {
+            user: process.env.EMAIL_USER,
+            pass: process.env.EMAIL_PASS,
+          },
+        });
+        
+        try {
+          await this.transporter.verify();
+          console.log('📧 [EmailService] SMTP transporter verified successfully');
+        } catch (error) {
+          console.error('📧 [EmailService] Failed to verify SMTP:', error);
+          throw error;
+        }
+      } else if (process.env.NODE_ENV === 'development') {
+        console.log('📧 [EmailService] No email config found, using Ethereal Email for development');
         try {
           const testAccount = await nodemailer.createTestAccount();
           console.log('📧 [EmailService] Ethereal test account created:', {
@@ -53,34 +84,8 @@ export class EmailService {
           jsonTransport: true,
         });
       } else {
-        console.log('📧 [EmailService] Using production SMTP configuration');
-        console.log('📧 [EmailService] Email config:', {
-          host: process.env.EMAIL_HOST || 'smtp.gmail.com',
-          port: process.env.EMAIL_PORT || '587',
-          secure: process.env.EMAIL_SECURE === 'true',
-          user: process.env.EMAIL_USER ? '***hidden***' : 'NOT_SET',
-          pass: process.env.EMAIL_PASS ? '***hidden***' : 'NOT_SET',
-          from: process.env.EMAIL_FROM || 'noreply@arbitrader.com'
-        });
-        
-        // For production, use real SMTP
-        this.transporter = nodemailer.createTransport({
-          host: process.env.EMAIL_HOST || 'smtp.gmail.com',
-          port: parseInt(process.env.EMAIL_PORT || '587'),
-          secure: process.env.EMAIL_SECURE === 'true',
-          auth: {
-            user: process.env.EMAIL_USER,
-            pass: process.env.EMAIL_PASS,
-          },
-        });
-        
-        try {
-          await this.transporter.verify();
-          console.log('📧 [EmailService] Production SMTP transporter verified successfully');
-        } catch (error) {
-          console.error('📧 [EmailService] Failed to verify production SMTP:', error);
-          throw error;
-        }
+        console.log('📧 [EmailService] No email configuration found - email sending disabled');
+        throw new Error('Email configuration is required but not found');
       }
     }
     return this.transporter;
@@ -120,8 +125,8 @@ export class EmailService {
       console.log('📧 [EmailService] Email sent successfully!');
       console.log('📧 [EmailService] Message ID:', info.messageId);
       
-      // In development, log the preview URL
-      if (process.env.NODE_ENV === 'development') {
+      // In development with Ethereal, log the preview URL
+      if (process.env.NODE_ENV === 'development' && !process.env.EMAIL_USER) {
         const previewUrl = nodemailer.getTestMessageUrl(info);
         console.log('📧 [EmailService] Preview URL:', previewUrl);
         if (previewUrl) {

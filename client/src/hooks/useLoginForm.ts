@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import ErrorHandler from '../utils/errorHandler';
@@ -20,6 +20,10 @@ export interface FormErrors {
   general?: string;
 }
 
+// Rate limiting storage keys
+const ATTEMPT_COUNT_KEY = 'loginAttemptCount';
+const LAST_ATTEMPT_KEY = 'loginLastAttempt';
+
 export const useLoginForm = () => {
   const navigate = useNavigate();
   const { login, isLoading } = useAuth();
@@ -34,6 +38,59 @@ export const useLoginForm = () => {
   const [attemptCount, setAttemptCount] = useState(0);
   const [lastAttemptTime, setLastAttemptTime] = useState<number>(0);
   const [isRateLimited, setIsRateLimited] = useState(false);
+
+  // Load rate limiting state from localStorage on component mount
+  useEffect(() => {
+    const loadRateLimitState = () => {
+      try {
+        const storedAttemptCount = localStorage.getItem(ATTEMPT_COUNT_KEY);
+        const storedLastAttempt = localStorage.getItem(LAST_ATTEMPT_KEY);
+        
+        if (storedAttemptCount && storedLastAttempt) {
+          const count = parseInt(storedAttemptCount, 10);
+          const lastAttempt = parseInt(storedLastAttempt, 10);
+          const now = Date.now();
+          const timeSinceLastAttempt = now - lastAttempt;
+          
+          // If 5 minutes have passed, reset the rate limiting
+          if (timeSinceLastAttempt >= 300000) { // 5 minutes
+            localStorage.removeItem(ATTEMPT_COUNT_KEY);
+            localStorage.removeItem(LAST_ATTEMPT_KEY);
+            setAttemptCount(0);
+            setLastAttemptTime(0);
+            setIsRateLimited(false);
+          } else {
+            // Restore the rate limiting state
+            setAttemptCount(count);
+            setLastAttemptTime(lastAttempt);
+            setIsRateLimited(count >= 5);
+          }
+        }
+      } catch (error) {
+        console.error('Failed to load rate limit state from localStorage:', error);
+        // Clear corrupted data
+        localStorage.removeItem(ATTEMPT_COUNT_KEY);
+        localStorage.removeItem(LAST_ATTEMPT_KEY);
+      }
+    };
+
+    loadRateLimitState();
+  }, []);
+
+  // Save rate limiting state to localStorage whenever it changes
+  const saveRateLimitState = (count: number, lastAttempt: number) => {
+    try {
+      if (count > 0) {
+        localStorage.setItem(ATTEMPT_COUNT_KEY, count.toString());
+        localStorage.setItem(LAST_ATTEMPT_KEY, lastAttempt.toString());
+      } else {
+        localStorage.removeItem(ATTEMPT_COUNT_KEY);
+        localStorage.removeItem(LAST_ATTEMPT_KEY);
+      }
+    } catch (error) {
+      console.error('Failed to save rate limit state to localStorage:', error);
+    }
+  };
 
   const validateForm = (): boolean => {
     const newErrors: FormErrors = {};
@@ -116,7 +173,9 @@ export const useLoginForm = () => {
     // Reset rate limiting if enough time has passed
     if (timeSinceLastAttempt >= 300000) {
       setAttemptCount(0);
+      setLastAttemptTime(0);
       setIsRateLimited(false);
+      saveRateLimitState(0, 0);
     }
     
     if (!validateForm()) {
@@ -141,6 +200,9 @@ export const useLoginForm = () => {
       console.log('📝 [useLoginForm] Login successful, redirecting to dashboard...');
       // Reset attempt count on successful login
       setAttemptCount(0);
+      setLastAttemptTime(0);
+      setIsRateLimited(false);
+      saveRateLimitState(0, 0);
       navigate('/dashboard');
     } catch (error: any) {
       console.error('📝 [useLoginForm] Login failed:', error);
@@ -149,10 +211,13 @@ export const useLoginForm = () => {
       ErrorHandler.logError(error, 'Login form submission');
       
       // Increment attempt count on failure
-      setAttemptCount(prev => prev + 1);
-      setLastAttemptTime(Date.now());
+      const newAttemptCount = attemptCount + 1;
+      const newLastAttemptTime = Date.now();
+      setAttemptCount(newAttemptCount);
+      setLastAttemptTime(newLastAttemptTime);
+      saveRateLimitState(newAttemptCount, newLastAttemptTime);
       
-      console.log('📝 [useLoginForm] Updated attempt count:', attemptCount + 1);
+      console.log('📝 [useLoginForm] Updated attempt count:', newAttemptCount);
       
       // Get user-friendly error message
       const errorMessage = ErrorHandler.createUserMessage(error);
@@ -175,6 +240,7 @@ export const useLoginForm = () => {
         console.log('📝 [useLoginForm] Account locked detected, setting rate limited state');
         setErrors({ general: safeErrorMessage });
         setIsRateLimited(true);
+        saveRateLimitState(newAttemptCount, newLastAttemptTime);
       } else if (safeErrorMessage.includes('No account found')) {
         setErrors({ general: safeErrorMessage });
       } else if (safeErrorMessage.includes('Network error') || safeErrorMessage.includes('timeout')) {
@@ -191,6 +257,13 @@ export const useLoginForm = () => {
     setErrors({});
   };
 
+  const clearRateLimitState = () => {
+    setAttemptCount(0);
+    setLastAttemptTime(0);
+    setIsRateLimited(false);
+    saveRateLimitState(0, 0);
+  };
+
   return {
     formData,
     errors,
@@ -202,6 +275,7 @@ export const useLoginForm = () => {
     handleInputChange,
     handleSubmit,
     clearErrors,
+    clearRateLimitState,
     validateForm
   };
 };
