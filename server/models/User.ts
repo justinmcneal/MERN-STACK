@@ -18,6 +18,11 @@ export interface IUser extends Document {
   emailVerificationExpires: Date | null;
   passwordResetToken: string | null;
   passwordResetExpires: Date | null;
+  // Two-Factor Authentication fields
+  twoFactorEnabled: boolean;
+  twoFactorSecret: string | null;
+  twoFactorBackupCodes: string[];
+  twoFactorVerifiedAt: Date | null;
 }
 
 const userSchema: Schema<IUser> = new mongoose.Schema(
@@ -33,6 +38,11 @@ const userSchema: Schema<IUser> = new mongoose.Schema(
     emailVerificationExpires: { type: Date, default: null },
     passwordResetToken: { type: String, default: null },
     passwordResetExpires: { type: Date, default: null },
+    // Two-Factor Authentication fields
+    twoFactorEnabled: { type: Boolean, default: false },
+    twoFactorSecret: { type: String, default: null },
+    twoFactorBackupCodes: [{ type: String }],
+    twoFactorVerifiedAt: { type: Date, default: null },
   },
   { timestamps: true }
 );
