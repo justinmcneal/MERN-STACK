@@ -3,7 +3,7 @@ import speakeasy from 'speakeasy';
 import QRCode from 'qrcode';
 import crypto from 'crypto';
 import User from '../models/User';
-import { createError } from '../utils/errorHandler';
+import { createError } from '../middleware/errorMiddleware';
 
 export interface TwoFactorSetupResponse {
   secret: string;

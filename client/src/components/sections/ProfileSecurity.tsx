@@ -54,17 +54,20 @@ const ProfileSecurity: React.FC<ProfileSecurityProps> = ({
     isLoading,
     isUpdating: is2FAUpdating,
     errors,
+    setup,
     verifySetup,
     disable,
     regenerateBackupCodes,
     clearSetupData
   } = useTwoFactor();
 
-  const handleTwoFactorToggle = () => {
+  const handleTwoFactorToggle = async () => {
     if (status?.enabled) {
       setShowDisableModal(true);
     } else {
       setShowSetupModal(true);
+      // Call setup API to get QR code and backup codes
+      await setup();
     }
   };
 

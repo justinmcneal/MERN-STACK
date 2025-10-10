@@ -38,7 +38,7 @@ const TwoFactorDisableModal: React.FC<TwoFactorDisableModalProps> = ({
 
   return (
     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-      <div className="bg-slate-800 rounded-2xl border border-slate-700 max-w-md w-full">
+      <div className="bg-slate-800 rounded-2xl border border-slate-700 w-full max-w-md mx-auto">
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-slate-700">
           <div className="flex items-center gap-3">
@@ -55,7 +55,7 @@ const TwoFactorDisableModal: React.FC<TwoFactorDisableModalProps> = ({
           </button>
         </div>
 
-        <div className="p-6 space-y-6">
+        <div className="p-4 sm:p-6 space-y-4 sm:space-y-6">
           {/* Warning */}
           <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-lg">
             <div className="flex items-start gap-3">
@@ -91,17 +91,17 @@ const TwoFactorDisableModal: React.FC<TwoFactorDisableModalProps> = ({
           </div>
 
           {/* Actions */}
-          <div className="flex gap-3">
+          <div className="flex flex-col sm:flex-row gap-3">
             <button
               onClick={onClose}
-              className="flex-1 py-3 bg-slate-600 hover:bg-slate-500 rounded-lg text-slate-200 font-semibold transition-colors"
+              className="flex-1 py-3 bg-slate-600 hover:bg-slate-500 rounded-lg text-slate-200 font-semibold transition-colors text-sm sm:text-base"
             >
               Cancel
             </button>
             <button
               onClick={handleDisable}
               disabled={!password || isDisabling}
-              className="flex-1 py-3 bg-red-600 hover:bg-red-500 disabled:bg-slate-600 disabled:opacity-50 rounded-lg text-white font-semibold transition-colors"
+              className="flex-1 py-3 bg-red-600 hover:bg-red-500 disabled:bg-slate-600 disabled:opacity-50 rounded-lg text-white font-semibold transition-colors text-sm sm:text-base"
             >
               {isDisabling ? 'Disabling...' : 'Disable 2FA'}
             </button>
