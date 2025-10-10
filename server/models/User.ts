@@ -16,6 +16,8 @@ export interface IUser extends Document {
   isEmailVerified: boolean;
   emailVerificationToken: string | null;
   emailVerificationExpires: Date | null;
+  passwordResetToken: string | null;
+  passwordResetExpires: Date | null;
 }
 
 const userSchema: Schema<IUser> = new mongoose.Schema(
@@ -29,6 +31,8 @@ const userSchema: Schema<IUser> = new mongoose.Schema(
     isEmailVerified: { type: Boolean, default: false },
     emailVerificationToken: { type: String, default: null },
     emailVerificationExpires: { type: Date, default: null },
+    passwordResetToken: { type: String, default: null },
+    passwordResetExpires: { type: Date, default: null },
   },
   { timestamps: true }
 );

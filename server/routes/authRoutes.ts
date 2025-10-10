@@ -1,7 +1,7 @@
 // routes/authRoutes.ts
 import { Router } from 'express';
 import rateLimit from 'express-rate-limit';
-import { registerUser, authUser, getMe, refreshToken, logoutUser, getCSRFToken, verifyEmail, resendVerification, regenerateVerification, getDebugToken } from '../controllers/authController';
+import { registerUser, authUser, getMe, refreshToken, logoutUser, getCSRFToken, verifyEmail, resendVerification, regenerateVerification, getDebugToken, forgotPassword, resetPassword } from '../controllers/authController';
 import { protect } from '../middleware/authMiddleware';
 import { validate, authSchemas } from '../middleware/validationMiddleware';
 
@@ -27,5 +27,9 @@ router.get('/verify-email', verifyEmail);
 router.get('/debug-token', getDebugToken); // DEBUG ONLY
 router.post('/regenerate-verification', authRateLimiter, regenerateVerification);
 router.post('/resend-verification', authRateLimiter, validate(authSchemas.resendVerification), resendVerification);
+
+// Password reset routes
+router.post('/forgot-password', authRateLimiter, validate(authSchemas.forgotPassword), forgotPassword);
+router.post('/reset-password', authRateLimiter, validate(authSchemas.resetPassword), resetPassword);
 
 export default router;

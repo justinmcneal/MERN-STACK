@@ -580,6 +580,83 @@ export class AuthService {
   }
 
   /**
+   * Request password reset
+   */
+  static async requestPasswordReset(email: string): Promise<{ success: boolean; message: string }> {
+    if (!email) {
+      throw createError('Email is required', 400);
+    }
+
+    const normalizedEmail = email.trim().toLowerCase();
+    const user = await User.findOne({ email: normalizedEmail });
+    
+    if (!user) {
+      // Don't reveal if user exists or not for security
+      return {
+        success: true,
+        message: 'If an account with that email exists, a password reset link has been sent.',
+      };
+    }
+
+    // Generate password reset token
+    const passwordResetToken = TokenService.generatePasswordResetToken();
+    const hashedToken = TokenService.hashToken(passwordResetToken);
+    const passwordResetExpires = TokenService.getPasswordResetExpiry();
+
+    // Save token to user
+    user.passwordResetToken = hashedToken;
+    user.passwordResetExpires = passwordResetExpires;
+    await user.save();
+
+    try {
+      await EmailService.sendPasswordResetEmail(normalizedEmail, user.name, passwordResetToken);
+    } catch (error) {
+      throw createError('Failed to send password reset email. Please try again.', 500);
+    }
+
+    return {
+      success: true,
+      message: 'If an account with that email exists, a password reset link has been sent.',
+    };
+  }
+
+  /**
+   * Reset password with token
+   */
+  static async resetPassword(token: string, newPassword: string): Promise<{ success: boolean; message: string }> {
+    if (!token || !newPassword) {
+      throw createError('Token and new password are required', 400);
+    }
+
+    if (newPassword.length < 6) {
+      throw createError('Password must be at least 6 characters long', 400);
+    }
+
+    // Find user with valid reset token
+    const user = await User.findOne({
+      passwordResetToken: TokenService.hashToken(token),
+      passwordResetExpires: { $gt: new Date() }
+    });
+
+    if (!user) {
+      throw createError('Invalid or expired password reset token', 400);
+    }
+
+    // Update password and clear reset token
+    user.password = newPassword;
+    user.passwordResetToken = null;
+    user.passwordResetExpires = null;
+    user.failedLoginAttempts = 0; // Reset failed attempts
+    user.lockUntil = null; // Unlock account
+    await user.save();
+
+    return {
+      success: true,
+      message: 'Password has been reset successfully. You can now log in with your new password.',
+    };
+  }
+
+  /**
    * Get user by ID
    */
   static async getUserById(id: string): Promise<IUser | null> {

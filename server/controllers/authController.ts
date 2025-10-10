@@ -210,3 +210,43 @@ export const resendVerification = asyncHandler(async (req: Request, res: Respons
     throw error;
   }
 });
+
+// POST /api/auth/forgot-password
+export const forgotPassword = asyncHandler(async (req: Request, res: Response) => {
+  try {
+    const { email } = req.body;
+    
+    if (!email) {
+      throw createError('Email is required', 400);
+    }
+
+    const result = await AuthService.requestPasswordReset(email);
+    
+    res.json({
+      success: true,
+      message: result.message,
+    });
+  } catch (error: any) {
+    throw error;
+  }
+});
+
+// POST /api/auth/reset-password
+export const resetPassword = asyncHandler(async (req: Request, res: Response) => {
+  try {
+    const { token, password } = req.body;
+    
+    if (!token || !password) {
+      throw createError('Token and password are required', 400);
+    }
+
+    const result = await AuthService.resetPassword(token, password);
+    
+    res.json({
+      success: true,
+      message: result.message,
+    });
+  } catch (error: any) {
+    throw error;
+  }
+});

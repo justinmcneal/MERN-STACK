@@ -174,7 +174,7 @@ const LoginForm: React.FC<LoginFormProps> = ({ className = "" }) => {
           </label>
           <button 
             type="button"
-            onClick={() => {/* TODO: Implement forgot password */}}
+            onClick={() => navigate("/forgot-password")}
             className="text-sm text-cyan-400 hover:text-cyan-300 transition-colors focus:outline-none focus:underline"
             aria-label="Forgot password? Click to reset"
           >

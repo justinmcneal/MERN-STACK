@@ -36,6 +36,7 @@ export interface RegisterData {
 
 export interface ApiError {
   error: string;
+  message?: string;
   stack?: string;
 }
 
@@ -243,6 +244,38 @@ class AuthService {
     }
 
     return new Error('An unexpected error occurred. Please try again.');
+  }
+
+  /**
+   * Request password reset
+   */
+  static async forgotPassword(email: string): Promise<{ success: boolean; message: string }> {
+    try {
+      const response = await apiClient.post('/auth/forgot-password', { email });
+      return response.data;
+    } catch (error) {
+      if (this.isAxiosError(error)) {
+        const message = error.response?.data?.message || 'Failed to send password reset email';
+        throw new Error(message);
+      }
+      throw new Error('Network error occurred');
+    }
+  }
+
+  /**
+   * Reset password with token
+   */
+  static async resetPassword(token: string, password: string): Promise<{ success: boolean; message: string }> {
+    try {
+      const response = await apiClient.post('/auth/reset-password', { token, password });
+      return response.data;
+    } catch (error) {
+      if (this.isAxiosError(error)) {
+        const message = error.response?.data?.message || 'Failed to reset password';
+        throw new Error(message);
+      }
+      throw new Error('Network error occurred');
+    }
   }
 
   private static isAxiosError(error: unknown): error is AxiosError<ApiError> {
