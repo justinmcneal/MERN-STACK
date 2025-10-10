@@ -128,14 +128,29 @@ export class AuthService {
     });
 
     const existingUser = await User.findOne({ email: normalizedEmail });
+    let passwordHash: string;
+
     if (existingUser) {
-      console.log('🔐 [AuthService] User already exists:', normalizedEmail);
-      throw createError('User already exists', 400);
+      console.log('🔐 [AuthService] Found existing user record:', {
+        email: normalizedEmail,
+        isEmailVerified: existingUser.isEmailVerified,
+      });
+
+      if (existingUser.isEmailVerified) {
+        console.log('🔐 [AuthService] Existing user is already verified. Aborting registration.');
+        throw createError('User already exists', 400);
+      }
+
+      console.log('🔐 [AuthService] Existing user is unverified. Migrating to pending user store...');
+      passwordHash = existingUser.password;
+
+      console.log('🔐 [AuthService] Removing legacy unverified user record...');
+      await User.deleteOne({ _id: existingUser._id });
+    } else {
+      console.log('🔐 [AuthService] No existing user found, proceeding with new registration...');
+      passwordHash = await bcrypt.hash(password, 10);
     }
 
-    console.log('🔐 [AuthService] No existing user found, proceeding with registration...');
-
-    const passwordHash = await bcrypt.hash(password, 10);
     const emailVerificationToken = TokenService.generateEmailVerificationToken();
     const emailVerificationExpires = TokenService.getEmailVerificationExpiry();
     const hashedToken = TokenService.hashToken(emailVerificationToken);
@@ -145,7 +160,7 @@ export class AuthService {
       expiresAt: emailVerificationExpires
     });
 
-    console.log('🔐 [AuthService] Creating pending user record...');
+    console.log('🔐 [AuthService] Creating/updating pending user record...');
     await PendingUser.findOneAndUpdate(
       { email: normalizedEmail },
       {
@@ -185,37 +200,65 @@ export class AuthService {
   static async login(data: LoginData): Promise<AuthResponse> {
     const { email, password, rememberMe = false } = data;
 
+    console.log('🔐 [AuthService] Starting login process...');
+    console.log('🔐 [AuthService] Login data:', {
+      email,
+      hasPassword: !!password,
+      rememberMe
+    });
+
     if (!email || !password) {
       throw createError('Please provide email and password', 400);
     }
 
+    console.log('🔐 [AuthService] Looking up user by email...');
     const user = await User.findOne({ email });
     if (!user) {
+      console.log('🔐 [AuthService] User not found:', email);
       throw createError('Invalid email or password', 401);
     }
 
+    console.log('🔐 [AuthService] User found:', {
+      id: user._id,
+      email: user.email,
+      failedLoginAttempts: user.failedLoginAttempts,
+      lockUntil: user.lockUntil,
+      isLocked: user.isLocked()
+    });
+
     // Check if account is locked
     if (user.isLocked()) {
+      console.log('🔐 [AuthService] Account is locked for user:', email);
       throw createError('Account is temporarily locked due to too many failed login attempts. Please try again later.', 403);
     }
 
+    console.log('🔐 [AuthService] Checking password...');
     // Check password
     const isMatch = await user.matchPassword(password);
     if (!isMatch) {
+      console.log('🔐 [AuthService] Password mismatch for user:', email);
       // Increment failed attempts
       user.failedLoginAttempts += 1;
+      console.log('🔐 [AuthService] Updated failed attempts:', user.failedLoginAttempts);
+      
       if (user.failedLoginAttempts >= this.MAX_FAILED_ATTEMPTS) {
         user.lockUntil = Date.now() + this.LOCK_TIME;
+        console.log('🔐 [AuthService] Account locked until:', new Date(user.lockUntil));
       }
+      
+      console.log('🔐 [AuthService] Saving user with updated failed attempts...');
       await user.save();
+      console.log('🔐 [AuthService] User saved successfully');
 
       const errorMessage = user.isLocked()
         ? 'Account is temporarily locked due to too many failed login attempts. Please try again later.'
         : 'Invalid email or password';
       
+      console.log('🔐 [AuthService] Throwing error:', errorMessage);
       throw createError(errorMessage, user.isLocked() ? 403 : 401);
     }
 
+    console.log('🔐 [AuthService] Password match successful, resetting failed attempts...');
     // Reset failed attempts and lock
     user.failedLoginAttempts = 0;
     user.lockUntil = null;
@@ -232,8 +275,11 @@ export class AuthService {
 
     // Save refresh token to user
     user.refreshTokens.push(refreshToken);
+    console.log('🔐 [AuthService] Saving user with reset failed attempts and new refresh token...');
     await user.save();
+    console.log('🔐 [AuthService] User saved successfully');
 
+    console.log('🔐 [AuthService] Login successful for user:', email);
     return {
       user: {
         _id: user._id,
@@ -303,16 +349,31 @@ export class AuthService {
    * Verify email address
    */
   static async verifyEmail(token: string): Promise<{ success: boolean; message: string }> {
+    console.log('🔐 [AuthService] Starting email verification process...');
+    console.log('🔐 [AuthService] Raw token received:', token);
+    
     if (!token) {
+      console.log('🔐 [AuthService] Error: No token provided');
       throw createError('Verification token is required', 400);
     }
 
     // Find user by verification token
     const hashedToken = TokenService.hashToken(token);
+    console.log('🔐 [AuthService] Hashed token for lookup:', hashedToken);
+    
     const pendingUser = await PendingUser.findOne({
       verificationToken: hashedToken,
       verificationExpires: { $gt: new Date() },
     });
+    
+    console.log('🔐 [AuthService] Pending user found:', !!pendingUser);
+    if (pendingUser) {
+      console.log('🔐 [AuthService] Pending user details:', {
+        email: pendingUser.email,
+        hasToken: !!pendingUser.verificationToken,
+        expiresAt: pendingUser.verificationExpires
+      });
+    }
 
     if (pendingUser) {
       const existingUser = await User.findOne({ email: pendingUser.email });
@@ -361,6 +422,8 @@ export class AuthService {
     });
 
     if (!user) {
+      console.log('🔐 [AuthService] Error: No pending user or valid user found with token');
+      console.log('🔐 [AuthService] Token lookup failed for hashed token:', hashedToken);
       throw createError('Invalid or expired verification token', 400);
     }
 

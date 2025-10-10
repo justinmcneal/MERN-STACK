@@ -29,12 +29,12 @@ class DataPipeline {
    */
   public startDataPipeline(): void {
     // Update token prices every 60 seconds
-    cron.schedule('*/60 * * * * *', async () => {
+    cron.schedule('*/600 * * * * *', async () => {
       await this.updateTokenPrices();
     });
 
     // Update gas prices every 120 seconds (2 minutes)
-    cron.schedule('*/120 * * * * *', async () => {
+    cron.schedule('*/600 * * * * *', async () => {
       await this.updateGasPrices();
     });
 

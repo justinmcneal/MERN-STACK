@@ -67,10 +67,20 @@ class AuthService {
    * Login user
    */
   static async login(credentials: LoginCredentials): Promise<LoginResponse> {
+    console.log('🌐 [AuthService] Starting login process...');
+    console.log('🌐 [AuthService] Login credentials:', {
+      email: credentials.email,
+      hasPassword: !!credentials.password,
+      rememberMe: credentials.rememberMe
+    });
+    
     try {
+      console.log('🌐 [AuthService] Making API call to /auth/login...');
       const response = await apiClient.post<LoginResponse>('/auth/login', credentials);
       const { data: responseData } = response;
       const user = responseData?.user;
+
+      console.log('🌐 [AuthService] Login API response received:', responseData);
 
       if (!user) {
         throw new Error('Login failed: missing user data in response.');
@@ -87,11 +97,13 @@ class AuthService {
         localStorage.removeItem('accessToken');
       }
 
+      console.log('🌐 [AuthService] Login successful for user:', user.email);
       return {
         ...responseData,
         user: normalizedUser,
       };
     } catch (error: unknown) {
+      console.error('🌐 [AuthService] Login failed:', error);
       throw this.handleError(error);
     }
   }
@@ -200,6 +212,10 @@ class AuthService {
             case 401:
               return new Error('Invalid email or password');
             case 403:
+              // Check if it's an account locked error
+              if (data && typeof data === 'object' && (data as any).error?.message?.includes('locked')) {
+                return new Error((data as any).error.message);
+              }
               return new Error('Access denied. Please contact support.');
             case 404:
               return new Error('User not found');

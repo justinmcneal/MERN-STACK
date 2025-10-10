@@ -27,8 +27,17 @@ export const registerUser = asyncHandler(async (req: Request, res: Response) => 
 
 // POST /api/auth/login
 export const authUser = asyncHandler(async (req: Request, res: Response) => {
+  console.log('🔐 [AuthController] Login request received');
+  console.log('🔐 [AuthController] Login data:', {
+    email: req.body.email,
+    hasPassword: !!req.body.password,
+    rememberMe: req.body.rememberMe
+  });
+  
   try {
+    console.log('🔐 [AuthController] Calling AuthService.login...');
     const authResponse = await AuthService.login(req.body);
+    console.log('🔐 [AuthController] Login successful, sending response');
     
     // Set cookies with remember me support
     AuthService.setAuthCookies(res, authResponse.refreshToken || '', authResponse.csrfToken, req.body.rememberMe || false);
@@ -45,6 +54,7 @@ export const authUser = asyncHandler(async (req: Request, res: Response) => {
       message: authResponse.message,
     });
   } catch (error: any) {
+    console.error('🔐 [AuthController] Login failed:', error);
     throw error; // Let the error middleware handle it
   }
 });

@@ -128,7 +128,42 @@ describe('Authentication Endpoints', () => {
         .send(userData)
         .expect(400);
 
-  expect(response.body.error.message).toContain('User already exists');
+      expect(response.body.error.message).toContain('User already exists');
+    });
+
+    it('should migrate legacy unverified users into pending state', async () => {
+      const userData = {
+        name: 'Legacy User 1',
+        email: 'legacy@example.com',
+        password: 'TestPass123!'
+      };
+
+      const legacyHash = await bcrypt.hash(userData.password, 10);
+      await User.create({
+        name: userData.name,
+        email: userData.email.toLowerCase(),
+        password: legacyHash,
+        isEmailVerified: false,
+        refreshTokens: [],
+      });
+
+      const response = await request(app)
+        .post('/api/auth/register')
+        .send(userData)
+        .expect(201);
+
+      expect(response.body).toMatchObject({
+        success: true,
+        message: 'A LINK HAS BEEN SENT TO YOUR EMAIL',
+        email: userData.email.toLowerCase(),
+      });
+
+      const migratedUser = await User.findOne({ email: userData.email.toLowerCase() });
+      expect(migratedUser).toBeNull();
+
+      const pendingUser = await PendingUser.findOne({ email: userData.email.toLowerCase() });
+      expect(pendingUser).toBeTruthy();
+      expect(pendingUser?.passwordHash).toEqual(legacyHash);
     });
   });
 
@@ -182,7 +217,7 @@ describe('Authentication Endpoints', () => {
         .send(loginData)
         .expect(401);
 
-  expect(response.body.error.message).toContain('Invalid email or password');
+      expect(response.body.error.message).toContain('Invalid email or password');
     });
 
     it('should reject login with non-existent email', async () => {
@@ -196,7 +231,7 @@ describe('Authentication Endpoints', () => {
         .send(loginData)
         .expect(401);
 
-  expect(response.body.error.message).toContain('Invalid email or password');
+      expect(response.body.error.message).toContain('Invalid email or password');
     });
 
     it('should reject login with missing fields', async () => {
@@ -210,7 +245,7 @@ describe('Authentication Endpoints', () => {
         .send(loginData)
         .expect(400);
 
-  expect(response.body.error).toContain('Validation Error');
+      expect(response.body.error).toContain('Validation Error');
     });
   });
 
@@ -249,7 +284,7 @@ describe('Authentication Endpoints', () => {
         .expect(200);
 
       expect(response.body).toHaveProperty('_id');
-  expect(response.body).toHaveProperty('name', 'Test User 1');
+      expect(response.body).toHaveProperty('name', 'Test User 1');
       expect(response.body).toHaveProperty('email', 'test@example.com');
       expect(response.body).not.toHaveProperty('password');
     });
@@ -259,7 +294,7 @@ describe('Authentication Endpoints', () => {
         .get('/api/auth/me')
         .expect(401);
 
-  expect(response.body.error.message).toContain('Not authorized');
+      expect(response.body.error.message).toContain('Not authorized');
     });
 
     it('should reject request with invalid token', async () => {
@@ -268,7 +303,7 @@ describe('Authentication Endpoints', () => {
         .set('Authorization', 'Bearer invalid-token')
         .expect(401);
 
-  expect(response.body.error.message).toContain('Not authorized');
+      expect(response.body.error.message).toContain('Not authorized');
     });
   });
 

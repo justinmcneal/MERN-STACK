@@ -124,16 +124,27 @@ export const useLoginForm = () => {
     }
 
     try {
+      console.log('📝 [useLoginForm] Submitting login form...');
+      console.log('📝 [useLoginForm] Form data:', {
+        email: formData.email,
+        hasPassword: !!formData.password,
+        rememberMe: rememberMe,
+        attemptCount: attemptCount
+      });
+      
       await login({
         email: formData.email,
         password: formData.password,
         rememberMe: rememberMe,
       });
       
+      console.log('📝 [useLoginForm] Login successful, redirecting to dashboard...');
       // Reset attempt count on successful login
       setAttemptCount(0);
       navigate('/dashboard');
     } catch (error: any) {
+      console.error('📝 [useLoginForm] Login failed:', error);
+      
       // Log error for debugging
       ErrorHandler.logError(error, 'Login form submission');
       
@@ -141,8 +152,12 @@ export const useLoginForm = () => {
       setAttemptCount(prev => prev + 1);
       setLastAttemptTime(Date.now());
       
+      console.log('📝 [useLoginForm] Updated attempt count:', attemptCount + 1);
+      
       // Get user-friendly error message
       const errorMessage = ErrorHandler.createUserMessage(error);
+      
+      console.log('📝 [useLoginForm] Error message:', errorMessage);
       
       // Ensure errorMessage is always a string
       const safeErrorMessage = typeof errorMessage === 'string' ? errorMessage : 'An unexpected error occurred. Please try again.';
@@ -157,6 +172,7 @@ export const useLoginForm = () => {
           general: `${safeErrorMessage} ${attemptCount >= 3 ? `(${5 - attemptCount} attempts remaining)` : ''}` 
         });
       } else if (safeErrorMessage.includes('Account temporarily locked') || safeErrorMessage.includes('too many attempts')) {
+        console.log('📝 [useLoginForm] Account locked detected, setting rate limited state');
         setErrors({ general: safeErrorMessage });
         setIsRateLimited(true);
       } else if (safeErrorMessage.includes('No account found')) {
