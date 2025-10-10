@@ -1,6 +1,5 @@
-import React from "react";
-import { BrandingPanel } from "../components/sections/BrandingPanel";
-import { VerticalSeparator } from "../components/ui/VerticalSeparator/VerticalSeparator";
+import BrandingPanel from "../components/sections/BrandingPanel";
+import VerticalSeparator from "../components/ui/VerticalSeparator/VerticalSeparator";
 import ChangePasswordForm from "../components/forms/ChangePasswordForm";
 
 const ChangePasswordPage = () => {

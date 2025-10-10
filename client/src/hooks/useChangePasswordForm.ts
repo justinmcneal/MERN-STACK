@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ErrorHandler } from '../utils/errorHandler';
-import apiClient from '../services/api';
+import ProfileService from '../services/profileService';
 
 interface FormData {
   currentPassword: string;
@@ -203,41 +203,20 @@ export const useChangePasswordForm = () => {
     setErrors({});
 
     try {
-      const response = await apiClient.put('/profile/password', {
+      await ProfileService.changePassword({
         currentPassword: formData.currentPassword,
         newPassword: formData.newPassword,
       });
       
-      if (response.data.success) {
-        setIsSuccess(true);
-        // Clear form data and rate limiting on success
-        setFormData({ currentPassword: '', newPassword: '', confirmPassword: '' });
-        localStorage.removeItem(CHANGE_PASSWORD_ATTEMPT_COUNT_KEY);
-        localStorage.removeItem(CHANGE_PASSWORD_LAST_ATTEMPT_KEY);
-        setAttemptCount(0);
-        setLastAttemptTime(0);
-        setIsRateLimited(false);
-      } else {
-        // Handle failed attempt
-        const newAttemptCount = attemptCount + 1;
-        const now = Date.now();
-        
-        setAttemptCount(newAttemptCount);
-        setLastAttemptTime(now);
-        
-        // Store in localStorage
-        localStorage.setItem(CHANGE_PASSWORD_ATTEMPT_COUNT_KEY, newAttemptCount.toString());
-        localStorage.setItem(CHANGE_PASSWORD_LAST_ATTEMPT_KEY, now.toString());
-        
-        if (newAttemptCount >= MAX_CHANGE_PASSWORD_ATTEMPTS) {
-          setIsRateLimited(true);
-          setErrors({ 
-            general: `Too many failed attempts. Please wait 5 minutes before trying again.` 
-          });
-        } else {
-          setErrors({ general: response.data.message || 'Failed to change password' });
-        }
-      }
+      // Success - password changed
+      setIsSuccess(true);
+      // Clear form data and rate limiting on success
+      setFormData({ currentPassword: '', newPassword: '', confirmPassword: '' });
+      localStorage.removeItem(CHANGE_PASSWORD_ATTEMPT_COUNT_KEY);
+      localStorage.removeItem(CHANGE_PASSWORD_LAST_ATTEMPT_KEY);
+      setAttemptCount(0);
+      setLastAttemptTime(0);
+      setIsRateLimited(false);
     } catch (error) {
       console.error('Change password error:', error);
       

@@ -1,16 +1,14 @@
 import React from 'react';
-import { useNavigate } from 'react-router-dom';
 import { useChangePasswordForm } from '../../hooks/useChangePasswordForm';
-import { Input } from '../ui/Input/Input';
-import { Button } from '../ui/Button/Button';
-import { BackButton } from '../ui/BackButton/BackButton';
+import Input from '../ui/Input/Input';
+import Button from '../ui/Button/Button';
+import BackButton from '../ui/BackButton/BackButton';
 
 interface ChangePasswordFormProps {
   className?: string;
 }
 
 const ChangePasswordForm: React.FC<ChangePasswordFormProps> = ({ className = "" }) => {
-  const navigate = useNavigate();
   const {
     formData,
     errors,
@@ -256,7 +254,7 @@ const ChangePasswordForm: React.FC<ChangePasswordFormProps> = ({ className = "" 
         {/* Back to Profile Link */}
         <div className="text-center pt-4">
           <BackButton 
-            onClick={handleBackToProfile}
+            to="/profile"
             className="text-slate-400 hover:text-cyan-400"
           >
             Back to Profile
