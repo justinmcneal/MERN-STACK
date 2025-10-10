@@ -120,16 +120,32 @@ export class AuthService {
     const normalizedEmail = email.trim().toLowerCase();
     const normalizedName = name.trim();
 
+    console.log('🔐 [AuthService] Starting user registration process...');
+    console.log('🔐 [AuthService] Registration data:', {
+      name: normalizedName,
+      email: normalizedEmail,
+      hasPassword: !!password
+    });
+
     const existingUser = await User.findOne({ email: normalizedEmail });
     if (existingUser) {
+      console.log('🔐 [AuthService] User already exists:', normalizedEmail);
       throw createError('User already exists', 400);
     }
+
+    console.log('🔐 [AuthService] No existing user found, proceeding with registration...');
 
     const passwordHash = await bcrypt.hash(password, 10);
     const emailVerificationToken = TokenService.generateEmailVerificationToken();
     const emailVerificationExpires = TokenService.getEmailVerificationExpiry();
     const hashedToken = TokenService.hashToken(emailVerificationToken);
 
+    console.log('🔐 [AuthService] Generated verification token and expiry:', {
+      tokenLength: emailVerificationToken.length,
+      expiresAt: emailVerificationExpires
+    });
+
+    console.log('🔐 [AuthService] Creating pending user record...');
     await PendingUser.findOneAndUpdate(
       { email: normalizedEmail },
       {
@@ -142,9 +158,15 @@ export class AuthService {
       { upsert: true, new: true, setDefaultsOnInsert: true }
     );
 
+    console.log('🔐 [AuthService] Pending user record created successfully');
+
     try {
+      console.log('🔐 [AuthService] Attempting to send verification email...');
       await EmailService.sendVerificationEmail(normalizedEmail, normalizedName, emailVerificationToken);
+      console.log('🔐 [AuthService] Verification email sent successfully!');
     } catch (error) {
+      console.error('🔐 [AuthService] Failed to send verification email:', error);
+      console.log('🔐 [AuthService] Cleaning up pending user record...');
       await PendingUser.deleteOne({ email: normalizedEmail });
       throw createError('Failed to send verification email. Please try again.', 500);
     }

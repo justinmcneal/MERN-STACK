@@ -145,14 +145,24 @@ export const useRegisterForm = () => {
     }
 
     try {
+      console.log('📝 [useRegisterForm] Submitting registration form...');
+      console.log('📝 [useRegisterForm] Form data:', {
+        name: formData.name.trim(),
+        email: formData.email,
+        hasPassword: !!formData.password
+      });
+      
       const response = await register({
         name: formData.name.trim(),
         email: formData.email,
         password: formData.password,
       });
 
-  const message = response.message?.trim() || 'A LINK HAS BEEN SENT TO YOUR EMAIL';
+      console.log('📝 [useRegisterForm] Registration response received:', response);
 
+      const message = response.message?.trim() || 'A LINK HAS BEEN SENT TO YOUR EMAIL';
+
+      console.log('📝 [useRegisterForm] Redirecting to verify-email page...');
       navigate('/verify-email', {
         state: {
           email: formData.email,

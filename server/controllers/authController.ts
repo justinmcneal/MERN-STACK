@@ -6,10 +6,21 @@ import { createError } from '../middleware/errorMiddleware';
 
 // POST /api/auth/register
 export const registerUser = asyncHandler(async (req: Request, res: Response) => {
+  console.log('🚀 [AuthController] Registration request received');
+  console.log('🚀 [AuthController] Request body:', {
+    name: req.body.name,
+    email: req.body.email,
+    hasPassword: !!req.body.password
+  });
+  
   try {
+    console.log('🚀 [AuthController] Calling AuthService.register...');
     const registrationResponse = await AuthService.register(req.body);
+    console.log('🚀 [AuthController] Registration successful, sending response:', registrationResponse);
+    
     res.status(201).json(registrationResponse);
   } catch (error: any) {
+    console.error('🚀 [AuthController] Registration failed:', error);
     throw error; // Let the error middleware handle it
   }
 });

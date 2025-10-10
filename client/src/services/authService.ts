@@ -44,10 +44,21 @@ class AuthService {
    * Register a new user
    */
   static async register(data: RegisterData): Promise<RegistrationResponse> {
+    console.log('🌐 [AuthService] Starting registration process...');
+    console.log('🌐 [AuthService] Registration data:', {
+      name: data.name,
+      email: data.email,
+      hasPassword: !!data.password
+    });
+    
     try {
+      console.log('🌐 [AuthService] Making API call to /auth/register...');
       const response = await apiClient.post<RegistrationResponse>('/auth/register', data);
+      console.log('🌐 [AuthService] Registration API response received:', response.data);
+      
       return response.data;
     } catch (error: unknown) {
+      console.error('🌐 [AuthService] Registration failed:', error);
       throw this.handleError(error);
     }
   }
