@@ -15,22 +15,26 @@ export class EmailService {
    * Initialize email transporter
    */
   private static async getTransporter(): Promise<nodemailer.Transporter> {
+    console.log('📧 [EmailService] Initializing email transporter...');
+    console.log('📧 [EmailService] NODE_ENV:', process.env.NODE_ENV);
+    
     if (!this.transporter) {
-      // For development, use Ethereal Email (fake SMTP)
-      if (process.env.NODE_ENV === 'development') {
-        const testAccount = await nodemailer.createTestAccount();
-        this.transporter = nodemailer.createTransporter({
-          host: 'smtp.ethereal.email',
-          port: 587,
-          secure: false,
-          auth: {
-            user: testAccount.user,
-            pass: testAccount.pass,
-          },
+      // Check if email credentials are configured
+      const hasEmailConfig = process.env.EMAIL_USER && process.env.EMAIL_PASS;
+      
+      if (hasEmailConfig) {
+        console.log('📧 [EmailService] Using configured SMTP for email sending');
+        console.log('📧 [EmailService] Email config:', {
+          host: process.env.EMAIL_HOST || 'smtp.gmail.com',
+          port: process.env.EMAIL_PORT || '587',
+          secure: process.env.EMAIL_SECURE === 'true',
+          user: process.env.EMAIL_USER ? '***hidden***' : 'NOT_SET',
+          pass: process.env.EMAIL_PASS ? '***hidden***' : 'NOT_SET',
+          from: process.env.EMAIL_FROM || process.env.EMAIL_USER || 'noreply@arbitrader.com'
         });
-      } else {
-        // For production, use real SMTP
-        this.transporter = nodemailer.createTransporter({
+        
+        // Use configured SMTP (works for both development and production)
+        this.transporter = nodemailer.createTransport({
           host: process.env.EMAIL_HOST || 'smtp.gmail.com',
           port: parseInt(process.env.EMAIL_PORT || '587'),
           secure: process.env.EMAIL_SECURE === 'true',
@@ -39,6 +43,49 @@ export class EmailService {
             pass: process.env.EMAIL_PASS,
           },
         });
+        
+        try {
+          await this.transporter.verify();
+          console.log('📧 [EmailService] SMTP transporter verified successfully');
+        } catch (error) {
+          console.error('📧 [EmailService] Failed to verify SMTP:', error);
+          throw error;
+        }
+      } else if (process.env.NODE_ENV === 'development') {
+        console.log('📧 [EmailService] No email config found, using Ethereal Email for development');
+        try {
+          const testAccount = await nodemailer.createTestAccount();
+          console.log('📧 [EmailService] Ethereal test account created:', {
+            user: testAccount.user,
+            pass: testAccount.pass ? '***hidden***' : 'NOT_SET'
+          });
+          
+          this.transporter = nodemailer.createTransport({
+            host: 'smtp.ethereal.email',
+            port: 587,
+            secure: false,
+            auth: {
+              user: testAccount.user,
+              pass: testAccount.pass,
+            },
+          });
+          
+          // Test the connection
+          await this.transporter.verify();
+          console.log('📧 [EmailService] Ethereal transporter verified successfully');
+        } catch (error) {
+          console.error('📧 [EmailService] Failed to create Ethereal transporter:', error);
+          throw error;
+        }
+      } else if (process.env.NODE_ENV === 'test') {
+        console.log('📧 [EmailService] Using JSON transport for tests');
+        // For tests, use a noop transport that logs to memory
+        this.transporter = nodemailer.createTransport({
+          jsonTransport: true,
+        });
+      } else {
+        console.log('📧 [EmailService] No email configuration found - email sending disabled');
+        throw new Error('Email configuration is required but not found');
       }
     }
     return this.transporter;
@@ -48,6 +95,14 @@ export class EmailService {
    * Send email
    */
   static async sendEmail(options: EmailOptions): Promise<void> {
+    console.log('📧 [EmailService] Attempting to send email...');
+    console.log('📧 [EmailService] Email options:', {
+      to: options.to,
+      subject: options.subject,
+      hasHtml: !!options.html,
+      hasText: !!options.text
+    });
+    
     try {
       const transporter = await this.getTransporter();
       
@@ -59,14 +114,27 @@ export class EmailService {
         text: options.text,
       };
 
+      console.log('📧 [EmailService] Sending email with options:', {
+        from: mailOptions.from,
+        to: mailOptions.to,
+        subject: mailOptions.subject
+      });
+
       const info = await transporter.sendMail(mailOptions);
       
-      // In development, log the preview URL
-      if (process.env.NODE_ENV === 'development') {
-        console.log('Email sent:', nodemailer.getTestMessageUrl(info));
+      console.log('📧 [EmailService] Email sent successfully!');
+      console.log('📧 [EmailService] Message ID:', info.messageId);
+      
+      // In development with Ethereal, log the preview URL
+      if (process.env.NODE_ENV === 'development' && !process.env.EMAIL_USER) {
+        const previewUrl = nodemailer.getTestMessageUrl(info);
+        console.log('📧 [EmailService] Preview URL:', previewUrl);
+        if (previewUrl) {
+          console.log('📧 [EmailService] ⚠️  This is a test email. Click the preview URL to view it in your browser.');
+        }
       }
     } catch (error) {
-      console.error('Email sending failed:', error);
+      console.error('📧 [EmailService] Email sending failed:', error);
       throw new Error('Failed to send email');
     }
   }
@@ -75,7 +143,8 @@ export class EmailService {
    * Send email verification email
    */
   static async sendVerificationEmail(email: string, name: string, verificationToken: string): Promise<void> {
-    const verificationUrl = `${process.env.CLIENT_URL}/verify-email?token=${verificationToken}`;
+  const clientUrl = process.env.CLIENT_URL || 'http://localhost:5173';
+  const verificationUrl = `${clientUrl}/verify-email?token=${verificationToken}`;
     
     const html = `
       <!DOCTYPE html>
@@ -139,19 +208,24 @@ export class EmailService {
       © 2024 ArbiTrader Pro. All rights reserved.
     `;
 
+    console.log('📧 [EmailService] Calling sendEmail with verification details...');
+    
     await this.sendEmail({
       to: email,
       subject: 'Verify Your Email - ArbiTrader Pro',
       html,
       text,
     });
+    
+    console.log('📧 [EmailService] Verification email process completed successfully!');
   }
+
 
   /**
    * Send password reset email
    */
   static async sendPasswordResetEmail(email: string, name: string, resetToken: string): Promise<void> {
-    const resetUrl = `${process.env.CLIENT_URL}/reset-password?token=${resetToken}`;
+    const resetUrl = `${process.env.CLIENT_URL || 'http://localhost:5173'}/reset-password?token=${resetToken}`;
     
     const html = `
       <!DOCTYPE html>
@@ -161,38 +235,44 @@ export class EmailService {
           <meta name="viewport" content="width=device-width, initial-scale=1.0">
           <title>Reset Your Password - ArbiTrader Pro</title>
           <style>
-            body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+            body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #333; }
             .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-            .header { background: linear-gradient(135deg, #ef4444, #f97316); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }
-            .content { background: #f8fafc; padding: 30px; border-radius: 0 0 10px 10px; }
-            .button { display: inline-block; background: #ef4444; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; margin: 20px 0; }
-            .footer { text-align: center; margin-top: 30px; color: #666; font-size: 14px; }
+            .header { background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); color: white; padding: 30px; text-align: center; border-radius: 8px 8px 0 0; }
+            .content { background: white; padding: 30px; border-radius: 0 0 8px 8px; border: 1px solid #e2e8f0; }
+            .button { display: inline-block; background: linear-gradient(135deg, #06b6d4 0%, #0891b2 100%); color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: 600; margin: 20px 0; }
+            .footer { text-align: center; margin-top: 30px; color: #64748b; font-size: 14px; }
+            .warning { background: #fef3c7; border: 1px solid #f59e0b; padding: 15px; border-radius: 6px; margin: 20px 0; }
           </style>
         </head>
         <body>
           <div class="container">
             <div class="header">
-              <h1>Password Reset Request</h1>
-              <p>ArbiTrader Pro</p>
+              <h1 style="margin: 0; font-size: 24px;">ArbiTrader Pro</h1>
+              <p style="margin: 10px 0 0 0; opacity: 0.9;">Professional Trading Platform</p>
             </div>
             <div class="content">
-              <h2>Hi ${name},</h2>
-              <p>We received a request to reset your password for your ArbiTrader Pro account. Click the button below to reset your password:</p>
+              <h2 style="color: #1e293b; margin-top: 0;">Password Reset Request</h2>
+              <p>Hello ${name},</p>
+              <p>We received a request to reset your password for your ArbiTrader Pro account. If you made this request, click the button below to reset your password:</p>
               
               <div style="text-align: center;">
-                <a href="${resetUrl}" class="button">Reset Password</a>
+                <a href="${resetUrl}" class="button">Reset My Password</a>
               </div>
               
-              <p>If the button doesn't work, you can also copy and paste this link into your browser:</p>
-              <p style="word-break: break-all; background: #e2e8f0; padding: 10px; border-radius: 5px; font-family: monospace;">${resetUrl}</p>
+              <p>Or copy and paste this link into your browser:</p>
+              <p style="word-break: break-all; background: #f8fafc; padding: 10px; border-radius: 4px; font-family: monospace;">${resetUrl}</p>
               
-              <p><strong>This reset link will expire in 1 hour.</strong></p>
+              <div class="warning">
+                <strong>Security Notice:</strong> This link will expire in 1 hour for your security. If you didn't request this password reset, please ignore this email and your password will remain unchanged.
+              </div>
               
-              <p>If you didn't request a password reset, you can safely ignore this email. Your password will remain unchanged.</p>
+              <p>If you have any questions or need assistance, please contact our support team.</p>
+              
+              <p>Best regards,<br>The ArbiTrader Pro Team</p>
             </div>
             <div class="footer">
-              <p>© 2024 ArbiTrader Pro. All rights reserved.</p>
-              <p>This is an automated message, please do not reply to this email.</p>
+              <p>This email was sent to ${email}. If you didn't request this, please ignore it.</p>
+              <p>&copy; 2024 ArbiTrader Pro. All rights reserved.</p>
             </div>
           </div>
         </body>

@@ -6,40 +6,58 @@ import { createError } from '../middleware/errorMiddleware';
 
 // POST /api/auth/register
 export const registerUser = asyncHandler(async (req: Request, res: Response) => {
+  console.log('🚀 [AuthController] Registration request received');
+  console.log('🚀 [AuthController] Request body:', {
+    name: req.body.name,
+    email: req.body.email,
+    hasPassword: !!req.body.password
+  });
+  
   try {
-    const authResponse = await AuthService.register(req.body);
+    console.log('🚀 [AuthController] Calling AuthService.register...');
+    const registrationResponse = await AuthService.register(req.body);
+    console.log('🚀 [AuthController] Registration successful, sending response:', registrationResponse);
     
-    // Set cookies
-    AuthService.setAuthCookies(res, req.cookies.refreshToken || '', authResponse.csrfToken);
-    
-    res.status(201).json({
-      _id: authResponse.user._id,
-      name: authResponse.user.name,
-      email: authResponse.user.email,
-      accessToken: authResponse.accessToken,
-      csrfToken: authResponse.csrfToken,
-    });
+    res.status(201).json(registrationResponse);
   } catch (error: any) {
+    console.error('🚀 [AuthController] Registration failed:', error);
     throw error; // Let the error middleware handle it
   }
 });
 
 // POST /api/auth/login
 export const authUser = asyncHandler(async (req: Request, res: Response) => {
+  console.log('🔐 [AuthController] Login request received');
+  console.log('🔐 [AuthController] Login data:', {
+    email: req.body.email,
+    hasPassword: !!req.body.password,
+    rememberMe: req.body.rememberMe
+  });
+  
   try {
+    console.log('🔐 [AuthController] Calling AuthService.login...');
     const authResponse = await AuthService.login(req.body);
+    console.log('🔐 [AuthController] Login successful, sending response');
     
-    // Set cookies with remember me support
-    AuthService.setAuthCookies(res, authResponse.refreshToken || '', authResponse.csrfToken, req.body.rememberMe || false);
+    // Set cookies with remember me support (only if not requiring 2FA)
+    if (!authResponse.requiresTwoFactor && authResponse.refreshToken && authResponse.csrfToken) {
+      AuthService.setAuthCookies(res, authResponse.refreshToken, authResponse.csrfToken, req.body.rememberMe || false);
+    }
     
     res.json({
-      _id: authResponse.user._id,
-      name: authResponse.user.name,
-      email: authResponse.user.email,
+      user: {
+        _id: authResponse.user._id,
+        name: authResponse.user.name,
+        email: authResponse.user.email,
+        isEmailVerified: authResponse.user.isEmailVerified,
+      },
       accessToken: authResponse.accessToken,
       csrfToken: authResponse.csrfToken,
+      message: authResponse.message,
+      requiresTwoFactor: authResponse.requiresTwoFactor,
     });
   } catch (error: any) {
+    console.error('🔐 [AuthController] Login failed:', error);
     throw error; // Let the error middleware handle it
   }
 });
@@ -131,6 +149,51 @@ export const verifyEmail = asyncHandler(async (req: Request, res: Response) => {
   }
 });
 
+// POST /api/auth/regenerate-verification
+export const regenerateVerification = asyncHandler(async (req: Request, res: Response) => {
+  try {
+    const { email } = req.body;
+    
+    if (!email) {
+      throw createError('Email is required', 400);
+    }
+
+    const result = await AuthService.regenerateVerificationToken(email);
+    
+    res.json({
+      success: true,
+      message: result.message,
+    });
+  } catch (error: any) {
+    throw error;
+  }
+});
+
+// GET /api/auth/debug-token (DEBUG ONLY - remove in production)
+export const getDebugToken = asyncHandler(async (req: Request, res: Response) => {
+  try {
+    const { email } = req.query;
+    
+    if (!email || typeof email !== 'string') {
+      throw createError('Email is required', 400);
+    }
+
+    const debugTokens = (global as any).debugTokens || {};
+    const tokenData = debugTokens[email.toLowerCase()];
+    
+    if (!tokenData) {
+      throw createError('No debug token found for this email', 404);
+    }
+
+    res.json({
+      success: true,
+      data: tokenData,
+    });
+  } catch (error: any) {
+    throw error;
+  }
+});
+
 // POST /api/auth/resend-verification
 export const resendVerification = asyncHandler(async (req: Request, res: Response) => {
   try {
@@ -141,6 +204,46 @@ export const resendVerification = asyncHandler(async (req: Request, res: Respons
     }
 
     const result = await AuthService.resendVerificationEmail(email);
+    
+    res.json({
+      success: true,
+      message: result.message,
+    });
+  } catch (error: any) {
+    throw error;
+  }
+});
+
+// POST /api/auth/forgot-password
+export const forgotPassword = asyncHandler(async (req: Request, res: Response) => {
+  try {
+    const { email } = req.body;
+    
+    if (!email) {
+      throw createError('Email is required', 400);
+    }
+
+    const result = await AuthService.requestPasswordReset(email);
+    
+    res.json({
+      success: true,
+      message: result.message,
+    });
+  } catch (error: any) {
+    throw error;
+  }
+});
+
+// POST /api/auth/reset-password
+export const resetPassword = asyncHandler(async (req: Request, res: Response) => {
+  try {
+    const { token, password } = req.body;
+    
+    if (!token || !password) {
+      throw createError('Token and password are required', 400);
+    }
+
+    const result = await AuthService.resetPassword(token, password);
     
     res.json({
       success: true,

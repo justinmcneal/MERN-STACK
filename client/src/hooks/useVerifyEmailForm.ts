@@ -1,69 +1,131 @@
 // hooks/useVerifyEmailForm.ts
-import { useState, useEffect } from 'react';
-import { useSearchParams, useNavigate } from 'react-router-dom';
+import { useState, useEffect, useCallback } from 'react';
+import { useSearchParams, useNavigate, useLocation } from 'react-router-dom';
 import { apiClient } from '../services/api';
+import type { AxiosError } from 'axios';
 
-export interface VerifyEmailFormData {
-  email: string;
+export type VerifyEmailStatus = 'verifying' | 'verified' | 'error' | 'resent' | 'pending';
+
+interface VerifyEmailLocationState {
+  email?: string;
+  fromRegistration?: boolean;
+  message?: string;
 }
+
+const extractErrorMessage = (error: unknown, fallback: string): string => {
+  const axiosError = error as AxiosError<{ error?: { message?: string }; message?: string }>;
+  
+  // Handle different error response structures
+  if (axiosError.response?.data?.error?.message) {
+    return axiosError.response.data.error.message;
+  }
+  
+  if (axiosError.response?.data?.message) {
+    return axiosError.response.data.message;
+  }
+  
+  return fallback;
+};
 
 export const useVerifyEmailForm = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  const [status, setStatus] = useState<'loading' | 'success' | 'error' | 'resending'>('loading');
-  const [message, setMessage] = useState('');
-  const [email, setEmail] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
-
   const token = searchParams.get('token');
+  const location = useLocation();
+  const locationState = (location.state ?? null) as VerifyEmailLocationState | null;
 
-  useEffect(() => {
+  // Determine initial status based on URL parameters and state
+  const getInitialStatus = (): VerifyEmailStatus => {
+    if (token) {
+      return 'verifying';
+    }
+    if (locationState?.fromRegistration) {
+      return 'pending';
+    }
+    return 'error';
+  };
+
+  const getInitialMessage = (): string => {
+    if (token) {
+      return 'Verifying your email. This will only take a moment...';
+    }
+    if (locationState?.fromRegistration) {
+      return locationState.message ||
+        'We just sent a verification link to your email. Please check your inbox to complete registration.';
+    }
+    return 'Invalid verification link. Please check your email and try again.';
+  };
+
+  const initialStatus = getInitialStatus();
+  const initialMessage = getInitialMessage();
+
+  console.log('🔐 [useVerifyEmailForm] Initial state:', {
+    token: !!token,
+    status: initialStatus,
+    message: initialMessage,
+    fromRegistration: locationState?.fromRegistration
+  });
+
+  const [status, setStatus] = useState<VerifyEmailStatus>(initialStatus);
+  const [message, setMessage] = useState(initialMessage);
+  const [email, setEmail] = useState(locationState?.email ?? '');
+  const [isLoading, setIsLoading] = useState<boolean>(!!token); // Start loading if we have a token
+
+  const verifyEmail = useCallback(async () => {
     if (!token) {
-      setStatus('error');
-      setMessage('Invalid verification link. Please check your email and try again.');
+      setStatus(locationState?.fromRegistration ? 'pending' : 'error');
+      if (!locationState?.fromRegistration) {
+        setMessage('Invalid verification link. Please check your email and try again.');
+      }
       return;
     }
 
-    verifyEmail();
-  }, [token]);
-
-  const verifyEmail = async () => {
-    if (!token) return;
-    
     try {
+      setStatus('verifying');
       setIsLoading(true);
-      const response = await apiClient.get(`/auth/verify-email?token=${token}`);
-      setStatus('success');
-      setMessage(response.data.message);
+      console.log('🔐 [useVerifyEmailForm] Starting verification with token:', token);
       
+      const response = await apiClient.get(`/auth/verify-email?token=${token}`);
+      console.log('🔐 [useVerifyEmailForm] Verification response:', response.data);
+      
+      setStatus('verified');
+      setMessage(response.data.message || 'Email verified successfully! You can now log in.');
+
       // Redirect to login after 3 seconds
       setTimeout(() => {
         navigate('/login');
       }, 3000);
-    } catch (error: any) {
+    } catch (error) {
+      console.error('🔐 [useVerifyEmailForm] Verification failed:', error);
       setStatus('error');
-      setMessage(error.response?.data?.message || 'Verification failed. Please try again.');
+      setMessage(extractErrorMessage(error, 'Verification failed. Please try again.'));
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [locationState?.fromRegistration, navigate, token]);
+
+  useEffect(() => {
+    console.log('🔐 [useVerifyEmailForm] useEffect triggered, token:', !!token);
+    if (token) {
+      verifyEmail();
+    }
+  }, [token, verifyEmail]);
 
   const resendVerification = async () => {
     if (!email) {
-      setMessage('Please enter your email address');
+      setStatus('error');
+      setMessage('Please enter your email address.');
       return;
     }
 
-    setStatus('resending');
-    setIsLoading(true);
-    
     try {
+      setIsLoading(true);
       const response = await apiClient.post('/auth/resend-verification', { email });
-      setStatus('success');
+      setStatus('resent');
       setMessage(response.data.message);
-    } catch (error: any) {
+    } catch (error) {
       setStatus('error');
-      setMessage(error.response?.data?.message || 'Failed to resend verification email');
+      setMessage(extractErrorMessage(error, 'Failed to resend verification email.'));
     } finally {
       setIsLoading(false);
     }

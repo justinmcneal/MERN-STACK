@@ -16,6 +16,17 @@ export interface IUser extends Document {
   isEmailVerified: boolean;
   emailVerificationToken: string | null;
   emailVerificationExpires: Date | null;
+  passwordResetToken: string | null;
+  passwordResetExpires: Date | null;
+  // Two-Factor Authentication fields
+  twoFactorEnabled: boolean;
+  twoFactorSecret: string | null;
+  twoFactorBackupCodes: string[];
+  twoFactorVerifiedAt: Date | null;
+  // Profile picture
+  profilePicture: string | null;
+  // Avatar selection
+  avatar: number;
 }
 
 const userSchema: Schema<IUser> = new mongoose.Schema(
@@ -29,6 +40,17 @@ const userSchema: Schema<IUser> = new mongoose.Schema(
     isEmailVerified: { type: Boolean, default: false },
     emailVerificationToken: { type: String, default: null },
     emailVerificationExpires: { type: Date, default: null },
+    passwordResetToken: { type: String, default: null },
+    passwordResetExpires: { type: Date, default: null },
+    // Two-Factor Authentication fields
+    twoFactorEnabled: { type: Boolean, default: false },
+    twoFactorSecret: { type: String, default: null },
+    twoFactorBackupCodes: [{ type: String }],
+    twoFactorVerifiedAt: { type: Date, default: null },
+    // Profile picture
+    profilePicture: { type: String, default: null },
+    // Avatar selection
+    avatar: { type: Number, default: 0 },
   },
   { timestamps: true }
 );
@@ -41,6 +63,12 @@ userSchema.methods.isLocked = function (): boolean {
 // Hash password before save (only if modified)
 userSchema.pre<IUser>('save', async function (next) {
   if (!this.isModified('password')) return next();
+
+  // Skip re-hashing if password is already a bcrypt hash
+  if (this.password.startsWith('$2a$') || this.password.startsWith('$2b$') || this.password.startsWith('$2y$')) {
+    return next();
+  }
+
   const salt = await bcrypt.genSalt(10);
   this.password = await bcrypt.hash(this.password, salt);
   next();

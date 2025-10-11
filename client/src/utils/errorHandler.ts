@@ -138,6 +138,15 @@ export const ErrorHandler = {
       'Password must include uppercase, lowercase, number, and special character': 'Password must include uppercase, lowercase, number, and special character.',
       'User already exists': 'An account with this email already exists. Please try logging in instead.',
       'Email already exists': 'An account with this email already exists. Please try logging in instead.',
+      'Invalid or expired password reset token': 'This password reset link is invalid or has expired. Please request a new one.',
+      'Password reset token is required': 'Invalid reset link. Please request a new password reset.',
+      'Token and password are required': 'Please provide both the reset token and new password.',
+      'Failed to send password reset email': 'Unable to send password reset email. Please try again later.',
+      'Failed to reset password': 'Unable to reset password. Please try again or request a new reset link.',
+      'Current password is incorrect': 'The current password you entered is incorrect. Please try again.',
+      'Please provide current and new password': 'Both current and new passwords are required.',
+      'New password must be at least 8 characters long and include uppercase, lowercase, number, and special character.': 'New password must be at least 8 characters long and include uppercase, lowercase, number, and special character.',
+      'Password changed successfully': 'Your password has been changed successfully.',
     };
 
     // Check for exact matches first
@@ -202,6 +211,10 @@ export const ErrorHandler = {
         if (!/(?=.*[A-Z])/.test(value)) return 'Password must include at least one uppercase letter';
         if (!/(?=.*\d)/.test(value)) return 'Password must include at least one number';
         if (!/(?=.*[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?])/.test(value)) return 'Password must include at least one special character';
+        return '';
+      
+      case 'confirmPassword':
+        if (!value) return 'Please confirm your password';
         return '';
       
       default:

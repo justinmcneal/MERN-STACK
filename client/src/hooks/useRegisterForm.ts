@@ -145,25 +145,32 @@ export const useRegisterForm = () => {
     }
 
     try {
+      console.log('📝 [useRegisterForm] Submitting registration form...');
+      console.log('📝 [useRegisterForm] Form data:', {
+        name: formData.name.trim(),
+        email: formData.email,
+        hasPassword: !!formData.password
+      });
+      
       const response = await register({
         name: formData.name.trim(),
         email: formData.email,
         password: formData.password,
       });
-      
-      // Check if email verification is required
-      if (response.message && response.message.includes('check your email')) {
-        // Show success message and redirect to verification page
-        setErrors({ 
-          general: 'Registration successful! Please check your email to verify your account before logging in.' 
-        });
-        // Don't navigate to dashboard, let user know to check email
-        return;
-      }
-      
-      // If email is already verified, redirect to dashboard
-      navigate('/dashboard');
-    } catch (error: any) {
+
+      console.log('📝 [useRegisterForm] Registration response received:', response);
+
+      const message = response.message?.trim() || 'A LINK HAS BEEN SENT TO YOUR EMAIL';
+
+      console.log('📝 [useRegisterForm] Redirecting to verify-email page...');
+      navigate('/verify-email', {
+        state: {
+          email: formData.email,
+          fromRegistration: true,
+          message,
+        },
+      });
+    } catch (error: unknown) {
       // Log error for debugging
       ErrorHandler.logError(error, 'Registration form submission');
       

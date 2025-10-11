@@ -9,6 +9,8 @@ import LandingPage from './pages/Landing';
 import Login from './pages/Login';
 import SignUp from './pages/Register';
 import VerifyEmail from './pages/VerifyEmail';
+import ForgotPassword from './pages/ForgotPassword';
+import ResetPassword from './pages/ResetPassword';
 import Dashboard from './pages/main_dashboard';
 import Opportunities from './pages/opportunities';
 import Profile from './pages/profile';
@@ -36,6 +38,8 @@ const App: React.FC = () => {
           <Route path="/logIn" element={<Login />} />
           <Route path="/signUp" element={<SignUp />} />
           <Route path="/verify-email" element={<VerifyEmail />} />
+          <Route path="/forgot-password" element={<ForgotPassword />} />
+          <Route path="/reset-password" element={<ResetPassword />} />
           
           {/* Protected Routes */}
           <Route path="/dashboard" element={

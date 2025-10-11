@@ -12,6 +12,7 @@ import profileRoutes from './routes/profileRoutes';
 import alertRoutes from './routes/alertRoutes';
 import systemRoutes from './routes/systemRoutes';
 import websocketRoutes from './routes/websocketRoutes';
+import twoFactorRoutes from './routes/twoFactorRoutes';
 import { notFound, errorHandler } from './middleware/errorMiddleware';
 import googleAuthRoutes from './routes/googleAuthRoutes';
 
@@ -45,6 +46,7 @@ app.use(cookieParser() as express.RequestHandler);
 // Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/auth', googleAuthRoutes);
+app.use('/api/auth/2fa', twoFactorRoutes);
 app.use('/api/tokens', tokenRoutes);
 app.use('/api/opportunities', opportunityRoutes);
 app.use('/api/preferences', preferenceRoutes);
