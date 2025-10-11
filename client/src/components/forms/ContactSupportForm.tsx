@@ -16,7 +16,7 @@ const ContactSupportForm = () => {
   } = useContactSupportForm();
 
   return (
-    <div className="bg-slate-800/50 backdrop-blur border border-slate-700/50 rounded-2xl p-6 min-h-[950px] flex flex-col">
+    <div className="bg-slate-800/50 backdrop-blur border border-slate-700/50 rounded-2xl p-6 min-h-[600px] flex flex-col">
       <h2 className="text-2xl font-bold text-slate-200 mb-4">Get in Touch</h2>
       
       {/* Success Message */}
