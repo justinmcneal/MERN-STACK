@@ -8,6 +8,11 @@ interface GeneralSettingsProps {
   onThemeModeChange: () => void;
   onDataRefreshIntervalChange: (value: string) => void;
   onDefaultCurrencyChange: (value: string) => void;
+  errors?: {
+    themeMode?: string;
+    dataRefreshInterval?: string;
+    defaultCurrency?: string;
+  };
 }
 
 const GeneralSettings: React.FC<GeneralSettingsProps> = ({
@@ -16,7 +21,8 @@ const GeneralSettings: React.FC<GeneralSettingsProps> = ({
   defaultCurrency,
   onThemeModeChange,
   onDataRefreshIntervalChange,
-  onDefaultCurrencyChange
+  onDefaultCurrencyChange,
+  errors = {}
 }) => {
   return (
     <div className="bg-slate-800/50 backdrop-blur border border-slate-700/50 rounded-2xl p-6">
@@ -39,6 +45,7 @@ const GeneralSettings: React.FC<GeneralSettingsProps> = ({
           <div className="flex-1">
             <h3 className="text-slate-200 font-medium mb-1">Theme Mode</h3>
             <p className="text-sm text-slate-400">Switch between light and dark mode interface</p>
+            {errors.themeMode && <p className="text-xs text-red-400 mt-1">{errors.themeMode}</p>}
           </div>
           <ToggleSwitch 
             enabled={themeMode}
@@ -51,12 +58,17 @@ const GeneralSettings: React.FC<GeneralSettingsProps> = ({
           <div className="flex-1">
             <h3 className="text-slate-200 font-medium mb-1">Data Refresh Interval</h3>
             <p className="text-sm text-slate-400">How often to refresh price data and opportunities</p>
+            {errors.dataRefreshInterval && <p className="text-xs text-red-400 mt-1">{errors.dataRefreshInterval}</p>}
           </div>
           <div className="relative w-full sm:w-48">
             <select 
               value={dataRefreshInterval}
               onChange={(e) => onDataRefreshIntervalChange(e.target.value)}
-              className="w-full appearance-none px-4 py-2.5 bg-slate-700/50 border border-slate-600/50 rounded-xl text-slate-200 focus:outline-none focus:ring-2 focus:ring-cyan-400/50 transition-all cursor-pointer"
+              className={`w-full appearance-none px-4 py-2.5 bg-slate-700/50 border rounded-xl text-slate-200 focus:outline-none focus:ring-2 transition-all cursor-pointer ${
+                errors.dataRefreshInterval 
+                  ? 'border-red-500 focus:ring-red-500/50' 
+                  : 'border-slate-600/50 focus:ring-cyan-400/50'
+              }`}
             >
               {["Every 10 seconds","Every 30 seconds","Every 1 minute","Every 5 minutes"].map(t => 
                 <option key={t} value={t} className="bg-slate-900 text-slate-300">{t}</option>
@@ -73,14 +85,19 @@ const GeneralSettings: React.FC<GeneralSettingsProps> = ({
           <div className="flex-1">
             <h3 className="text-slate-200 font-medium mb-1">Default Currency</h3>
             <p className="text-sm text-slate-400">Primary currency for displaying values</p>
+            {errors.defaultCurrency && <p className="text-xs text-red-400 mt-1">{errors.defaultCurrency}</p>}
           </div>
           <div className="relative w-full sm:w-48">
             <select 
               value={defaultCurrency}
               onChange={(e) => onDefaultCurrencyChange(e.target.value)}
-              className="w-full appearance-none px-4 py-2.5 bg-slate-700/50 border border-slate-600/50 rounded-xl text-slate-200 focus:outline-none focus:ring-2 focus:ring-cyan-400/50 transition-all cursor-pointer"
+              className={`w-full appearance-none px-4 py-2.5 bg-slate-700/50 border rounded-xl text-slate-200 focus:outline-none focus:ring-2 transition-all cursor-pointer ${
+                errors.defaultCurrency 
+                  ? 'border-red-500 focus:ring-red-500/50' 
+                  : 'border-slate-600/50 focus:ring-cyan-400/50'
+              }`}
             >
-              {["Select Currency","USD ($)","EUR (€)","GBP (£)","JPY (¥)","PHP (₱)"].map(t => 
+              {["USD ($)","EUR (€)","GBP (£)","JPY (¥)","PHP (₱)"].map(t => 
                 <option key={t} value={t} className="bg-slate-900 text-slate-300">{t}</option>
               )}
             </select>
