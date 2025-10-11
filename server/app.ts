@@ -13,6 +13,7 @@ import alertRoutes from './routes/alertRoutes';
 import systemRoutes from './routes/systemRoutes';
 import websocketRoutes from './routes/websocketRoutes';
 import twoFactorRoutes from './routes/twoFactorRoutes';
+import contactSupportRoutes from './routes/contactSupportRoutes';
 import { notFound, errorHandler } from './middleware/errorMiddleware';
 import googleAuthRoutes from './routes/googleAuthRoutes';
 
@@ -54,6 +55,7 @@ app.use('/api/profile', profileRoutes);
 app.use('/api/alerts', alertRoutes);
 app.use('/api/system', systemRoutes);
 app.use('/api/websocket', websocketRoutes);
+app.use('/api/support', contactSupportRoutes);
 // Error handlers (must be last)
 app.use(notFound);
 app.use(errorHandler);
