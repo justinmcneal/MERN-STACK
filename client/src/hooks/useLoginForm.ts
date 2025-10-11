@@ -141,19 +141,31 @@ export const useLoginForm = () => {
     // Real-time validation for better UX
     if (sanitizedValue.length > 0) {
       validateField(field, sanitizedValue);
+    } else {
+      // Clear field-specific error when field is empty
+      if (errors[field]) {
+        setErrors(prev => ({
+          ...prev,
+          [field]: undefined
+        }));
+      }
     }
   };
 
   const validateField = (field: keyof LoginFormData, value: string) => {
     let errorMessage = '';
     
-    // For login form, only validate email format and basic password presence
+    // Real-time validation for better UX
     if (field === 'email') {
       errorMessage = ErrorHandler.handleValidationError(field, value);
     } else if (field === 'password') {
-      // Only check if password is provided for login
+      // More comprehensive password validation for login
       if (!value) {
         errorMessage = 'Password is required';
+      } else if (value.length < 6) {
+        errorMessage = 'Password must be at least 6 characters';
+      } else if (value.includes(' ')) {
+        errorMessage = 'Password cannot contain spaces';
       }
     }
     
