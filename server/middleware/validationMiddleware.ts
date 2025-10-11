@@ -4,9 +4,11 @@ import Joi from 'joi';
 
 export const validate = (schema: Joi.ObjectSchema) => {
   return (req: Request, res: Response, next: NextFunction) => {
+    console.log('🔍 [ValidationMiddleware] Validating request body:', req.body);
     const { error } = schema.validate(req.body);
     
     if (error) {
+      console.log('❌ [ValidationMiddleware] Validation failed:', error.details);
       const errorMessage = error.details.map(detail => detail.message).join(', ');
       return res.status(400).json({
         error: 'Validation Error',
@@ -14,6 +16,7 @@ export const validate = (schema: Joi.ObjectSchema) => {
       });
     }
     
+    console.log('✅ [ValidationMiddleware] Validation passed');
     next();
   };
 };
@@ -90,6 +93,15 @@ export const profileSchemas = {
     name: Joi.string().min(10).max(50).optional().messages({
       'string.min': 'Name must be at least 10 characters long',
       'string.max': 'Name must not exceed 50 characters',
+    }),
+    profilePicture: Joi.string().uri().allow('').optional().messages({
+      'string.uri': 'Profile picture must be a valid URL',
+    }),
+    avatar: Joi.number().integer().min(0).max(5).optional().messages({
+      'number.base': 'Avatar must be a number',
+      'number.integer': 'Avatar must be an integer',
+      'number.min': 'Avatar must be between 0 and 5',
+      'number.max': 'Avatar must be between 0 and 5',
     }),
     // email: Joi.string().email().optional().messages({
     //   'string.email': 'Please provide a valid email address',

@@ -6,10 +6,12 @@ import {
   updateProfile, 
   changePassword, 
   getUserStats, 
-  deleteAccount 
+  deleteAccount,
+  uploadProfilePicture
 } from '../controllers/profileController';
 import { protect } from '../middleware/authMiddleware';
 import { validate, profileSchemas } from '../middleware/validationMiddleware';
+import { uploadProfilePicture as uploadMiddleware, handleUploadError } from '../middleware/uploadMiddleware';
 
 const router = Router();
 
@@ -29,5 +31,8 @@ router.put('/', profileRateLimiter, validate(profileSchemas.updateProfile), upda
 router.put('/password', profileRateLimiter, validate(profileSchemas.changePassword), changePassword);
 router.get('/stats', profileRateLimiter, getUserStats);
 router.delete('/', profileRateLimiter, validate(profileSchemas.deleteAccount), deleteAccount);
+
+// Profile picture upload route
+router.post('/upload-avatar', profileRateLimiter, uploadMiddleware, handleUploadError, uploadProfilePicture);
 
 export default router;

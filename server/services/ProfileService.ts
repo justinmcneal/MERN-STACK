@@ -10,6 +10,8 @@ export interface ProfileData {
 
 export interface ProfileUpdateData {
   name?: string;
+  profilePicture?: string;
+  avatar?: number;
   // email?: string; // Email changes are disabled for security
 }
 
@@ -23,6 +25,8 @@ export interface ProfileResponse {
     _id: string;
     name: string;
     email: string;
+    profilePicture: string | null;
+    avatar: number;
     createdAt: Date;
     updatedAt: Date;
   };
@@ -55,6 +59,8 @@ export class ProfileService {
         _id: user._id,
         name: user.name,
         email: user.email,
+        profilePicture: user.profilePicture,
+        avatar: user.avatar,
         createdAt: (user as any).createdAt,
         updatedAt: (user as any).updatedAt,
       },
@@ -78,6 +84,8 @@ export class ProfileService {
 
     // Update user fields
     if (data.name) user.name = data.name;
+    if (data.profilePicture !== undefined) user.profilePicture = data.profilePicture;
+    if (data.avatar !== undefined) user.avatar = data.avatar;
 
     await user.save();
 

@@ -23,6 +23,10 @@ export interface IUser extends Document {
   twoFactorSecret: string | null;
   twoFactorBackupCodes: string[];
   twoFactorVerifiedAt: Date | null;
+  // Profile picture
+  profilePicture: string | null;
+  // Avatar selection
+  avatar: number;
 }
 
 const userSchema: Schema<IUser> = new mongoose.Schema(
@@ -43,6 +47,10 @@ const userSchema: Schema<IUser> = new mongoose.Schema(
     twoFactorSecret: { type: String, default: null },
     twoFactorBackupCodes: [{ type: String }],
     twoFactorVerifiedAt: { type: Date, default: null },
+    // Profile picture
+    profilePicture: { type: String, default: null },
+    // Avatar selection
+    avatar: { type: Number, default: 0 },
   },
   { timestamps: true }
 );

@@ -5,6 +5,8 @@ export interface ProfileData {
   _id: string;
   name: string;
   email: string;
+  profilePicture: string | null;
+  avatar: number;
   createdAt: string;
   updatedAt: string;
 }
@@ -43,6 +45,8 @@ export interface UserStats {
 
 export interface UpdateProfileData {
   name?: string;
+  profilePicture?: string;
+  avatar?: number;
   // email?: string; // Email changes are disabled for security
 }
 

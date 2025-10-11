@@ -35,7 +35,7 @@ const ProfilePage = () => {
 
   // Original state for comparison
   const [originalState, setOriginalState] = useState({
-    profile: { name: '', email: '' },
+    profile: { name: '', email: '', profilePicture: null as string | null, avatar: 0 },
     preferences: {
       tokensTracked: [] as string[],
       dashboardPopup: false,
@@ -53,6 +53,7 @@ const ProfilePage = () => {
   const [localProfitThreshold, setLocalProfitThreshold] = useState(1);
   const [localTwoFactorAuth, setLocalTwoFactorAuth] = useState(false);
   const [selectedAvatar, setSelectedAvatar] = useState(0);
+  const [localProfilePicture, setLocalProfilePicture] = useState<string | null>(null);
   const [availableTokens, setAvailableTokens] = useState<string[]>([]);
   
   // Update local state when preferences change
@@ -68,12 +69,16 @@ const ProfilePage = () => {
       setLocalEmailNotifications(preferences.notificationSettings.email);
       setLocalProfitThreshold(preferences.alertThresholds.minROI);
       setLocalName(profile?.user.name || '');
+      setLocalProfilePicture(profile?.user.profilePicture || null);
+      setSelectedAvatar(profile?.user.avatar || 0);
 
       // Set original state for comparison
       setOriginalState({
         profile: {
           name: profile?.user.name || '',
-          email: profile?.user.email || ''
+          email: profile?.user.email || '',
+          profilePicture: profile?.user.profilePicture || null,
+          avatar: profile?.user.avatar || 0
         },
         preferences: {
           tokensTracked: [...preferences.tokensTracked],
@@ -123,8 +128,10 @@ const ProfilePage = () => {
 
   // Function to check if current state differs from original state
   const hasActualChanges = useMemo(() => {
-  const trimmedLocalName = localName.trim();
-  const profileChanged = trimmedLocalName !== originalState.profile.name;
+    const trimmedLocalName = localName.trim();
+    const profileChanged = trimmedLocalName !== originalState.profile.name;
+    const profilePictureChanged = localProfilePicture !== originalState.profile.profilePicture;
+    const avatarChanged = selectedAvatar !== originalState.profile.avatar;
 
     const localTokensSelected = Object.entries(localTokensTracked)
       .filter(([, selected]) => selected)
@@ -137,14 +144,22 @@ const ProfilePage = () => {
     const emailChanged = localEmailNotifications !== originalState.preferences.emailNotifications;
     const profitChanged = localProfitThreshold !== originalState.preferences.profitThreshold;
 
-    return profileChanged || tokensChanged || dashboardChanged || emailChanged || profitChanged;
-  }, [localName, localTokensTracked, localDashboardPopup, localEmailNotifications, localProfitThreshold, originalState]);
+    return profileChanged || profilePictureChanged || avatarChanged || tokensChanged || dashboardChanged || emailChanged || profitChanged;
+  }, [localName, localProfilePicture, selectedAvatar, localTokensTracked, localDashboardPopup, localEmailNotifications, localProfitThreshold, originalState]);
 
   // Handle profile updates (store locally, don't save immediately)
-  const handleProfileUpdate = (data: { name?: string; email?: string; avatar?: number }) => {
+  const handleProfileUpdate = (data: { name?: string; email?: string; avatar?: number; profilePicture?: string }) => {
     if (data.avatar !== undefined) {
       setSelectedAvatar(data.avatar);
-      // Avatar is just UI state for now, not saved to backend
+      // Clear profile picture when avatar is selected
+      if (data.avatar !== originalState.profile.avatar) {
+        setLocalProfilePicture('');
+      }
+      return;
+    }
+
+    if (data.profilePicture !== undefined) {
+      setLocalProfilePicture(data.profilePicture);
       return;
     }
 
@@ -194,9 +209,15 @@ const ProfilePage = () => {
 
     try {
       const trimmedLocalName = localName.trim();
-      const profileData: { name?: string } = {};
+      const profileData: { name?: string; profilePicture?: string; avatar?: number } = {};
       if (trimmedLocalName && trimmedLocalName !== originalState.profile.name) {
         profileData.name = trimmedLocalName;
+      }
+      if (localProfilePicture !== originalState.profile.profilePicture) {
+        profileData.profilePicture = localProfilePicture || '';
+      }
+      if (selectedAvatar !== originalState.profile.avatar) {
+        profileData.avatar = selectedAvatar;
       }
 
       const localTokensSelected = Object.entries(localTokensTracked)
@@ -210,7 +231,8 @@ const ProfilePage = () => {
       const profitChanged = localProfitThreshold !== originalState.preferences.profitThreshold;
 
       // Save profile changes
-      if (profileData.name) {
+      if (profileData.name || profileData.profilePicture !== undefined || profileData.avatar !== undefined) {
+        console.log('🔍 [ProfilePage] Sending profile data:', profileData);
         await updateProfile(profileData);
       }
 
@@ -245,7 +267,9 @@ const ProfilePage = () => {
       setOriginalState(prev => ({
         profile: {
           ...prev.profile,
-          name: profileData.name ?? prev.profile.name
+          name: profileData.name ?? prev.profile.name,
+          profilePicture: profileData.profilePicture !== undefined ? profileData.profilePicture : prev.profile.profilePicture,
+          avatar: profileData.avatar !== undefined ? profileData.avatar : prev.profile.avatar
         },
         preferences: {
           tokensTracked: tokensChanged ? [...localTokensSelected] : [...prev.preferences.tokensTracked],
@@ -383,6 +407,7 @@ const ProfilePage = () => {
                 joinDate={profile?.user.createdAt ? new Date(profile.user.createdAt).toLocaleDateString() : ''}
                 selectedAvatar={selectedAvatar}
                 avatars={avatars}
+                profilePicture={localProfilePicture}
                 onUpdate={handleProfileUpdate}
                 isUpdating={profileUpdating}
               />
