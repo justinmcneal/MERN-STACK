@@ -1,26 +1,9 @@
-import { Router } from 'express';
-import {
-  getSystemStatus,
-  getHealthCheck,
-  triggerOpportunityScan,
-  triggerDataUpdate,
-  restartBackgroundJobs,
-  getScannerStatus,
-  getPipelineStatus
-} from '../controllers/systemController';
-import { protect } from '../middleware/authMiddleware';
+import express from 'express';
+import systemController from '../controllers/systemController';
 
-const router = Router();
+const router = express.Router();
 
-// System status and health routes (public)
-router.route('/status').get(getSystemStatus);
-router.route('/health').get(getHealthCheck);
-
-// Protected routes for system management
-router.route('/scan').post(protect, triggerOpportunityScan);
-router.route('/update-data').post(protect, triggerDataUpdate);
-router.route('/restart-jobs').post(protect, restartBackgroundJobs);
-router.route('/scanner-status').get(protect, getScannerStatus);
-router.route('/pipeline-status').get(protect, getPipelineStatus);
+// GET /api/system/health
+router.get('/health', systemController.getHealth);
 
 export default router;

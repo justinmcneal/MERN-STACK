@@ -25,6 +25,16 @@ export const COINGECKO_TOKEN_IDS: Record<SupportedToken, string> = {
   'MATIC': 'matic-network'
 } as const;
 
+// Mapping of token -> chain -> contract address (or 'NATIVE' for native chain token)
+// If a chain is not present for a token, we consider the token unsupported on that chain
+export const TOKEN_CONTRACTS: Record<SupportedToken, Partial<Record<SupportedChain, string>>> = {
+  ETH: { ethereum: 'NATIVE', polygon: 'NATIVE' },
+  USDT: { ethereum: '0xdAC17F958D2ee523a2206206994597C13D831ec7', bsc: '0x55d398326f99059fF775485246999027B3197955', polygon: '0xc2132D05D31c914a87C6611C10748AEb04B58e8F' },
+  USDC: { ethereum: '0xA0b86991c6218b36c1d19D4a2e9eb0cE3606eB48', bsc: '0x8ac76a51cc950d9822d68b83fe1ad97b32cd580d', polygon: '0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174' },
+  BNB: { bsc: 'NATIVE' },
+  MATIC: { polygon: 'NATIVE' }
+};
+
 // Chain display names
 export const CHAIN_NAMES: Record<SupportedChain, string> = {
   'ethereum': 'Ethereum',

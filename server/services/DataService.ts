@@ -52,6 +52,8 @@ export class DataService {
   private readonly blocknativeUrl = 'https://api.blocknative.com/gasprices/blockprices';
 
   private readonly tokenIdMap = COINGECKO_TOKEN_IDS;
+  // In-memory cooldown timestamp for CoinGecko rate limit (ms since epoch)
+  private coinGeckoRateLimitUntil: number | null = null;
 
   private constructor() {}
 
@@ -63,8 +65,20 @@ export class DataService {
   }
 
   async fetchTokenPrices(): Promise<TokenPrice[]> {
-    const tokenIds = Object.values(this.tokenIdMap).join(',');
-    
+    // If we recently detected a CoinGecko rate limit, and the cooldown hasn't expired,
+    // avoid making another request to prevent blocking callers for a long period.
+    const now = Date.now();
+    if (this.coinGeckoRateLimitUntil && now < this.coinGeckoRateLimitUntil) {
+      const waitSec = Math.ceil((this.coinGeckoRateLimitUntil - now) / 1000);
+      console.warn(`CoinGecko is in cooldown for another ${waitSec}s; skipping fetch`);
+      // Return empty list to let callers decide how to handle lack of prices.
+      return [];
+    }
+
+    // Build token ID list only for configured tokens (avoid unknown tokens)
+    const tokenIds = Object.values(this.tokenIdMap).filter(Boolean).join(',');
+
+    const start = Date.now();
     try {
       const response = await axios.get<CoinGeckoResponse>(
         `${this.coinGeckoBaseUrl}/simple/price`,
@@ -80,10 +94,14 @@ export class DataService {
         }
       );
 
+      const elapsedMs = Date.now() - start;
+      console.info(`CoinGecko price fetch completed in ${elapsedMs}ms for ${tokenIds}`);
+
       const prices: TokenPrice[] = [];
       const timestamp = new Date();
 
       Object.entries(this.tokenIdMap).forEach(([symbol, tokenId]) => {
+        if (!tokenId) return;
         if (response.data[tokenId]?.usd) {
           prices.push({
             symbol,
@@ -95,16 +113,17 @@ export class DataService {
 
       return prices;
     } catch (error: any) {
-      console.error('Error fetching token prices:', error);
-      
-      // Handle rate limiting - wait and retry once
+      const elapsedMs = Date.now() - start;
+      console.error(`Error fetching token prices from CoinGecko (${elapsedMs}ms):`, error?.message || error);
+
+      // Handle rate limiting - set 1 hour cooldown and return empty result instead of blocking
       if (error.response?.status === 429) {
-        console.warn('⚠️  CoinGecko rate limit hit, waiting 60 seconds before retry');
-        await new Promise(resolve => setTimeout(resolve, 60000)); 
-        console.log('🔄 Retrying CoinGecko API call...');
-        return this.fetchTokenPrices(); 
+        const cooldownMs = 60 * 60 * 1000; // 1 hour
+        this.coinGeckoRateLimitUntil = Date.now() + cooldownMs;
+        console.warn(`CoinGecko rate limit hit; entering cooldown for 1 hour (${new Date(this.coinGeckoRateLimitUntil).toISOString()})`);
+        return [];
       }
-      
+
       throw new Error('Failed to fetch token prices from CoinGecko');
     }
   }

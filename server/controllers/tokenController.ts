@@ -83,33 +83,49 @@ export const refreshTokenPrices = asyncHandler(async (req: Request, res: Respons
     
     let updatedCount = 0;
     let createdCount = 0;
-    
-    // Update/create tokens for each supported chain
+
+    if (!priceData || priceData.length === 0) {
+      res.json({
+        success: true,
+        message: 'No price data available (possible CoinGecko cooldown).',
+        updated: 0,
+        created: 0,
+        timestamp: new Date()
+      });
+      return;
+    }
+
+    // Update/create tokens for each supported chain (only configured chains)
     const supportedChains = dataService.getSupportedChains();
-    
+
     for (const priceInfo of priceData) {
       for (const chain of supportedChains) {
-        const existingToken = await Token.findOne({
+        // Use atomic upsert to avoid race conditions and reduce DB calls
+        const update = {
           symbol: priceInfo.symbol,
-          chain: chain
-        });
+          chain: chain,
+          currentPrice: priceInfo.price,
+          lastUpdated: priceInfo.timestamp,
+          name: getTokenName(priceInfo.symbol)
+        } as any;
 
-        if (existingToken) {
-          // Update existing token
-          existingToken.currentPrice = priceInfo.price;
-          existingToken.lastUpdated = priceInfo.timestamp;
-          await existingToken.save();
-          updatedCount++;
-        } else {
-          // Create new token
-          await Token.create({
-            symbol: priceInfo.symbol,
-            chain: chain,
-            currentPrice: priceInfo.price,
-            lastUpdated: priceInfo.timestamp,
-            name: getTokenName(priceInfo.symbol)
-          });
-          createdCount++;
+        const result = await Token.findOneAndUpdate(
+          { symbol: priceInfo.symbol, chain },
+          { $set: update },
+          { upsert: true, new: true, setDefaultsOnInsert: true }
+        ).exec();
+
+        // If the document existed prior to this operation, count as updated, else created
+        // We can infer creation if the createdAt timestamp is very recent or if the returned doc has no previous updatedAt.
+        // Mongoose does not return a flag for upsert creation here, so we'll approximate by checking timestamps.
+        if (result) {
+          // If createdAt is within 5 seconds of lastUpdated, assume it was newly created by upsert
+          const createdAt = (result as any).createdAt as Date | undefined;
+          if (createdAt && Math.abs(createdAt.getTime() - new Date().getTime()) < 5000) {
+            createdCount++;
+          } else {
+            updatedCount++;
+          }
         }
       }
     }
@@ -121,6 +137,7 @@ export const refreshTokenPrices = asyncHandler(async (req: Request, res: Respons
       created: createdCount,
       timestamp: new Date()
     });
+    return;
   } catch (error: any) {
     res.status(500);
     throw new Error(`Failed to refresh token prices: ${error.message}`);
