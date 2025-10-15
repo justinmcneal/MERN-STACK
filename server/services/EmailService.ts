@@ -19,36 +19,53 @@ export class EmailService {
     console.log('📧 [EmailService] NODE_ENV:', process.env.NODE_ENV);
     
     if (!this.transporter) {
+      // Read and sanitize email credentials from environment
+      const envUserRaw = process.env.EMAIL_USER || '';
+      const envPassRaw = process.env.EMAIL_PASS || '';
+      const emailUser = envUserRaw.trim();
+      // Some providers (and UI displays) show app passwords grouped with spaces — remove whitespace
+      const emailPass = envPassRaw.replace(/\s+/g, '');
+
       // Check if email credentials are configured
-      const hasEmailConfig = process.env.EMAIL_USER && process.env.EMAIL_PASS;
-      
+      const hasEmailConfig = !!emailUser && !!emailPass;
+
       if (hasEmailConfig) {
         console.log('📧 [EmailService] Using configured SMTP for email sending');
         console.log('📧 [EmailService] Email config:', {
           host: process.env.EMAIL_HOST || 'smtp.gmail.com',
           port: process.env.EMAIL_PORT || '587',
-          secure: process.env.EMAIL_SECURE === 'true',
-          user: process.env.EMAIL_USER ? '***hidden***' : 'NOT_SET',
-          pass: process.env.EMAIL_PASS ? '***hidden***' : 'NOT_SET',
-          from: process.env.EMAIL_FROM || process.env.EMAIL_USER || 'noreply@arbitrader.com'
+          secure: (process.env.EMAIL_SECURE || 'false') === 'true',
+          user: emailUser ? '***hidden***' : 'NOT_SET',
+          pass: envPassRaw ? (envPassRaw.includes(' ') ? '***hidden (contains spaces)***' : '***hidden***') : 'NOT_SET',
+          from: process.env.EMAIL_FROM || emailUser || 'noreply@arbitrader.com'
         });
-        
+
+        if (envPassRaw && /\s/.test(envPassRaw)) {
+          console.warn('📧 [EmailService] EMAIL_PASS contains whitespace. Removing whitespace before using it. If this is an app password, ensure you copied it correctly (no spaces).');
+        }
+
         // Use configured SMTP (works for both development and production)
         this.transporter = nodemailer.createTransport({
           host: process.env.EMAIL_HOST || 'smtp.gmail.com',
           port: parseInt(process.env.EMAIL_PORT || '587'),
-          secure: process.env.EMAIL_SECURE === 'true',
+          secure: (process.env.EMAIL_SECURE || 'false') === 'true',
           auth: {
-            user: process.env.EMAIL_USER,
-            pass: process.env.EMAIL_PASS,
+            user: emailUser,
+            pass: emailPass,
           },
         });
         
         try {
           await this.transporter.verify();
           console.log('📧 [EmailService] SMTP transporter verified successfully');
-        } catch (error) {
-          console.error('📧 [EmailService] Failed to verify SMTP:', error);
+        } catch (error: any) {
+          // More detailed logging for SMTP verification failures
+          console.error('📧 [EmailService] Failed to verify SMTP:');
+          console.error('  message:', error && error.message ? error.message : error);
+          if (error && error.response) console.error('  response:', error.response);
+          if (error && error.responseCode) console.error('  responseCode:', error.responseCode);
+          if (error && error.code) console.error('  code:', error.code);
+          if (error && error.stack) console.error('  stack:', error.stack);
           throw error;
         }
       } else if (process.env.NODE_ENV === 'development') {
@@ -73,8 +90,13 @@ export class EmailService {
           // Test the connection
           await this.transporter.verify();
           console.log('📧 [EmailService] Ethereal transporter verified successfully');
-        } catch (error) {
-          console.error('📧 [EmailService] Failed to create Ethereal transporter:', error);
+        } catch (error: any) {
+          console.error('📧 [EmailService] Failed to create Ethereal transporter:');
+          console.error('  message:', error && error.message ? error.message : error);
+          if (error && error.response) console.error('  response:', error.response);
+          if (error && error.responseCode) console.error('  responseCode:', error.responseCode);
+          if (error && error.code) console.error('  code:', error.code);
+          if (error && error.stack) console.error('  stack:', error.stack);
           throw error;
         }
       } else if (process.env.NODE_ENV === 'test') {
@@ -133,8 +155,17 @@ export class EmailService {
           console.log('📧 [EmailService] ⚠️  This is a test email. Click the preview URL to view it in your browser.');
         }
       }
-    } catch (error) {
-      console.error('📧 [EmailService] Email sending failed:', error);
+    } catch (error: any) {
+      // Log detailed nodemailer error information to help debug SMTP failures
+      console.error('📧 [EmailService] Email sending failed:');
+      console.error('  message:', error && error.message ? error.message : error);
+      if (error && error.response) console.error('  response:', error.response);
+      if (error && error.responseCode) console.error('  responseCode:', error.responseCode);
+      if (error && error.rejected) console.error('  rejected:', error.rejected);
+      if (error && error.accepted) console.error('  accepted:', error.accepted);
+      if (error && error.code) console.error('  code:', error.code);
+      if (error && error.stack) console.error('  stack:', error.stack);
+      // Keep behavior unchanged: surface a generic error to callers
       throw new Error('Failed to send email');
     }
   }

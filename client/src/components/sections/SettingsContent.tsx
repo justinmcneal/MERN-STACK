@@ -1,5 +1,5 @@
 import React from "react";
-import { Save, AlertCircle, CheckCircle } from "lucide-react";
+import { Save, AlertCircle } from "lucide-react";
 import GeneralSettings from "./GeneralSettings";
 import MonitoringSettings from "./MonitoringSettings";
 import { useSettings } from "../../hooks/useSettings";

@@ -26,7 +26,7 @@ export const useSettings = () => {
     preferences,
     isLoading,
     isUpdating,
-    errors: preferencesErrors,
+    
     updateAppearanceSettings,
     updateAlertThresholds
   } = usePreferences();
@@ -93,7 +93,7 @@ export const useSettings = () => {
   };
 
   // Update individual settings
-  const updateSetting = (key: keyof SettingsData, value: any) => {
+  const updateSetting = (key: keyof SettingsData, value: unknown) => {
     setSettings(prev => ({
       ...prev,
       [key]: value
@@ -123,7 +123,10 @@ export const useSettings = () => {
       // Prepare alert thresholds update
       const alertThresholdsUpdate = {
         minProfit: settings.minProfitThreshold,
-        maxGasCost: settings.maxGasFee
+        maxGasCost: settings.maxGasFee,
+        // Provide defaults for the missing fields expected by the API
+        minROI: 0,
+        minScore: 0
       };
 
       // Update appearance settings
@@ -145,8 +148,8 @@ export const useSettings = () => {
 
       setHasChanges(false);
       return { success: true };
-    } catch (error: any) {
-      const errorMessage = error.message || 'Failed to save settings';
+    } catch (error: unknown) {
+  const errorMessage = (error && typeof error === 'object' && 'message' in error) ? String((error as Record<string, unknown>)['message']) : 'Failed to save settings';
       setErrors({ general: errorMessage });
       return { success: false, error: errorMessage };
     }

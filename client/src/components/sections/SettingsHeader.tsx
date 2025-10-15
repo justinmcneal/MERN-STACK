@@ -26,7 +26,6 @@ interface SettingsHeaderProps {
 }
 
 const SettingsHeader: React.FC<SettingsHeaderProps> = ({
-  sidebarOpen,
   onSidebarToggle,
   notificationOpen,
   onNotificationToggle,
