@@ -1,6 +1,7 @@
 import cron from 'node-cron';
 import { dataService, webSocketService } from '../services';
 import { Token } from '../models';
+import { TOKEN_CONTRACTS } from '../config/tokens';
 
 interface PipelineStatus {
   isRunning: boolean;
@@ -28,8 +29,8 @@ class DataPipeline {
    * Start the data pipeline with scheduled tasks
    */
   public startDataPipeline(): void {
-    // Update token prices every 60 seconds
-    cron.schedule('*/600 * * * * *', async () => {
+    // Update token prices every hour
+    cron.schedule('0 * * * *', async () => {
       await this.updateTokenPrices();
     });
 
@@ -68,21 +69,35 @@ class DataPipeline {
       const supportedChains = dataService.getSupportedChains();
       let tokensUpdated = 0;
 
-      for (const priceInfo of prices) {
-        for (const chain of supportedChains) {
-          const result = await Token.findOneAndUpdate(
-            { symbol: priceInfo.symbol, chain: chain },
-            {
+      // Respect backoff / empty results
+      if (!prices || prices.length === 0) {
+        console.log('No price data returned (possible backoff). Skipping token upserts.');
+      } else {
+        for (const priceInfo of prices) {
+          const tokenContracts = TOKEN_CONTRACTS[priceInfo.symbol as keyof typeof TOKEN_CONTRACTS] || {};
+          for (const chain of supportedChains) {
+            // Skip if token not mapped to this chain
+            if (!Object.prototype.hasOwnProperty.call(tokenContracts, chain)) continue;
+
+            const contractAddr = tokenContracts[chain as keyof typeof tokenContracts];
+            const update: any = {
               currentPrice: priceInfo.price,
               lastUpdated: new Date(),
               name: priceInfo.symbol,
               decimals: 18,
-            },
-            { upsert: true, new: true, setDefaultsOnInsert: true }
-          );
+            };
 
-          if (result) {
-            tokensUpdated++;
+            if (contractAddr && contractAddr !== 'NATIVE') {
+              update.contractAddress = contractAddr.toLowerCase();
+            }
+
+            const result = await Token.findOneAndUpdate(
+              { symbol: priceInfo.symbol, chain: chain },
+              update,
+              { upsert: true, new: true, setDefaultsOnInsert: true }
+            );
+
+            if (result) tokensUpdated++;
           }
         }
       }

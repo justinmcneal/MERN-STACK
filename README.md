@@ -91,6 +91,17 @@ Required variables:
 VITE_API_URL=http://localhost:5001/api
 ```
 
+### Optional API keys and ML service
+The server can use fallback data providers for resilience. Add the following to `server/.env` if you have keys:
+
+```
+CRYPTOCOMPARE_API_KEY=your_cryptocompare_key
+ETHERSCAN_API_KEY=your_etherscan_key
+ML_SERVICE_URL=http://localhost:8000
+```
+
+The repository includes a simple Python-based ML microservice under the `llm/` folder — run it separately and point `ML_SERVICE_URL` at it to enable ML-based analysis.
+
 ## Technologies Used
 
 - **Frontend**: React, TypeScript, Vite, Tailwind CSS

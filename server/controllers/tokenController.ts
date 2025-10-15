@@ -2,7 +2,7 @@ import { Request, Response } from 'express';
 import asyncHandler from 'express-async-handler';
 import Token from '../models/Token';
 import DataService from '../services/DataService';
-import { getTokenName } from '../config/tokens';
+import { getTokenName, TOKEN_CONTRACTS } from '../config/tokens';
 
 // GET /api/tokens - Get all tokens
 export const getTokens = asyncHandler(async (req: Request, res: Response) => {
@@ -95,11 +95,16 @@ export const refreshTokenPrices = asyncHandler(async (req: Request, res: Respons
       return;
     }
 
-    // Update/create tokens for each supported chain (only configured chains)
-    const supportedChains = dataService.getSupportedChains();
+  // Update/create tokens only for chains where the token has a contract mapping
+  const supportedChains = dataService.getSupportedChains();
 
     for (const priceInfo of priceData) {
+      const tokenContracts = TOKEN_CONTRACTS[priceInfo.symbol as keyof typeof TOKEN_CONTRACTS] || {};
       for (const chain of supportedChains) {
+        // Skip chains where this token has no contract mapping
+        if (!Object.prototype.hasOwnProperty.call(tokenContracts, chain)) {
+          continue;
+        }
         // Use atomic upsert to avoid race conditions and reduce DB calls
         const update = {
           symbol: priceInfo.symbol,
