@@ -1,0 +1,204 @@
+import { useState, useEffect } from 'react';
+import { usePreferences } from './usePreferences';
+
+export interface SettingsData {
+  // General Settings
+  themeMode: boolean; // true = dark, false = light (mapped from theme)
+  dataRefreshInterval: string; // Display string (mapped from refreshInterval)
+  defaultCurrency: string; // Client-side only for now
+  
+  // Monitoring Settings
+  minProfitThreshold: number; // Mapped from alertThresholds.minProfit
+  maxGasFee: number; // Mapped from alertThresholds.maxGasCost
+}
+
+export interface SettingsErrors {
+  themeMode?: string;
+  dataRefreshInterval?: string;
+  defaultCurrency?: string;
+  minProfitThreshold?: string;
+  maxGasFee?: string;
+  general?: string;
+}
+
+export const useSettings = () => {
+  const {
+    preferences,
+    isLoading,
+    isUpdating,
+    
+    updateAppearanceSettings,
+    updateAlertThresholds
+  } = usePreferences();
+
+  const [settings, setSettings] = useState<SettingsData>({
+    themeMode: true, // Default to dark mode
+    dataRefreshInterval: "Every 30 seconds",
+    defaultCurrency: "USD ($)",
+    minProfitThreshold: 1.5,
+    maxGasFee: 75
+  });
+
+  const [errors, setErrors] = useState<SettingsErrors>({});
+  const [hasChanges, setHasChanges] = useState(false);
+
+  // Convert API data to settings format
+  useEffect(() => {
+    if (preferences) {
+      const newSettings: SettingsData = {
+        // Theme mapping: 'dark' -> true, 'light' -> false, 'auto' -> true (default to dark)
+        themeMode: preferences.theme === 'dark' || preferences.theme === 'auto',
+        
+        // Refresh interval mapping: number -> display string
+        dataRefreshInterval: getRefreshIntervalString(preferences.refreshInterval),
+        
+        // Default currency (client-side only for now)
+        defaultCurrency: "USD ($)",
+        
+        // Alert thresholds mapping
+        minProfitThreshold: preferences.alertThresholds.minProfit,
+        maxGasFee: preferences.alertThresholds.maxGasCost
+      };
+      
+      setSettings(newSettings);
+      setHasChanges(false);
+    }
+  }, [preferences]);
+
+  // Convert refresh interval string to number
+  const getRefreshIntervalNumber = (intervalString: string): number => {
+    switch (intervalString) {
+      case "Every 10 seconds": return 10;
+      case "Every 30 seconds": return 30;
+      case "Every 1 minute": return 60;
+      case "Every 5 minutes": return 300;
+      default: return 30;
+    }
+  };
+
+  // Convert refresh interval number to string
+  const getRefreshIntervalString = (intervalNumber: number): string => {
+    switch (intervalNumber) {
+      case 10: return "Every 10 seconds";
+      case 30: return "Every 30 seconds";
+      case 60: return "Every 1 minute";
+      case 300: return "Every 5 minutes";
+      default: return "Every 30 seconds";
+    }
+  };
+
+  // Convert theme boolean to API format
+  const getThemeValue = (themeMode: boolean): 'light' | 'dark' | 'auto' => {
+    return themeMode ? 'dark' : 'light';
+  };
+
+  // Update individual settings
+  const updateSetting = (key: keyof SettingsData, value: unknown) => {
+    setSettings(prev => ({
+      ...prev,
+      [key]: value
+    }));
+    setHasChanges(true);
+    
+    // Clear any existing errors for this field
+    if (errors[key]) {
+      setErrors(prev => ({
+        ...prev,
+        [key]: undefined
+      }));
+    }
+  };
+
+  // Save all settings
+  const saveSettings = async () => {
+    try {
+      setErrors({});
+      
+      // Prepare appearance settings update
+      const appearanceUpdate = {
+        theme: getThemeValue(settings.themeMode),
+        refreshInterval: getRefreshIntervalNumber(settings.dataRefreshInterval)
+      };
+
+      // Prepare alert thresholds update
+      const alertThresholdsUpdate = {
+        minProfit: settings.minProfitThreshold,
+        maxGasCost: settings.maxGasFee,
+        // Provide defaults for the missing fields expected by the API
+        minROI: 0,
+        minScore: 0
+      };
+
+      // Update appearance settings
+      const appearanceResult = await updateAppearanceSettings(
+        appearanceUpdate.theme,
+        appearanceUpdate.refreshInterval
+      );
+
+      if (!appearanceResult.success) {
+        throw new Error(appearanceResult.error || 'Failed to update appearance settings');
+      }
+
+      // Update alert thresholds
+      const alertResult = await updateAlertThresholds(alertThresholdsUpdate);
+
+      if (!alertResult.success) {
+        throw new Error(alertResult.error || 'Failed to update alert thresholds');
+      }
+
+      setHasChanges(false);
+      return { success: true };
+    } catch (error: unknown) {
+  const errorMessage = (error && typeof error === 'object' && 'message' in error) ? String((error as Record<string, unknown>)['message']) : 'Failed to save settings';
+      setErrors({ general: errorMessage });
+      return { success: false, error: errorMessage };
+    }
+  };
+
+  // Validate settings
+  const validateSettings = (): boolean => {
+    const newErrors: SettingsErrors = {};
+
+    // Validate profit threshold
+    if (settings.minProfitThreshold < 0 || settings.minProfitThreshold > 10) {
+      newErrors.minProfitThreshold = 'Profit threshold must be between 0 and 10%';
+    }
+
+    // Validate gas fee
+    if (settings.maxGasFee < 0 || settings.maxGasFee > 1000) {
+      newErrors.maxGasFee = 'Gas fee must be between 0 and 1000';
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  // Reset to original values
+  const resetSettings = () => {
+    if (preferences) {
+      const originalSettings: SettingsData = {
+        themeMode: preferences.theme === 'dark' || preferences.theme === 'auto',
+        dataRefreshInterval: getRefreshIntervalString(preferences.refreshInterval),
+        defaultCurrency: "USD ($)",
+        minProfitThreshold: preferences.alertThresholds.minProfit,
+        maxGasFee: preferences.alertThresholds.maxGasCost
+      };
+      
+      setSettings(originalSettings);
+      setHasChanges(false);
+      setErrors({});
+    }
+  };
+
+  return {
+    settings,
+    errors,
+    isLoading,
+    isUpdating,
+    hasChanges,
+    updateSetting,
+    saveSettings,
+    validateSettings,
+    resetSettings
+  };
+};

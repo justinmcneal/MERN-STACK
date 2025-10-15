@@ -1,5 +1,7 @@
 // services/DataService.ts
 import * as axios from 'axios';
+import fs from 'fs';
+import path from 'path';
 import { 
   SUPPORTED_TOKENS, 
   SUPPORTED_CHAINS, 
@@ -52,6 +54,16 @@ export class DataService {
   private readonly blocknativeUrl = 'https://api.blocknative.com/gasprices/blockprices';
 
   private readonly tokenIdMap = COINGECKO_TOKEN_IDS;
+  // In-memory cooldown timestamp for CoinGecko rate limit (ms since epoch)
+  private coinGeckoRateLimitUntil: number | null = null;
+  // Backoff state persisted to disk so it survives restarts
+  private readonly cacheDir = path.resolve(__dirname, '..', '.cache');
+  private readonly coinGeckoBackoffFile = path.join(this.cacheDir, 'coingecko_backoff.json');
+  private coinGeckoBackoff: { until: number; attempts: number } | null = null;
+  // CryptoCompare API (fallback) - requires API key for higher rate limits
+  private readonly cryptoCompareUrl = 'https://min-api.cryptocompare.com/data/pricemulti';
+  // Etherscan API fallback for gas (requires ETHERSCAN_API_KEY)
+  private readonly etherscanGasUrl = 'https://api.etherscan.io/api';
 
   private constructor() {}
 
@@ -62,9 +74,57 @@ export class DataService {
     return DataService.instance;
   }
 
+  private ensureCacheDir() {
+    try {
+      if (!fs.existsSync(this.cacheDir)) {
+        fs.mkdirSync(this.cacheDir, { recursive: true });
+      }
+    } catch (err) {
+      console.warn('Failed to ensure cache dir:', err);
+    }
+  }
+
+  private loadBackoffState() {
+    try {
+      this.ensureCacheDir();
+      if (fs.existsSync(this.coinGeckoBackoffFile)) {
+        const raw = fs.readFileSync(this.coinGeckoBackoffFile, 'utf8');
+        this.coinGeckoBackoff = JSON.parse(raw);
+        this.coinGeckoRateLimitUntil = this.coinGeckoBackoff?.until ?? null;
+      }
+    } catch (err) {
+      console.warn('Failed to load CoinGecko backoff state:', err);
+    }
+  }
+
+  private saveBackoffState() {
+    try {
+      this.ensureCacheDir();
+      fs.writeFileSync(this.coinGeckoBackoffFile, JSON.stringify(this.coinGeckoBackoff || {}));
+    } catch (err) {
+      console.warn('Failed to save CoinGecko backoff state:', err);
+    }
+  }
+
   async fetchTokenPrices(): Promise<TokenPrice[]> {
-    const tokenIds = Object.values(this.tokenIdMap).join(',');
-    
+    // Try to load persisted backoff state once per process lifetime
+    if (this.coinGeckoBackoff === null) {
+      this.loadBackoffState();
+    }
+    // If we recently detected a CoinGecko rate limit, and the cooldown hasn't expired,
+    // avoid making another request to prevent blocking callers for a long period.
+    const now = Date.now();
+    if (this.coinGeckoRateLimitUntil && now < this.coinGeckoRateLimitUntil) {
+      const waitSec = Math.ceil((this.coinGeckoRateLimitUntil - now) / 1000);
+      console.warn(`CoinGecko is in cooldown for another ${waitSec}s; skipping fetch`);
+      // Return empty list to let callers decide how to handle lack of prices.
+      return [];
+    }
+
+  // Build token ID list only for configured tokens (avoid unknown tokens)
+    const tokenIds = Object.values(this.tokenIdMap).filter(Boolean).join(',');
+
+    const start = Date.now();
     try {
       const response = await axios.get<CoinGeckoResponse>(
         `${this.coinGeckoBaseUrl}/simple/price`,
@@ -80,10 +140,14 @@ export class DataService {
         }
       );
 
+      const elapsedMs = Date.now() - start;
+      console.info(`CoinGecko price fetch completed in ${elapsedMs}ms for ${tokenIds}`);
+
       const prices: TokenPrice[] = [];
       const timestamp = new Date();
 
       Object.entries(this.tokenIdMap).forEach(([symbol, tokenId]) => {
+        if (!tokenId) return;
         if (response.data[tokenId]?.usd) {
           prices.push({
             symbol,
@@ -95,17 +159,53 @@ export class DataService {
 
       return prices;
     } catch (error: any) {
-      console.error('Error fetching token prices:', error);
-      
-      // Handle rate limiting - wait and retry once
+      const elapsedMs = Date.now() - start;
+      console.error(`Error fetching token prices from CoinGecko (${elapsedMs}ms):`, error?.message || error);
+      // Handle rate limiting - apply exponential backoff and persist state
       if (error.response?.status === 429) {
-        console.warn('⚠️  CoinGecko rate limit hit, waiting 60 seconds before retry');
-        await new Promise(resolve => setTimeout(resolve, 60000)); 
-        console.log('🔄 Retrying CoinGecko API call...');
-        return this.fetchTokenPrices(); 
+        const prev = this.coinGeckoBackoff || { until: 0, attempts: 0 };
+        const attempts = Math.min(prev.attempts + 1, 6); // cap attempts
+        const backoffMs = Math.pow(2, attempts) * 60 * 1000; // exponential minutes (2^n * 1min)
+        const until = Date.now() + backoffMs;
+        this.coinGeckoBackoff = { until, attempts };
+        this.coinGeckoRateLimitUntil = until;
+        this.saveBackoffState();
+        console.warn(`CoinGecko rate limit hit; entering backoff for ${Math.round(backoffMs/1000)}s until ${new Date(until).toISOString()}`);
+        return [];
       }
-      
-      throw new Error('Failed to fetch token prices from CoinGecko');
+
+      // Non-rate-limit failures: try CryptoCompare as a fallback
+      try {
+        console.info('Attempting fallback to CryptoCompare for prices');
+        const symbols = Object.keys(this.tokenIdMap).join(',');
+        const ccApiKey = process.env.CRYPTOCOMPARE_API_KEY;
+        const resp = await axios.get(`${this.cryptoCompareUrl}`, {
+          params: {
+            fsyms: symbols,
+            tsyms: 'USD',
+            api_key: ccApiKey
+          },
+          timeout: 8000
+        });
+
+        const timestamp = new Date();
+        const prices: TokenPrice[] = [];
+        Object.keys(this.tokenIdMap).forEach(symbol => {
+          const data = (resp.data as any)[symbol];
+          if (data && data.USD) {
+            prices.push({ symbol, price: data.USD, timestamp });
+          }
+        });
+
+        if (prices.length > 0) {
+          console.info(`CryptoCompare fallback returned ${prices.length} prices`);
+          return prices;
+        }
+      } catch (ccErr) {
+        console.warn('CryptoCompare fallback failed:', (ccErr as any).message || ccErr);
+      }
+
+      throw new Error('Failed to fetch token prices from CoinGecko and fallbacks');
     }
   }
 
@@ -140,8 +240,26 @@ export class DataService {
         timestamp: new Date()
       };
     } catch (error) {
-      console.error('Error fetching Ethereum gas price:', error);
-      throw new Error('Failed to fetch Ethereum gas price');
+      console.error('Error fetching Ethereum gas price from Blocknative:', error);
+      // Fallback to Etherscan gas oracle if API key provided or unauthenticated
+      try {
+        const etherscanKey = process.env.ETHERSCAN_API_KEY;
+        const params: any = { module: 'gastracker', action: 'gasoracle' };
+        if (etherscanKey) params.apikey = etherscanKey;
+        const resp = await (axios as any).get(this.etherscanGasUrl, { params, timeout: 8000 });
+        const result = resp.data?.result;
+        const safeGas = Number(result?.SafeGasPrice || result?.ProposeGasPrice || result?.FastGasPrice) || 0;
+        if (safeGas === 0) throw new Error('Etherscan returned no gas price');
+
+        return {
+          chain: 'ethereum',
+          gasPrice: safeGas,
+          timestamp: new Date()
+        };
+      } catch (esErr) {
+        console.error('Etherscan fallback failed:', esErr);
+        throw new Error('Failed to fetch Ethereum gas price');
+      }
     }
   }
 

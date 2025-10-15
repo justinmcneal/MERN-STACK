@@ -1,64 +1,46 @@
 import { Request, Response } from 'express';
 import asyncHandler from 'express-async-handler';
-import jobManager from '../jobs';
+import axios from 'axios';
+import MLService from '../services/MLService';
+import { EmailService } from '../services/EmailService';
 
-// GET /api/system/status - Get overall system status
-export const getSystemStatus = asyncHandler(async (req: Request, res: Response) => {
-  const status = jobManager.getSystemStatus();
-  res.status(200).json({ success: true, data: status });
-});
+// GET /api/system/health - Check basic system health (CoinGecko + ML service)
+export const getHealth = asyncHandler(async (req: Request, res: Response) => {
+  const mlService = MLService.getInstance();
 
-// GET /api/system/health - Get health check for all services
-export const getHealthCheck = asyncHandler(async (req: Request, res: Response) => {
-  const health = jobManager.getHealthCheck();
-  res.status(200).json({ success: true, data: health });
-});
+  // Lightweight CoinGecko ping
+  let coingeckoHealthy = false;
+  try {
+    await axios.get('https://api.coingecko.com/api/v3/ping', { timeout: 3000 });
+    coingeckoHealthy = true;
+  } catch (err) {
+    console.warn('CoinGecko ping failed:', (err as any).message || err);
+    coingeckoHealthy = false;
+  }
 
-// POST /api/system/scan - Manually trigger opportunity scan
-export const triggerOpportunityScan = asyncHandler(async (req: Request, res: Response) => {
-  const scanner = jobManager.getOpportunityScanner();
-  const result = await scanner.scanAllOpportunities();
-  
-  res.status(200).json({ 
-    success: true, 
-    message: 'Opportunity scan triggered',
-    data: result 
+  const mlHealthy = await mlService.isHealthy();
+  res.json({
+    success: true,
+    services: {
+      coingecko: coingeckoHealthy,
+      ml_service: mlHealthy
+    },
+    timestamp: new Date()
   });
 });
 
-// POST /api/system/update-data - Manually trigger data update
-export const triggerDataUpdate = asyncHandler(async (req: Request, res: Response) => {
-  const pipeline = jobManager.getDataPipeline();
-  await pipeline.forceUpdateAll();
-  
-  res.status(200).json({ 
-    success: true, 
-    message: 'Data update triggered' 
-  });
+// GET /api/system/debug-smtp - Verify SMTP transporter and return short result (for debugging only)
+export const debugSMTP = asyncHandler(async (req: Request, res: Response) => {
+  try {
+    // EmailService.getTransporter is private; calling sendEmail with jsonTransport=false will trigger verify in our implementation
+    // So we implement a lightweight verify call by creating a transporter via EmailService by calling its internal method indirectly.
+    // To keep code minimal, we'll attempt to call EmailService.sendEmail with a no-op recipient that won't be delivered; errors will surface.
+    await EmailService.sendEmail({ to: process.env.EMAIL_FROM || process.env.EMAIL_USER || 'test@example.com', subject: 'SMTP Debug', html: '<p>SMTP Debug</p>' });
+    res.json({ success: true, message: 'SMTP verification succeeded (email send attempted).' });
+  } catch (err: any) {
+    // EmailService already logs detailed errors. Return a short message here.
+    res.status(500).json({ success: false, message: 'SMTP verification failed. Check server logs for details.', error: err && err.message ? err.message : err });
+  }
 });
 
-// POST /api/system/restart-jobs - Restart all background jobs
-export const restartBackgroundJobs = asyncHandler(async (req: Request, res: Response) => {
-  jobManager.restartAll();
-  
-  res.status(200).json({ 
-    success: true, 
-    message: 'Background jobs restarted' 
-  });
-});
-
-// GET /api/system/scanner-status - Get opportunity scanner status
-export const getScannerStatus = asyncHandler(async (req: Request, res: Response) => {
-  const scanner = jobManager.getOpportunityScanner();
-  const status = scanner.getStatus();
-  
-  res.status(200).json({ success: true, data: status });
-});
-
-// GET /api/system/pipeline-status - Get data pipeline status
-export const getPipelineStatus = asyncHandler(async (req: Request, res: Response) => {
-  const pipeline = jobManager.getDataPipeline();
-  const status = pipeline.getStatus();
-  
-  res.status(200).json({ success: true, data: status });
-});
+export default { getHealth, debugSMTP };

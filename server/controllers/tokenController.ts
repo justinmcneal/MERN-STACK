@@ -2,7 +2,7 @@ import { Request, Response } from 'express';
 import asyncHandler from 'express-async-handler';
 import Token from '../models/Token';
 import DataService from '../services/DataService';
-import { getTokenName } from '../config/tokens';
+import { getTokenName, TOKEN_CONTRACTS } from '../config/tokens';
 
 // GET /api/tokens - Get all tokens
 export const getTokens = asyncHandler(async (req: Request, res: Response) => {
@@ -83,33 +83,54 @@ export const refreshTokenPrices = asyncHandler(async (req: Request, res: Respons
     
     let updatedCount = 0;
     let createdCount = 0;
-    
-    // Update/create tokens for each supported chain
-    const supportedChains = dataService.getSupportedChains();
-    
-    for (const priceInfo of priceData) {
-      for (const chain of supportedChains) {
-        const existingToken = await Token.findOne({
-          symbol: priceInfo.symbol,
-          chain: chain
-        });
 
-        if (existingToken) {
-          // Update existing token
-          existingToken.currentPrice = priceInfo.price;
-          existingToken.lastUpdated = priceInfo.timestamp;
-          await existingToken.save();
-          updatedCount++;
-        } else {
-          // Create new token
-          await Token.create({
-            symbol: priceInfo.symbol,
-            chain: chain,
-            currentPrice: priceInfo.price,
-            lastUpdated: priceInfo.timestamp,
-            name: getTokenName(priceInfo.symbol)
-          });
-          createdCount++;
+    if (!priceData || priceData.length === 0) {
+      res.json({
+        success: true,
+        message: 'No price data available (possible CoinGecko cooldown).',
+        updated: 0,
+        created: 0,
+        timestamp: new Date()
+      });
+      return;
+    }
+
+  // Update/create tokens only for chains where the token has a contract mapping
+  const supportedChains = dataService.getSupportedChains();
+
+    for (const priceInfo of priceData) {
+      const tokenContracts = TOKEN_CONTRACTS[priceInfo.symbol as keyof typeof TOKEN_CONTRACTS] || {};
+      for (const chain of supportedChains) {
+        // Skip chains where this token has no contract mapping
+        if (!Object.prototype.hasOwnProperty.call(tokenContracts, chain)) {
+          continue;
+        }
+        // Use atomic upsert to avoid race conditions and reduce DB calls
+        const update = {
+          symbol: priceInfo.symbol,
+          chain: chain,
+          currentPrice: priceInfo.price,
+          lastUpdated: priceInfo.timestamp,
+          name: getTokenName(priceInfo.symbol)
+        } as any;
+
+        const result = await Token.findOneAndUpdate(
+          { symbol: priceInfo.symbol, chain },
+          { $set: update },
+          { upsert: true, new: true, setDefaultsOnInsert: true }
+        ).exec();
+
+        // If the document existed prior to this operation, count as updated, else created
+        // We can infer creation if the createdAt timestamp is very recent or if the returned doc has no previous updatedAt.
+        // Mongoose does not return a flag for upsert creation here, so we'll approximate by checking timestamps.
+        if (result) {
+          // If createdAt is within 5 seconds of lastUpdated, assume it was newly created by upsert
+          const createdAt = (result as any).createdAt as Date | undefined;
+          if (createdAt && Math.abs(createdAt.getTime() - new Date().getTime()) < 5000) {
+            createdCount++;
+          } else {
+            updatedCount++;
+          }
         }
       }
     }
@@ -121,6 +142,7 @@ export const refreshTokenPrices = asyncHandler(async (req: Request, res: Respons
       created: createdCount,
       timestamp: new Date()
     });
+    return;
   } catch (error: any) {
     res.status(500);
     throw new Error(`Failed to refresh token prices: ${error.message}`);
