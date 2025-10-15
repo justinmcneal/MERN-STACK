@@ -21,8 +21,12 @@ class DataPipeline {
     totalTokensUpdated: 0
   };
 
-  constructor() {
-    this.startDataPipeline();
+  constructor(options?: { autoStart?: boolean }) {
+    // By default, autoStart is true to preserve existing behavior.
+    const autoStart = options?.autoStart !== false;
+    if (autoStart) {
+      this.startDataPipeline();
+    }
   }
 
   /**

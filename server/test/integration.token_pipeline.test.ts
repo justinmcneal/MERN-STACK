@@ -48,7 +48,7 @@ describe('DataPipeline integration', () => {
       return Promise.resolve({ data: {} } as any);
     });
 
-    const pipeline = new DataPipeline();
+  const pipeline = new DataPipeline({ autoStart: false });
 
     // Run updateTokenPrices directly
     await pipeline.updateTokenPrices();
