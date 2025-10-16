@@ -171,3 +171,40 @@ export const getSupportedChains = asyncHandler(async (req: Request, res: Respons
   });
 });
 
+// GET /api/tokens/:symbol/:chain/history?tf=24h
+export const getTokenHistory = async (req: Request, res: Response) => {
+  const { symbol, chain } = req.params;
+  const { tf = '7d' } = req.query;
+
+  const dataService = DataService.getInstance();
+
+  try {
+    const raw = await dataService.fetchTokenHistory(symbol.toUpperCase(), chain.toLowerCase(), String(tf));
+
+    // Normalize to { ts, price }
+    const data = Array.isArray(raw) ? raw.map(([ts, price]) => ({ ts: Number(ts), price: Number(price) })) : [];
+
+    // Always return 200 with data (possibly empty)
+    res.json({
+      success: true,
+      symbol: symbol.toUpperCase(),
+      chain: chain.toLowerCase(),
+      timeframe: String(tf),
+      count: data.length,
+      data,
+      message: data.length === 0 ? 'No history available (provider failure or no cache); fallback recommended' : undefined
+    });
+  } catch (err: any) {
+    console.error('Error in getTokenHistory:', err);
+    res.json({
+      success: true,
+      symbol: symbol.toUpperCase(),
+      chain: chain.toLowerCase(),
+      timeframe: String(tf),
+      count: 0,
+      data: [],
+      message: 'No history available (provider failure, rate limit, or server error); fallback recommended'
+    });
+  }
+};
+

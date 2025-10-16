@@ -62,7 +62,8 @@ const PriceTable: React.FC<Props> = ({ filterMode, selectedChain, onSelectChain,
       </div>
 
       <div className="overflow-x-auto">
-        <table className="w-full">
+  <div className="max-h-[336px] overflow-y-auto scrollbar-white">
+          <table className="w-full">
           <thead>
             <tr className="border-b border-slate-700/50">
               {['Token', 'Chain', 'Current Price', 'Last Updated'].map((h, i) => (
@@ -83,7 +84,8 @@ const PriceTable: React.FC<Props> = ({ filterMode, selectedChain, onSelectChain,
               </tr>
             ))}
           </tbody>
-        </table>
+          </table>
+        </div>
       </div>
     </div>
   );

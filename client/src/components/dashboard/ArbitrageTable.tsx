@@ -21,7 +21,8 @@ const ArbitrageTable: React.FC<{ opportunities: Opportunity[] }> = ({ opportunit
       </div>
 
       <div className="overflow-x-auto">
-        <table className="w-full">
+  <div className="max-h-[336px] overflow-y-auto scrollbar-white">
+          <table className="w-full">
           <thead>
             <tr className="border-b border-slate-700/50">
               {['Token','From → To','Price Diff (%)','Gas Fee','Est Profit','Score'].map((h,i)=> (
@@ -41,7 +42,8 @@ const ArbitrageTable: React.FC<{ opportunities: Opportunity[] }> = ({ opportunit
               </tr>
             ))}
           </tbody>
-        </table>
+          </table>
+        </div>
       </div>
     </div>
   );
