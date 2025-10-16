@@ -3,6 +3,7 @@ import { Save, AlertCircle } from "lucide-react";
 import GeneralSettings from "./GeneralSettings";
 import MonitoringSettings from "./MonitoringSettings";
 import { useSettings } from "../../hooks/useSettings";
+import { useThemeClasses } from "../ThemeAware";
 
 const SettingsContent: React.FC = () => {
   const {
@@ -16,6 +17,8 @@ const SettingsContent: React.FC = () => {
     validateSettings,
     resetSettings
   } = useSettings();
+
+  const { border, bg, buttonPrimary } = useThemeClasses();
 
   const handleSaveChanges = async () => {
     if (!validateSettings()) {
@@ -42,7 +45,7 @@ const SettingsContent: React.FC = () => {
   }
 
   return (
-    <main className="flex-1 overflow-y-auto p-4 lg:p-6">
+  <main className="flex-1 overflow-y-auto p-4 lg:p-6">
       <div className="space-y-6">
         {/* Error Message */}
         {errors.general && (
@@ -82,7 +85,7 @@ const SettingsContent: React.FC = () => {
         />
 
         {/* Save Button */}
-        <div className="mt-8 bg-slate-800/50 backdrop-blur border border-slate-700/50 rounded-2xl p-6">
+        <div className={`${bg}/50 backdrop-blur border ${border}/50 rounded-2xl p-6`}>
           <div className="flex flex-col items-center gap-4">
             <div className="flex gap-3">
               <button
@@ -91,7 +94,7 @@ const SettingsContent: React.FC = () => {
                 className={`inline-flex items-center justify-center gap-3 px-8 py-4 rounded-xl font-semibold shadow-lg transition-all duration-300 transform ${
                   !hasChanges || isUpdating
                     ? 'bg-slate-600 text-slate-400 cursor-not-allowed'
-                    : 'bg-gradient-to-r from-cyan-500 to-purple-600 hover:from-cyan-400 hover:to-purple-500 hover:shadow-cyan-500/25 hover:scale-105'
+                    : `${buttonPrimary} hover:scale-105`
                 }`}
               >
                 {isUpdating ? (

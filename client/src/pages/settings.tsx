@@ -57,8 +57,8 @@ const SettingsPage = () => {
       />
 
         {/* Main Content */}
-        <div className={`flex-1 overflow-y-auto transition-all duration-300
-              ${sidebarOpen ? "fixed inset-0 backdrop-blur-5xl bg-black/60 z-40 lg:static lg:backdrop-blur-5xl lg:bg-black/60" : ""}`}
+  <div className={`flex-1 overflow-y-auto transition-all duration-300
+        ${sidebarOpen ? "fixed inset-0 z-40 lg:static" : ""}`}
       onClick={() => setSidebarOpen(false)} >
           
           {/* Header */}
@@ -79,7 +79,7 @@ const SettingsPage = () => {
       {/* Mobile overlay */}
       {sidebarOpen && (
         <div
-          className="fixed inset-0 bg-black/50 z-40 lg:hidden"
+          className="fixed inset-0 z-40 lg:hidden"
           onClick={() => setSidebarOpen(false)}
         ></div>
       )}

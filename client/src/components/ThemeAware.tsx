@@ -71,6 +71,6 @@ export const useThemeClasses = () => {
     // Theme-specific gradients
     gradient: actualTheme === 'dark'
       ? 'bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950'
-      : 'bg-gradient-to-br from-slate-50 via-white to-slate-50',
+      : 'bg-white',
   };
 };

@@ -74,7 +74,7 @@ const GeneralSettings: React.FC<GeneralSettingsProps> = ({
               }`}
             >
               {["Every 10 seconds","Every 30 seconds","Every 1 minute","Every 5 minutes"].map(t => 
-                <option key={t} value={t} className="bg-slate-900 text-slate-300">{t}</option>
+                <option key={t} value={t} className="">{t}</option>
               )}
             </select>
             <svg className="w-4 h-4 text-slate-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -86,22 +86,22 @@ const GeneralSettings: React.FC<GeneralSettingsProps> = ({
         {/* Default Currency */}
         <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
           <div className="flex-1">
-            <h3 className="text-slate-200 font-medium mb-1">Default Currency</h3>
-            <p className="text-sm text-slate-400">Primary currency for displaying values</p>
+            <h3 className={`${text} font-medium mb-1`}>Default Currency</h3>
+            <p className={`text-sm ${textSecondary}`}>Primary currency for displaying values</p>
             {errors.defaultCurrency && <p className="text-xs text-red-400 mt-1">{errors.defaultCurrency}</p>}
           </div>
-          <div className="relative w-full sm:w-48">
+            <div className="relative w-full sm:w-48">
             <select 
               value={defaultCurrency}
               onChange={(e) => onDefaultCurrencyChange(e.target.value)}
-              className={`w-full appearance-none px-4 py-2.5 bg-slate-700/50 border rounded-xl text-slate-200 focus:outline-none focus:ring-2 transition-all cursor-pointer ${
+              className={`w-full appearance-none px-4 py-2.5 ${input} border rounded-xl focus:outline-none focus:ring-2 transition-all cursor-pointer ${
                 errors.defaultCurrency 
                   ? 'border-red-500 focus:ring-red-500/50' 
-                  : 'border-slate-600/50 focus:ring-cyan-400/50'
+                  : 'focus:ring-cyan-400/50'
               }`}
             >
               {["USD ($)","EUR (€)","GBP (£)","JPY (¥)","PHP (₱)"].map(t => 
-                <option key={t} value={t} className="bg-slate-900 text-slate-300">{t}</option>
+                <option key={t} value={t} className="">{t}</option>
               )}
             </select>
             <svg className="w-4 h-4 text-slate-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor">
