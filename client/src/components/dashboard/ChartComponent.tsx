@@ -1,8 +1,158 @@
-import React from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
+import { useTokenContext } from '../../context/useTokenContext';
+import TokenService from '../../services/TokenService';
 
 const ChartComponent: React.FC = () => {
-  const activeChart = 0;
-  const selectedToken = 'ETH';
+  const { tokens, loading } = useTokenContext();
+  const [timeframe, setTimeframe] = useState<'1h'|'24h'|'7d'>('24h');
+  const [selectedSymbol, setSelectedSymbol] = useState<string>('');
+
+  // Helper: deterministic PRNG based on seed string
+  const seedFromString = (s: string) => {
+    let h = 2166136261 >>> 0;
+    for (let i = 0; i < s.length; i++) {
+      h ^= s.charCodeAt(i);
+      h = Math.imul(h, 16777619) >>> 0;
+    }
+    return h;
+  };
+  const mulberry32 = (a: number) => () => {
+    a |= 0;
+    a = a + 0x6D2B79F5 | 0;
+    let t = Math.imul(a ^ a >>> 15, 1 | a);
+    t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+    return ((t ^ t >>> 14) >>> 0) / 4294967296;
+  };
+
+  // Choose a token object to base the chart on: prefer selectedSymbol else first token symbol
+  // When picking a token object for anchor price (for mocks), prefer the ethereum chain, then polygon, then bsc
+  const baseToken = useMemo(() => {
+    if (!tokens || tokens.length === 0) return null;
+    // build list of symbols
+    const symbols = Array.from(new Set(tokens.map(t => t.symbol)));
+    const chosenSymbol = selectedSymbol || symbols[0] || tokens[0].symbol;
+
+    // find token object for chosenSymbol preferring preferredChains order
+    for (const chain of ['ethereum', 'polygon', 'bsc']) {
+      const found = tokens.find(t => t.symbol.toLowerCase() === chosenSymbol.toLowerCase() && t.chain.toLowerCase() === chain);
+      if (found) return found;
+    }
+
+    // fallback to any token with the symbol
+    const anyFound = tokens.find(t => t.symbol.toLowerCase() === chosenSymbol.toLowerCase());
+    if (anyFound) return anyFound;
+
+    return tokens[0];
+  }, [tokens, selectedSymbol]);
+
+  // Number of points per timeframe
+  const pointsCount = timeframe === '1h' ? 12 : timeframe === '24h' ? 24 : 7 * 12; // 7d -> 84 points
+
+  // Generate deterministic mock series around currentPrice
+  const [seriesByChain, setSeriesByChain] = useState<Record<string, number[]>>({});
+
+  // Try to fetch real history from server; if it fails, fallback to deterministic mock
+  useEffect(() => {
+    let mounted = true;
+    const fetchHistory = async () => {
+      if (!baseToken) {
+        setSeriesByChain({});
+        return;
+      }
+
+      const chains = ['polygon', 'ethereum', 'bsc'];
+      const tfParam = timeframe === '1h' ? '24h' : timeframe === '24h' ? '24h' : '7d';
+      const results: Record<string, number[]> = {};
+
+      await Promise.all(chains.map(async (chain) => {
+        try {
+          const resp = await TokenService.history(baseToken.symbol, chain, tfParam);
+          const data = resp?.data || [];
+          if (Array.isArray(data) && data.length > 0) {
+            const prices = data.map((p: { price: number | string }) => Number(p.price));
+            if (prices.length > pointsCount) {
+              const step = Math.floor(prices.length / pointsCount) || 1;
+              const sampled: number[] = [];
+              for (let i = 0; i < prices.length; i += step) {
+                sampled.push(prices[i]);
+                if (sampled.length >= pointsCount) break;
+              }
+              results[chain] = sampled;
+              return;
+            }
+            results[chain] = prices;
+            return;
+          }
+        } catch {
+          // ignore and fallback to mock for this chain
+        }
+
+        // Fallback seeded mock per chain using token currentPrice as anchor
+        const startPrice = Number(baseToken.currentPrice) || 1;
+        const seed = seedFromString(`${baseToken.symbol}-${chain}-${timeframe}`);
+        const rand = mulberry32(seed);
+        const volatility = timeframe === '1h' ? 0.004 : timeframe === '24h' ? 0.01 : 0.03;
+        const vals: number[] = [startPrice];
+        for (let i = 1; i < pointsCount; i++) {
+          const pct = (rand() - 0.5) * 2 * volatility;
+          const next = Math.max(0.0000001, vals[i-1] * (1 + pct));
+          vals.push(next);
+        }
+        results[chain] = vals;
+      }));
+
+      if (!mounted) return;
+      setSeriesByChain(results);
+    };
+    fetchHistory();
+    return () => { mounted = false; };
+  }, [baseToken, timeframe, pointsCount]);
+
+  // Chart drawing params
+  const width = 800;
+  const height = 200;
+  const padding = 20;
+  const innerW = width - padding * 2;
+  const innerH = height - padding * 2;
+
+  // Helper to build path/area and min/max for a numeric series
+  const buildPathForSeries = (s: number[]) => {
+    if (!s || s.length === 0) return { pathD: '', areaD: '', minP: 0, maxP: 0 };
+    const min = Math.min(...s);
+    const max = Math.max(...s);
+    const range = Math.max(1e-8, max - min);
+    const points = s.map((v, i) => {
+      const x = padding + (i / (s.length - 1)) * innerW;
+      const y = padding + innerH - ((v - min) / range) * innerH;
+      return { x, y };
+    });
+    const path = points.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x.toFixed(2)} ${p.y.toFixed(2)}`).join(' ');
+    const last = points[points.length - 1];
+    const first = points[0];
+    const area = `${path} L ${last.x.toFixed(2)} ${padding + innerH} L ${first.x.toFixed(2)} ${padding + innerH} Z`;
+    return { pathD: path, areaD: area, minP: min, maxP: max };
+  };
+
+  const colorByChain = (chain?: string) => {
+    if (!chain) return '#8b5cf6';
+    if (chain.toLowerCase().includes('eth')) return '#22d3ee';
+    if (chain.toLowerCase().includes('bsc')) return '#fbbf24';
+    if (chain.toLowerCase().includes('polygon') || chain.toLowerCase().includes('matic')) return '#a78bfa';
+    return '#8b5cf6';
+  };
+
+  const selectedChain = baseToken?.chain;
+
+  // Combined series for scale/labels (merge all available chains)
+  const combinedSeries = useMemo(() => {
+    const all = Object.values(seriesByChain).flat();
+    return all.length > 0 ? all : [];
+  }, [seriesByChain]);
+
+  const { minP: combinedMin, maxP: combinedMax } = useMemo(() => {
+    if (!combinedSeries || combinedSeries.length === 0) return { minP: 0, maxP: 0 };
+    return { minP: Math.min(...combinedSeries), maxP: Math.max(...combinedSeries) };
+  }, [combinedSeries]);
 
   return (
     <div className="bg-slate-800/50 backdrop-blur border border-slate-700/50 rounded-2xl p-6">
@@ -11,46 +161,85 @@ const ChartComponent: React.FC = () => {
           <svg className="w-5 h-5 text-cyan-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>Token Trends
         </h3>
         <div className="flex gap-2 items-center">
-          {['1h','24h','7d'].map(tf=> (
-            <button key={tf} onClick={() => {}} className={`px-3 py-1 text-xs rounded-lg transition-all bg-slate-700/50 text-slate-400 hover:text-slate-300 border border-slate-600/50`}>{tf}</button>
+          {(['1h','24h','7d'] as const).map(tf=> (
+            <button key={tf} onClick={() => setTimeframe(tf)} className={`px-3 py-1 text-xs rounded-lg transition-all ${timeframe===tf? 'bg-cyan-600 text-white' : 'bg-slate-700/50 text-slate-400'} hover:text-slate-300 border border-slate-600/50`}>{tf}</button>
           ))}
           <div className="relative">
-            <select value={selectedToken} onChange={() => {}} className="appearance-none w-full px-3 py-2 text-xs rounded-lg bg-slate-800/50 border border-slate-700/50 text-slate-300 pr-8 focus:outline-none focus:ring-2 focus:ring-cyan-400/50 transition-all duration-300">
-              {['Select token','BTC','ETH','BNB','MATIC','USDT'].map(t=> <option key={t} value={t} className="bg-slate-900 text-slate-300">{t}</option>)}
+            <select value={selectedSymbol || (baseToken?.symbol ?? '')} onChange={(e) => setSelectedSymbol(e.target.value)} className="appearance-none w-full px-3 py-2 text-xs rounded-lg bg-slate-800/50 border border-slate-700/50 text-slate-300 pr-8 focus:outline-none focus:ring-2 focus:ring-cyan-400/50 transition-all duration-300">
+              <option value="">Select token</option>
+              {(!loading ? Array.from(new Set(tokens.map(t => t.symbol))).map(sym => (
+                <option key={sym} value={sym} className="bg-slate-900 text-slate-300">{sym}</option>
+              )) : [])}
             </select>
             <svg className="w-4 h-4 text-slate-400 absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7"/></svg>
           </div>
         </div>
       </div>
 
-      <div className="relative h-64 overflow-hidden">
-        <svg className="w-full h-full" viewBox="0 0 800 200">
+      {/* Use a responsive container that preserves the chart aspect ratio */}
+      <div className="relative w-full" style={{ aspectRatio: `${width} / ${height}`, width: '100%' }}>
+        <svg className="w-full h-full" viewBox={`0 0 ${width} ${height}`} preserveAspectRatio="xMidYMid meet">
           <defs>
-            <linearGradient id="polygonGradient" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0%" stopColor="rgba(139,92,246,0.3)"/><stop offset="100%" stopColor="rgba(139,92,246,0)"/></linearGradient>
-            <linearGradient id="ethereumGradient" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0%" stopColor="rgba(34,211,238,0.3)"/><stop offset="100%" stopColor="rgba(34,211,238,0)"/></linearGradient>
-            <linearGradient id="bscGradient" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0%" stopColor="rgba(251,191,36,0.3)"/><stop offset="100%" stopColor="rgba(251,191,36,0)"/></linearGradient>
+            <linearGradient id={`areaGrad-${baseToken?.symbol || 'g'}`} x1="0%" y1="0%" x2="0%" y2="100%">
+              <stop offset="0%" stopColor={colorByChain(selectedChain)} stopOpacity="0.25" />
+              <stop offset="100%" stopColor={colorByChain(selectedChain)} stopOpacity="0" />
+            </linearGradient>
           </defs>
 
-          <path d="M0 150 Q100 140 200 135 T400 130 T600 125 T800 120" stroke="#8b5cf6" strokeWidth="2" fill="none"/>
-          <path d="M0 150 Q100 140 200 135 T400 130 T600 125 T800 120 L800 200 L0 200 Z" fill="url(#polygonGradient)"/>
-          <path d="M0 120 Q100 110 200 105 T400 100 T600 95 T800 90" stroke="#22d3ee" strokeWidth="2" fill="none"/>
-          <path d="M0 120 Q100 110 200 105 T400 100 T600 95 T800 90 L800 200 L0 200 Z" fill="url(#ethereumGradient)"/>
-          <path d="M0 80 Q100 70 200 75 T400 65 T600 60 T800 55" stroke="#fbbf24" strokeWidth="2" fill="none"/>
-          <path d="M0 80 Q100 70 200 75 T400 65 T600 60 T800 55 L800 200 L0 200 Z" fill="url(#bscGradient)"/>
+          {/* per-chain areas and lines */}
+          {['polygon','ethereum','bsc'].map(chain => {
+            const s = seriesByChain[chain] || [];
+            const { pathD, areaD } = buildPathForSeries(s);
+            const gradId = `areaGrad-${baseToken?.symbol || 'g'}-${chain}`;
+            return (
+              <g key={chain}>
+                <linearGradient id={gradId} x1="0%" y1="0%" x2="0%" y2="100%">
+                  <stop offset="0%" stopColor={colorByChain(chain)} stopOpacity="0.18" />
+                  <stop offset="100%" stopColor={colorByChain(chain)} stopOpacity="0" />
+                </linearGradient>
+                {areaD && <path d={areaD} fill={`url(#${gradId})`} stroke="none" />}
+                {pathD && <path d={pathD} stroke={colorByChain(chain)} strokeWidth={2} fill="none" strokeLinejoin="round" strokeLinecap="round" opacity={chain===selectedChain ? 1 : 0.65} />}
+              </g>
+            );
+          })}
 
-          {['00:00','00:15','00:30','00:45','01:00','01:15'].map((t,i)=> <text key={i} x={i*150} y="195" fill="#64748b" fontSize="10">{t}</text>)}
-          {['$70k','$80k','$90k','$100k','$110k'].map((p,i)=> <text key={i} x="-25" y={185-30*i} fill="#64748b" fontSize="10">{p}</text>)}
+          {/* x labels (based on combined series length or default pointsCount) */}
+          {(() => {
+            const len = combinedSeries.length > 0 ? combinedSeries.length : pointsCount;
+            return Array.from({ length: len }).map((_, i) => {
+              const x = padding + (i / (len - 1)) * innerW;
+              if (i % Math.ceil(len / 6) !== 0) return null;
+              const label = (() => {
+                if (timeframe === '1h') return `${Math.max(0, 60 - Math.round(i * (60 / len)))}m`;
+                if (timeframe === '24h') return `${Math.max(0, 24 - Math.round(i * (24 / len)))}h`;
+                return `${Math.max(0, 7 - Math.round(i * (7 / len)))}d`;
+              })();
+              return <text key={i} x={x} y={height - 6} fill="#64748b" fontSize="10" textAnchor="middle">{label}</text>;
+            });
+          })()}
 
-          <circle cx={activeChart*16} cy={120-(activeChart*0.5)} r="4" fill="#22d3ee" className="animate-pulse"/>
+          {/* y labels based on combined min/max */}
+          {combinedSeries.length > 0 && [0,0.25,0.5,0.75,1].map((f, idx) => {
+            const val = combinedMin + (1 - f) * (combinedMax - combinedMin || 1);
+            const y = padding + innerH * f;
+            return <text key={idx} x={6} y={y+3} fill="#64748b" fontSize="10">{`$${Number(val).toLocaleString(undefined, {maximumFractionDigits:2})}`}</text>;
+          })}
         </svg>
+      </div>
 
-        <div className="absolute bottom-4 right-4 flex gap-10 text-xs mb-56 mr-20">
-          {[{color:'purple-500',name:'Polygon'},{color:'cyan-400',name:'Ethereum'},{color:'yellow-400',name:'Binance Smart Chain'}].map(l=> (
-            <div key={l.name} className="flex items-center gap-2">
-              <div className={`w-3 h-3 rounded-full bg-${l.color}`}></div>
-              <span className="text-slate-400">{l.name}</span>
-            </div>
-          ))}
+      {/* Legend moved outside the SVG to avoid overlap and ensure responsive layout */}
+      <div className="mt-4 flex flex-wrap gap-6 text-xs items-center">
+        <div className="flex items-center gap-2">
+          <div style={{width:12,height:12,borderRadius:6,background:colorByChain('polygon')}}></div>
+          <span className="text-slate-400">Polygon</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <div style={{width:12,height:12,borderRadius:6,background:colorByChain('ethereum')}}></div>
+          <span className="text-slate-400">Ethereum</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <div style={{width:12,height:12,borderRadius:6,background:colorByChain('bsc')}}></div>
+          <span className="text-slate-400">Binance Smart Chain</span>
         </div>
       </div>
     </div>

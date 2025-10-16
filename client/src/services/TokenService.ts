@@ -36,4 +36,9 @@ const refreshTokens = async () => {
   return res.data;
 };
 
-export default { listTokens, getToken, refreshTokens };
+const history = async (symbol: string, chain: string, timeframe = '7d') => {
+  const res = await client.get(`/tokens/${encodeURIComponent(symbol)}/${encodeURIComponent(chain)}/history`, { params: { tf: timeframe } });
+  return res.data;
+};
+
+export default { listTokens, getToken, refreshTokens, history };

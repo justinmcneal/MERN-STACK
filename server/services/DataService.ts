@@ -67,6 +67,97 @@ export class DataService {
 
   private constructor() {}
 
+  // Simple file-based cache for historical series
+  private getHistoryCachePath(symbol: string, chain: string, timeframe: string) {
+    this.ensureCacheDir();
+    const safeSymbol = symbol.toLowerCase().replace(/[^a-z0-9]/g, '_');
+    const safeChain = chain.toLowerCase().replace(/[^a-z0-9]/g, '_');
+    const safeTf = timeframe.replace(/[^a-z0-9]/gi, '_');
+    return path.join(this.cacheDir, `history_${safeSymbol}_${safeChain}_${safeTf}.json`);
+  }
+
+  // timeframe: '24h' | '7d' | '30d' | '90d' etc. We'll map to CoinGecko 'days' param
+  private timeframeToDays(tf: string) {
+    if (tf === '24h') return '1';
+    if (tf === '7d') return '7';
+    if (tf === '30d') return '30';
+    if (tf === '90d') return '90';
+    // default to 7 days
+    return '7';
+  }
+
+  // TTL for history cache in milliseconds
+  private readonly historyCacheTtl = 10 * 60 * 1000; // 10 minutes
+
+  /**
+   * Fetch historical price series for a token from CoinGecko and cache it.
+   * Returns array of [timestamp(ms), price]
+   */
+  async fetchTokenHistory(symbol: string, chain: string, timeframe = '7d') : Promise<Array<[number, number]>> {
+    // Resolve CoinGecko token id
+    const tokenId = this.getTokenId(symbol);
+    if (!tokenId) {
+      console.warn(`No CoinGecko token id mapping for symbol ${symbol}; returning empty history`);
+      return [];
+    }
+
+    const cachePath = this.getHistoryCachePath(symbol, chain, timeframe);
+    try {
+      if (fs.existsSync(cachePath)) {
+        const raw = fs.readFileSync(cachePath, 'utf8');
+        const parsed = JSON.parse(raw);
+        if (parsed && parsed._meta && parsed._meta.fetchedAt && (Date.now() - parsed._meta.fetchedAt) < this.historyCacheTtl) {
+          return parsed.data as Array<[number, number]>;
+        }
+      }
+    } catch (err) {
+      console.warn('Failed to read history cache:', err);
+    }
+
+    // Query CoinGecko market_chart endpoint
+    const days = this.timeframeToDays(timeframe);
+    try {
+      const resp = await (axios as any).get(`${this.coinGeckoBaseUrl}/coins/${encodeURIComponent(tokenId)}/market_chart`, {
+        params: {
+          vs_currency: 'usd',
+          days,
+          interval: 'hourly'
+        },
+        timeout: 15000
+      });
+
+      // CoinGecko returns { prices: [[ts, price], ...], market_caps: [...], total_volumes: [...] }
+      const prices: Array<[number, number]> = resp.data?.prices || [];
+
+      // Persist cache file with metadata
+      try {
+        const out = { _meta: { fetchedAt: Date.now(), tokenId, symbol, chain, timeframe }, data: prices };
+        fs.writeFileSync(cachePath, JSON.stringify(out));
+      } catch (writeErr) {
+        console.warn('Failed to write history cache:', writeErr);
+      }
+
+      return prices;
+    } catch (err: any) {
+      console.error('Error fetching token history from CoinGecko:', err?.message || err);
+      // As a fallback, if we have a cache file (stale allowed), return it
+      try {
+        if (fs.existsSync(cachePath)) {
+          const raw = fs.readFileSync(cachePath, 'utf8');
+          const parsed = JSON.parse(raw);
+          if (parsed && parsed.data) {
+            return parsed.data as Array<[number, number]>;
+          }
+        }
+      } catch (cacheErr) {
+        console.warn('Failed to read fallback history cache:', cacheErr);
+      }
+
+      // No cache available — return empty array so callers can fallback gracefully
+      return [];
+    }
+  }
+
   public static getInstance(): DataService {
     if (!DataService.instance) {
       DataService.instance = new DataService();
