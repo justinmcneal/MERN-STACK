@@ -3,6 +3,7 @@ import { createPortal } from "react-dom";
 import { User, LogOut } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
+import ThemeToggle from "../ui/ThemeToggle/ThemeToggle";
 
 interface SettingsHeaderProps {
   sidebarOpen: boolean;
@@ -62,6 +63,9 @@ const SettingsHeader: React.FC<SettingsHeaderProps> = ({
         </div>
         
         <div className="flex items-center gap-3">
+          {/* Theme Toggle */}
+          <ThemeToggle />
+          
           {/* Notification */}
           <div className="relative">
             <button
