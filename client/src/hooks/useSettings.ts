@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { usePreferences } from './usePreferences';
+import { useTheme } from '../context/ThemeContext';
 
 export interface SettingsData {
   // General Settings
@@ -30,6 +31,8 @@ export const useSettings = () => {
     updateAppearanceSettings,
     updateAlertThresholds
   } = usePreferences();
+
+  const { theme, setTheme } = useTheme();
 
   const [settings, setSettings] = useState<SettingsData>({
     themeMode: true, // Default to dark mode
@@ -65,6 +68,13 @@ export const useSettings = () => {
     }
   }, [preferences]);
 
+  // Sync theme context with preferences
+  useEffect(() => {
+    if (preferences?.theme && preferences.theme !== theme) {
+      setTheme(preferences.theme);
+    }
+  }, [preferences?.theme, theme, setTheme]);
+
   // Convert refresh interval string to number
   const getRefreshIntervalNumber = (intervalString: string): number => {
     switch (intervalString) {
@@ -99,6 +109,12 @@ export const useSettings = () => {
       [key]: value
     }));
     setHasChanges(true);
+    
+    // Update theme context immediately for theme changes
+    if (key === 'themeMode') {
+      const newTheme = value ? 'dark' : 'light';
+      setTheme(newTheme);
+    }
     
     // Clear any existing errors for this field
     if (errors[key]) {

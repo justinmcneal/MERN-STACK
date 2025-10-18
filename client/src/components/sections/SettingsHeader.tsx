@@ -3,6 +3,8 @@ import { createPortal } from "react-dom";
 import { User, LogOut } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
+import ThemeToggle from "../ui/ThemeToggle/ThemeToggle";
+import { useThemeClasses } from "../ThemeAware";
 
 interface SettingsHeaderProps {
   sidebarOpen: boolean;
@@ -35,6 +37,7 @@ const SettingsHeader: React.FC<SettingsHeaderProps> = ({
 }) => {
   const navigate = useNavigate();
   const { user, logout } = useAuth();
+  const { bg, border, textSecondary } = useThemeClasses();
 
   const handleLogout = async () => {
     try {
@@ -47,7 +50,7 @@ const SettingsHeader: React.FC<SettingsHeaderProps> = ({
   };
 
   return (
-    <header className="bg-slate-900/50 backdrop-blur border-b border-slate-800/50 p-4 lg:p-6 z-50">
+    <header className={`${bg}/50 backdrop-blur border-b ${border}/50 p-4 lg:p-6 z-50`}>
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
           <button
@@ -58,10 +61,13 @@ const SettingsHeader: React.FC<SettingsHeaderProps> = ({
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
             </svg>
           </button>
-          <h1 className="text-xl font-semibold text-slate-200">Settings</h1>
+          <h1 className={`text-xl font-semibold ${textSecondary}`}>Settings</h1>
         </div>
         
         <div className="flex items-center gap-3">
+          {/* Theme Toggle */}
+          <ThemeToggle />
+          
           {/* Notification */}
           <div className="relative">
             <button
@@ -84,19 +90,19 @@ const SettingsHeader: React.FC<SettingsHeaderProps> = ({
             {notificationOpen &&
               createPortal(
                 <div
-                  className="fixed top-[70px] right-0 left-0 sm:right-[260px] sm:left-auto w-full sm:w-96 max-h-[70vh] bg-slate-900/95 backdrop-blur border border-slate-700/50 rounded-2xl shadow-xl z-[9999] overflow-hidden flex flex-col"
+                  className={`fixed top-[70px] right-0 left-0 sm:right-[260px] sm:left-auto w-full sm:w-96 max-h-[70vh] ${bg}/95 backdrop-blur border ${border}/50 rounded-2xl shadow-xl z-[9999] overflow-hidden flex flex-col`}
                 >
                   {/* Header */}
-                  <div className="flex items-center justify-between px-4 py-3 border-b border-slate-700/50">
+                  <div className={`flex items-center justify-between px-4 py-3 border-b ${border}/50`}>
                     <div className="flex items-center gap-2">
                       <svg className="w-5 h-5 text-yellow-400" fill="currentColor" viewBox="0 0 24 24">
                         <path d="M12 2C10.343 2 9 3.343 9 5v1.07C6.164 6.562 4 9.138 4 12v5l-1 1v1h18v-1l-1-1v-5c0-2.862-2.164-5.438-5-5.93V5c0-1.657-1.343-3-3-3zm0 20a3 3 0 003-3H9a3 3 0 003 3z" />
                       </svg>
-                      <span className="font-semibold text-slate-200">Notifications</span>
+                      <span className="font-semibold ${textSecondary}">Notifications</span>
                     </div>
                     <div className="flex gap-6">
-                      <button className="text-xs text-slate-400 hover:text-slate-200">Mark All Read</button>
-                      <button className="text-xs text-slate-400 hover:text-slate-200">Clear All</button>
+                      <button className={`text-xs ${textSecondary} hover:text-slate-200`}>Mark All Read</button>
+                      <button className={`text-xs ${textSecondary} hover:text-slate-200`}>Clear All</button>
                     </div>
                   </div>
 
@@ -107,20 +113,20 @@ const SettingsHeader: React.FC<SettingsHeaderProps> = ({
                         {n.type === "price" ? (
                           <>
                             <div className="flex items-center justify-between">
-                              <span className="text-slate-200 font-medium">{n.title}</span>
+                              <span className={`${textSecondary} font-medium`}>{n.title}</span>
                               <span className="text-xs text-cyan-400">{n.time}</span>
                             </div>
                             <p className="text-sm text-slate-300 mt-1">{n.pair} reached your target of {n.target}</p>
-                            <p className="text-xs text-slate-400">Alert set: {n.target} • Current: {n.current}</p>
+                            <p className={`text-xs ${textSecondary}`}>Alert set: {n.target} • Current: {n.current}</p>
                           </>
                         ) : (
                           <>
                             <div className="flex items-center justify-between">
-                              <span className="text-slate-200 font-medium">{n.title}</span>
+                              <span className={`${textSecondary} font-medium`}>{n.title}</span>
                               <span className="text-xs text-cyan-400">{n.time}</span>
                             </div>
                             <p className="text-sm text-emerald-400 mt-1">{n.details}</p>
-                            <p className="text-xs text-slate-400">Est. Profit: {n.profit} • Gas: {n.gas} • Score: {n.score}</p>
+                            <p className={`text-xs ${textSecondary}`}>Est. Profit: {n.profit} • Gas: {n.gas} • Score: {n.score}</p>
                           </>
                         )}
                       </div>
@@ -142,7 +148,7 @@ const SettingsHeader: React.FC<SettingsHeaderProps> = ({
 
           {/* Profile */}
           <div className="relative z-50">
-            <div className="flex items-center gap-3 bg-slate-800/50 border border-slate-700/50 rounded-xl px-3 py-2 cursor-pointer z-50"
+            <div className={`flex items-center gap-3 ${bg}/50 border ${border}/50 rounded-xl px-3 py-2 cursor-pointer z-50`}
                 onClick={onProfileDropdownToggle}>
                 <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-cyan-400 to-purple-500 flex items-center justify-center">
                   <span className="text-white font-bold text-xs">
@@ -150,20 +156,20 @@ const SettingsHeader: React.FC<SettingsHeaderProps> = ({
                   </span>
                 </div>
                 <div className="hidden sm:block">
-                  <div className="text-sm font-medium text-slate-200">{user?.name || 'User'}</div>
-                  <div className="text-xs text-slate-400">Pro Trader</div>
+                  <div className={`text-sm font-medium ${textSecondary}`}>{user?.name || 'User'}</div>
+                  <div className={`text-xs ${textSecondary}`}>Pro Trader</div>
                 </div>
-                <svg className="w-4 h-4 text-slate-400 transition-transform duration-200" style={{transform: profileDropdownOpen?'rotate(180deg)':'rotate(0deg)'}} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <svg className={`w-4 h-4 ${textSecondary} transition-transform duration-200`} style={{transform: profileDropdownOpen?'rotate(180deg)':'rotate(0deg)'}} fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7"/>
                 </svg>
             </div>
             {profileDropdownOpen &&
             createPortal(
-              <div className="fixed top-[85px] right-[39px] w-44 bg-slate-800/90 backdrop-blur border border-slate-700/50 rounded-xl shadow-lg z-50">
-                <button onClick={() => { navigate("/profile"); onProfileDropdownToggle(); }} className="w-full flex items-center gap-2 px-4 py-2 text-sm text-slate-200 hover:bg-slate-700/50 transition-colors">
+              <div className={`fixed top-[85px] right-[39px] w-44 ${bg}/90 backdrop-blur border ${border}/50 rounded-xl shadow-lg z-50`}>
+                <button onClick={() => { navigate("/profile"); onProfileDropdownToggle(); }} className={`w-full flex items-center gap-2 px-4 py-2 text-sm ${textSecondary} hover:opacity-90 transition-colors`}>
                   <User className="w-4 h-4 text-cyan-400" /> Profile
                 </button>
-                <button onClick={() => { handleLogout(); onProfileDropdownToggle(); }} className="w-full flex items-center gap-2 px-4 py-2 text-sm text-slate-200 hover:bg-slate-700/50 transition-colors">
+                <button onClick={() => { handleLogout(); onProfileDropdownToggle(); }} className={`w-full flex items-center gap-2 px-4 py-2 text-sm ${textSecondary} hover:opacity-90 transition-colors`}>
                   <LogOut className="w-4 h-4 text-red-400" /> Logout
                 </button>
               </div>,
