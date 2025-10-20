@@ -84,8 +84,10 @@ class DataPipeline {
             if (!Object.prototype.hasOwnProperty.call(tokenContracts, chain)) continue;
 
             const contractAddr = tokenContracts[chain as keyof typeof tokenContracts];
+            const chainPrice = priceInfo.chainPrices?.[chain] ?? priceInfo.price;
+            if (chainPrice === undefined || chainPrice === null) continue;
             const update: any = {
-              currentPrice: priceInfo.price,
+              currentPrice: chainPrice,
               lastUpdated: new Date(),
               name: priceInfo.symbol,
               decimals: 18,

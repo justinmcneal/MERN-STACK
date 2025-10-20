@@ -1,6 +1,7 @@
 import cron from 'node-cron';
 import { Opportunity, Token, UserPreference } from '../models';
 import { dataService, mlService, webSocketService } from '../services';
+import { TOKEN_CONTRACTS } from '../config/tokens';
 import { Alert } from '../models';
 
 interface ScanResult {
@@ -137,11 +138,21 @@ class OpportunityScanner {
       const supportedChains = dataService.getSupportedChains();
 
       for (const priceInfo of prices) {
+        const tokenContracts = TOKEN_CONTRACTS[priceInfo.symbol as keyof typeof TOKEN_CONTRACTS] || {};
         for (const chain of supportedChains) {
+          if (!Object.prototype.hasOwnProperty.call(tokenContracts, chain)) {
+            continue;
+          }
+
+          const chainPrice = priceInfo.chainPrices?.[chain] ?? priceInfo.price;
+          if (chainPrice === undefined || chainPrice === null) {
+            continue;
+          }
+
           await Token.findOneAndUpdate(
             { symbol: priceInfo.symbol, chain: chain },
             {
-              currentPrice: priceInfo.price,
+              currentPrice: chainPrice,
               lastUpdated: new Date(),
               name: priceInfo.symbol,
               decimals: 18,

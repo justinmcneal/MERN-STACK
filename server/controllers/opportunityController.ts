@@ -4,6 +4,7 @@ import Opportunity from '../models/Opportunity';
 import Token from '../models/Token';
 import DataService from '../services/DataService';
 import MLService from '../services/MLService';
+import { TOKEN_CONTRACTS } from '../config/tokens';
 
 // GET /api/opportunities - Get all opportunities with filtering
 export const getOpportunities = asyncHandler(async (req: Request, res: Response) => {
@@ -109,11 +110,21 @@ export const scanOpportunities = asyncHandler(async (req: Request, res: Response
       
       for (const priceInfo of priceData) {
         const supportedChains = dataService.getSupportedChains();
+        const tokenContracts = TOKEN_CONTRACTS[priceInfo.symbol as keyof typeof TOKEN_CONTRACTS] || {};
         for (const chain of supportedChains) {
+          if (!Object.prototype.hasOwnProperty.call(tokenContracts, chain)) {
+            continue;
+          }
+
+          const chainPrice = priceInfo.chainPrices?.[chain] ?? priceInfo.price;
+          if (chainPrice === undefined || chainPrice === null) {
+            continue;
+          }
+
           await Token.findOneAndUpdate(
             { symbol: priceInfo.symbol, chain: chain },
             { 
-              currentPrice: priceInfo.price, 
+              currentPrice: chainPrice, 
               lastUpdated: priceInfo.timestamp 
             },
             { upsert: true }
