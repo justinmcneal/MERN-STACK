@@ -32,12 +32,14 @@ const LoginForm: React.FC<LoginFormProps> = ({ className = "" }) => {
     e.preventDefault();
     
     try {
-      await handleSubmit(e);
-      // If we get here, login was successful
-      navigate('/profile');
-    } catch (error: any) {
+  await handleSubmit(e);
+  // If we get here, login was successful
+  navigate('/dashboard');
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : '';
+
       // Check if error indicates 2FA is required
-      if (error.message && (error.message.includes('2FA') || error.message.includes('verification required'))) {
+      if (errorMessage && (errorMessage.includes('2FA') || errorMessage.includes('verification required'))) {
         setUserEmail(formData.email);
         setShowTwoFactor(true);
         return; // Don't let the error propagate
@@ -51,10 +53,10 @@ const LoginForm: React.FC<LoginFormProps> = ({ className = "" }) => {
     try {
       // Refresh user data in auth context
       await refreshUser();
-      console.log('🔐 [LoginForm] Auth state refreshed, navigating to profile');
+  console.log('🔐 [LoginForm] Auth state refreshed, navigating to dashboard');
       
-      // Navigate to profile page
-      navigate('/profile');
+  // Navigate to dashboard page
+  navigate('/dashboard');
     } catch (error) {
       console.error('🔐 [LoginForm] Failed to refresh auth state after 2FA:', error);
       // Fallback to page reload if something goes wrong
