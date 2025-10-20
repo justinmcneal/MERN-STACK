@@ -169,10 +169,18 @@ export const scanOpportunities = asyncHandler(async (req: Request, res: Response
       chainFrom: SupportedChain;
       chainTo: SupportedChain;
       profitable: boolean;
+      priceDiffPerTokenUsd: number;
       netProfitUsd: number;
+      grossProfitUsd: number;
       priceDiffUsd: number;
       priceDiffPercent: number;
       gasCostUsd: number;
+      gasCostBreakdown: {
+        outboundUsd: number;
+        inboundUsd: number;
+      };
+      tradeUsdAmount: number;
+      tradeTokenAmount: number;
       roi: number | null;
       score: number;
       priceFrom: number;
@@ -214,10 +222,15 @@ export const scanOpportunities = asyncHandler(async (req: Request, res: Response
               chainFrom,
               chainTo,
               profitable: evaluation.profitable,
+              priceDiffPerTokenUsd: evaluation.priceDiffPerTokenUsd,
               netProfitUsd: evaluation.netProfitUsd,
+              grossProfitUsd: evaluation.grossProfitUsd,
               priceDiffUsd: evaluation.priceDiffUsd,
               priceDiffPercent: evaluation.priceDiffPercent,
               gasCostUsd: evaluation.gasCostUsd,
+              gasCostBreakdown: evaluation.gasCostBreakdown,
+              tradeUsdAmount: evaluation.tradeUsdAmount,
+              tradeTokenAmount: evaluation.tradeTokenAmount,
               roi: evaluation.roi,
               score: evaluation.score,
               priceFrom: evaluation.priceFrom,
@@ -300,15 +313,17 @@ export const getOpportunityStats = asyncHandler(async (req: Request, res: Respon
     { $group: {
       _id: '$status',
       count: { $sum: 1 },
-      avgProfit: { $avg: '$estimatedProfit' },
+      avgProfit: { $avg: '$netProfit' },
+      avgGrossProfit: { $avg: '$estimatedProfit' },
       avgScore: { $avg: '$score' },
-      avgROI: { $avg: '$roi' }
+      avgROI: { $avg: '$roi' },
+      avgTradeVolume: { $avg: '$volume' }
     }}
   ]);
 
   const profitableOpportunities = await Opportunity.countDocuments({
     status: 'active',
-    estimatedProfit: { $gt: 0 }
+    netProfit: { $gt: 0 }
   });
 
   const totalOpportunities = await Opportunity.countDocuments({});

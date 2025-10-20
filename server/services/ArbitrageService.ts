@@ -9,7 +9,19 @@ import {
   type SupportedToken
 } from '../config/tokens';
 
-const GAS_UNITS_PER_TRANSFER = 21000;
+const DEFAULT_TRADE_SIZE_USD = 1000;
+
+const OUTBOUND_GAS_UNITS: Record<SupportedChain, number> = {
+  ethereum: 450000, // swap + bridge initiation
+  polygon: 320000,
+  bsc: 360000
+};
+
+const INBOUND_GAS_UNITS: Record<SupportedChain, number> = {
+  ethereum: 220000, // swap on destination chain
+  polygon: 160000,
+  bsc: 200000
+};
 
 const dataService = DataService.getInstance();
 const mlService = MLService.getInstance();
@@ -28,13 +40,21 @@ export interface ArbitrageEvaluation {
   chainTo: SupportedChain;
   priceFrom: number;
   priceTo: number;
+  priceDiffPerTokenUsd: number;
   priceDiffUsd: number;
   priceDiffPercent: number;
   gasCostUsd: number;
+  gasCostBreakdown: {
+    outboundUsd: number;
+    inboundUsd: number;
+  };
+  grossProfitUsd: number;
   netProfitUsd: number;
   roi: number | null;
   score: number;
   profitable: boolean;
+  tradeUsdAmount: number;
+  tradeTokenAmount: number;
 }
 
 const createTokenCacheKey = (symbol: SupportedToken, chain: SupportedChain): TokenCacheKey => {
@@ -78,7 +98,7 @@ export async function evaluateOpportunity(
   chainFrom: SupportedChain,
   chainTo: SupportedChain,
   context: ArbitrageContext,
-  options?: { skipScoring?: boolean }
+  options?: { skipScoring?: boolean; tradeAmountUsd?: number }
 ): Promise<ArbitrageEvaluation | null> {
   const symbol = tokenSymbol.toUpperCase() as SupportedToken;
 
@@ -107,16 +127,30 @@ export async function evaluateOpportunity(
     return null;
   }
 
-  const priceDiffUsd = priceTo - priceFrom;
-  const priceDiffPercent = priceFrom > 0 ? (priceDiffUsd / priceFrom) * 100 : 0;
+  const priceDiffPerTokenUsd = priceTo - priceFrom;
+  const priceDiffPercent = priceFrom > 0 ? (priceDiffPerTokenUsd / priceFrom) * 100 : 0;
 
-  const gasCostFromUsd = dataService.estimateGasCostUsd(chainFrom, gasPriceFrom, nativePriceFrom, GAS_UNITS_PER_TRANSFER);
-  const gasCostToUsd = dataService.estimateGasCostUsd(chainTo, gasPriceTo, nativePriceTo, GAS_UNITS_PER_TRANSFER);
+  const tradeUsdAmount = options?.tradeAmountUsd ?? DEFAULT_TRADE_SIZE_USD;
+  if (tradeUsdAmount <= 0) {
+    return null;
+  }
+
+  const tradeTokenAmount = tradeUsdAmount / priceFrom;
+  if (!Number.isFinite(tradeTokenAmount) || tradeTokenAmount <= 0) {
+    return null;
+  }
+
+  const outboundGasUnits = OUTBOUND_GAS_UNITS[chainFrom] ?? 300000;
+  const inboundGasUnits = INBOUND_GAS_UNITS[chainTo] ?? 200000;
+
+  const gasCostFromUsd = dataService.estimateGasCostUsd(chainFrom, gasPriceFrom, nativePriceFrom, outboundGasUnits);
+  const gasCostToUsd = dataService.estimateGasCostUsd(chainTo, gasPriceTo, nativePriceTo, inboundGasUnits);
   const gasCostUsd = gasCostFromUsd + gasCostToUsd;
 
-  const netProfitUsd = priceDiffUsd - gasCostUsd;
+  const grossProfitUsd = priceDiffPerTokenUsd * tradeTokenAmount;
+  const netProfitUsd = grossProfitUsd - gasCostUsd;
   const profitable = netProfitUsd > 0;
-  const roi = gasCostUsd > 0 ? netProfitUsd / gasCostUsd * 100 : null;
+  const roi = tradeUsdAmount > 0 ? (netProfitUsd / tradeUsdAmount) * 100 : null;
 
   let score = 0;
   if (!options?.skipScoring && profitable) {
@@ -124,7 +158,7 @@ export async function evaluateOpportunity(
       const prediction = await mlService.getPrediction({
         token: symbol,
         chain: chainFrom,
-        price: priceDiffUsd,
+        price: priceDiffPerTokenUsd,
         gas: gasCostUsd
       });
       score = Math.max(0, Math.min(1, Number(prediction.score ?? 0)));
@@ -140,13 +174,21 @@ export async function evaluateOpportunity(
     chainTo,
     priceFrom,
     priceTo,
-    priceDiffUsd,
+    priceDiffPerTokenUsd,
+    priceDiffUsd: priceDiffPerTokenUsd * tradeTokenAmount,
     priceDiffPercent,
     gasCostUsd,
+    gasCostBreakdown: {
+      outboundUsd: gasCostFromUsd,
+      inboundUsd: gasCostToUsd
+    },
+    grossProfitUsd,
     netProfitUsd,
     roi: Number.isFinite(roi ?? NaN) ? (roi as number) : null,
     score,
-    profitable
+    profitable,
+    tradeUsdAmount,
+    tradeTokenAmount
   };
 }
 
@@ -177,16 +219,18 @@ export async function upsertOpportunity(
 
   const payload = {
     priceDiff: evaluation.priceDiffUsd,
+    priceDiffPercent: evaluation.priceDiffPercent,
+    priceDiffPerToken: evaluation.priceDiffPerTokenUsd,
     gasCost: evaluation.gasCostUsd,
-    estimatedProfit: evaluation.netProfitUsd,
+    estimatedProfit: evaluation.grossProfitUsd,
     netProfit: evaluation.netProfitUsd,
     priceFrom: evaluation.priceFrom,
     priceTo: evaluation.priceTo,
-    priceDiffPercent: evaluation.priceDiffPercent,
     score: evaluation.score,
     roi: evaluation.roi,
     timestamp: new Date(),
-    status: 'active'
+    status: 'active',
+    volume: evaluation.tradeUsdAmount
   };
 
   if (existing) {
@@ -220,7 +264,12 @@ export async function isOpportunityProfitable(
     opportunity.chainFrom as SupportedChain,
     opportunity.chainTo as SupportedChain,
     workingContext,
-    { skipScoring: true }
+    {
+      skipScoring: true,
+      tradeAmountUsd: typeof opportunity.volume === 'number' && opportunity.volume > 0
+        ? opportunity.volume
+        : undefined
+    }
   );
 
   return Boolean(evaluation && evaluation.profitable);

@@ -65,7 +65,7 @@ const ArbitrageTable: React.FC<ArbitrageTableProps> = ({ opportunities, loading,
           <table className="w-full">
             <thead>
               <tr className="border-b border-slate-700/50">
-                {['Token','From → To','Price Diff (%)','Gas Fee','Net Profit','Score'].map((h,i)=> (
+                {['Token','From → To','Price Diff (%)','Trade Size','Gas Fee','Net Profit','Score'].map((h,i)=> (
                   <th key={i} className="text-left text-xs text-slate-400 font-medium pb-3 px-4">{h}</th>
                 ))}
               </tr>
@@ -96,6 +96,11 @@ const ArbitrageTable: React.FC<ArbitrageTableProps> = ({ opportunities, loading,
                       <span className={opportunity.priceDiffPercent && opportunity.priceDiffPercent >= 0 ? 'text-emerald-400 font-medium' : 'text-rose-400 font-medium'}>
                         {formatPercent(opportunity.priceDiffPercent)}
                       </span>
+                    </td>
+                    <td className="py-3 px-4 text-right text-slate-300">
+                      {opportunity.tradeVolumeUsd !== undefined
+                        ? formatUsd(opportunity.tradeVolumeUsd)
+                        : '—'}
                     </td>
                     <td className="py-3 px-4 text-right text-slate-300">{formatUsd(opportunity.gasCostUsd)}</td>
                     <td className="py-3 px-4 text-right text-cyan-400 font-medium">{formatUsd(opportunity.netProfitUsd)}</td>
@@ -130,6 +135,11 @@ const ArbitrageTable: React.FC<ArbitrageTableProps> = ({ opportunities, loading,
           </table>
         </div>
       </div>
+      {(hasData || loading) && (
+        <p className="mt-4 text-xs text-slate-500">
+          Trade size reflects the assumed USD amount used when evaluating each opportunity.
+        </p>
+      )}
     </div>
   );
 };

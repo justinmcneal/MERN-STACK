@@ -227,7 +227,11 @@ class OpportunityScanner {
       for (const preference of usersWithAlerts) {
         // Check if this opportunity meets user's thresholds
         if (this.meetsUserThresholds(opportunity, preference)) {
-          const message = `New arbitrage opportunity: ${(opportunity.tokenId as any)?.symbol} ${opportunity.chainFrom} → ${opportunity.chainTo}. Profit: $${opportunity.estimatedProfit.toFixed(2)} (${opportunity.roi?.toFixed(1)}% ROI)`;
+          const netProfit = typeof opportunity.netProfit === 'number'
+            ? opportunity.netProfit
+            : (opportunity.estimatedProfit ?? 0) - (opportunity.gasCost ?? 0);
+
+          const message = `New arbitrage opportunity: ${(opportunity.tokenId as any)?.symbol} ${opportunity.chainFrom} → ${opportunity.chainTo}. Net profit: $${netProfit.toFixed(2)} (${opportunity.roi?.toFixed(1)}% ROI)`;
           
           await Alert.create({
             userId: preference.userId,
@@ -240,7 +244,7 @@ class OpportunityScanner {
               tokenSymbol: (opportunity.tokenId as any)?.symbol,
               chainFrom: opportunity.chainFrom,
               chainTo: opportunity.chainTo,
-              profit: opportunity.estimatedProfit,
+              profit: netProfit,
               roi: opportunity.roi,
             }
           });
@@ -256,9 +260,12 @@ class OpportunityScanner {
    */
   private meetsUserThresholds(opportunity: any, preference: any): boolean {
     const thresholds = preference.alertThresholds;
+    const netProfit = typeof opportunity.netProfit === 'number'
+      ? opportunity.netProfit
+      : (opportunity.estimatedProfit ?? 0) - (opportunity.gasCost ?? 0);
     
     return (
-      opportunity.estimatedProfit >= thresholds.minProfit &&
+      netProfit >= thresholds.minProfit &&
       opportunity.gasCost <= thresholds.maxGasCost &&
       (opportunity.roi || 0) >= thresholds.minROI &&
       opportunity.score >= thresholds.minScore
@@ -269,11 +276,15 @@ class OpportunityScanner {
    * Determine alert priority based on opportunity metrics
    */
   private getAlertPriority(opportunity: any): 'low' | 'medium' | 'high' | 'urgent' {
-    if (opportunity.estimatedProfit > 1000 || (opportunity.roi || 0) > 50) {
+    const netProfit = typeof opportunity.netProfit === 'number'
+      ? opportunity.netProfit
+      : (opportunity.estimatedProfit ?? 0) - (opportunity.gasCost ?? 0);
+
+    if (netProfit > 1000 || (opportunity.roi || 0) > 50) {
       return 'urgent';
-    } else if (opportunity.estimatedProfit > 500 || (opportunity.roi || 0) > 25) {
+    } else if (netProfit > 500 || (opportunity.roi || 0) > 25) {
       return 'high';
-    } else if (opportunity.estimatedProfit > 100 || (opportunity.roi || 0) > 10) {
+    } else if (netProfit > 100 || (opportunity.roi || 0) > 10) {
       return 'medium';
     } else {
       return 'low';

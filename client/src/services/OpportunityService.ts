@@ -7,12 +7,17 @@ export interface OpportunityDto {
   chainFrom: string;
   chainTo: string;
   priceDiffUsd: number;
+  priceDiffPerTokenUsd?: number;
   priceDiffPercent?: number;
   gasCostUsd: number;
   netProfitUsd: number;
-  estimatedProfitUsd: number;
+  grossProfitUsd: number;
   score: number;
   roi?: number | null;
+  tradeVolumeUsd?: number;
+  tradeTokenAmount?: number;
+  priceFrom?: number;
+  priceTo?: number;
   updatedAt?: string;
 }
 
@@ -37,12 +42,16 @@ interface OpportunityApiResponse {
     chainFrom: string;
     chainTo: string;
     priceDiff: number;
+    priceDiffPerToken?: number;
     priceDiffPercent?: number;
     gasCost: number;
     estimatedProfit: number;
     score: number;
     roi?: number;
     netProfit?: number;
+    volume?: number;
+    priceFrom?: number;
+    priceTo?: number;
     updatedAt?: string;
     tokenId?: {
       _id: string;
@@ -82,13 +91,22 @@ const OpportunityService = {
         tokenName: tokenName ?? undefined,
         chainFrom: item.chainFrom,
         chainTo: item.chainTo,
-        priceDiffUsd: item.priceDiff,
+  priceDiffUsd: item.priceDiff,
+        priceDiffPerTokenUsd: item.priceDiffPerToken,
         priceDiffPercent,
         gasCostUsd: item.gasCost,
         netProfitUsd,
-        estimatedProfitUsd: item.estimatedProfit,
+  grossProfitUsd: item.priceDiff ?? item.estimatedProfit,
         score: item.score,
         roi: item.roi ?? null,
+        tradeVolumeUsd: item.volume ?? undefined,
+        tradeTokenAmount: item.volume && item.priceFrom
+          ? Number.isFinite(item.volume / item.priceFrom)
+            ? item.volume / item.priceFrom
+            : undefined
+          : undefined,
+        priceFrom: item.priceFrom,
+        priceTo: item.priceTo,
         updatedAt: item.updatedAt
       } satisfies OpportunityDto;
     });

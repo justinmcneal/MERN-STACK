@@ -10,13 +10,14 @@ export interface IOpportunity extends Document {
   priceFrom?: number;
   priceTo?: number;
   priceDiff: number;
+  priceDiffPerToken?: number;
   priceDiffPercent?: number;
   gasCost: number;
   estimatedProfit: number;
   score: number;
   timestamp: Date;
   status: 'active' | 'expired' | 'executed';
-  volume?: number;
+  volume?: number; // assumed trade size in USD
   roi?: number;
   netProfit?: number;
 }
@@ -49,6 +50,9 @@ const opportunitySchema: Schema<IOpportunity> = new mongoose.Schema(
     priceDiff: { 
       type: Number, 
       required: true 
+    },
+    priceDiffPerToken: {
+      type: Number
     },
     priceDiffPercent: {
       type: Number
@@ -106,15 +110,25 @@ opportunitySchema.pre('save', function(next) {
     const from = this.priceFrom ?? null;
     const to = this.priceTo ?? null;
     if (from !== null && to !== null) {
-      this.priceDiff = to - from;
+      this.priceDiffPerToken = to - from;
       this.priceDiffPercent = from !== 0 ? ((to - from) / from) * 100 : undefined;
+      if (!this.isModified('priceDiff') && this.volume && from > 0) {
+        const estimatedTokens = this.volume / from;
+        if (Number.isFinite(estimatedTokens)) {
+          this.priceDiff = (to - from) * estimatedTokens;
+        }
+      }
     }
   }
 
-  if (this.isModified('estimatedProfit') || this.isModified('gasCost')) {
+  if (this.isModified('estimatedProfit') || this.isModified('gasCost') || this.isModified('volume')) {
     this.netProfit = this.estimatedProfit - this.gasCost;
-    if (this.gasCost > 0) {
+    if (this.volume && this.volume > 0) {
+      this.roi = (this.netProfit / this.volume) * 100;
+    } else if (this.gasCost > 0) {
       this.roi = (this.netProfit / this.gasCost) * 100;
+    } else {
+      this.roi = undefined;
     }
   }
   next();
