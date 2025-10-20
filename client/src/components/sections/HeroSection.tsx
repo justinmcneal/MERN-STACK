@@ -59,7 +59,7 @@ const HeroSection = () => {
         <StatCard value="$2.4M+" label="Total Volume Tracked" trend="+127% this month" />
         <StatCard value="156" label="Active Opportunities" trend="Real-time updates" />
         <StatCard value="18.4%" label="Avg ROI Potential" trend="+2.1% vs last week" />
-        <StatCard value="12" label="Supported Chains" trend="Expanding weekly" />
+        <StatCard value="3" label="Supported Chains" trend="Expanding weekly" />
       </div>
     </section>
   );
