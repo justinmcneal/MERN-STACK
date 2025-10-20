@@ -72,6 +72,12 @@ export const COINGECKO_CHAIN_IDS: Record<SupportedChain, string> = {
   bsc: 'binance-smart-chain'
 };
 
+export const CHAIN_NATIVE_TOKENS: Record<SupportedChain, SupportedToken> = {
+  ethereum: 'ETH',
+  polygon: 'MATIC',
+  bsc: 'BNB'
+} as const;
+
 // Chain display names
 export const CHAIN_NAMES: Record<SupportedChain, string> = {
   'ethereum': 'Ethereum',

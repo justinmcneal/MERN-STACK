@@ -414,6 +414,15 @@ export class DataService {
     }
   }
 
+  estimateGasCostUsd(chain: SupportedChain, gasPriceGwei: number, nativeTokenPriceUsd: number, gasUnits = 21000): number {
+    if (gasPriceGwei <= 0 || nativeTokenPriceUsd <= 0 || gasUnits <= 0) {
+      return 0;
+    }
+
+    const gasPriceInNative = gasPriceGwei * 1e-9;
+    return gasPriceInNative * gasUnits * nativeTokenPriceUsd;
+  }
+
   async fetchTokenPrices(): Promise<TokenPrice[]> {
     this.ensureCoinGeckoBackoffLoaded();
 

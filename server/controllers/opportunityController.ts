@@ -3,8 +3,12 @@ import asyncHandler from 'express-async-handler';
 import Opportunity from '../models/Opportunity';
 import Token from '../models/Token';
 import DataService from '../services/DataService';
-import MLService from '../services/MLService';
-import { TOKEN_CONTRACTS } from '../config/tokens';
+import { TOKEN_CONTRACTS, type SupportedChain, type SupportedToken } from '../config/tokens';
+import {
+  buildArbitrageContext,
+  evaluateOpportunity,
+  upsertOpportunity
+} from '../services/ArbitrageService';
 
 // GET /api/opportunities - Get all opportunities with filtering
 export const getOpportunities = asyncHandler(async (req: Request, res: Response) => {
@@ -99,18 +103,23 @@ export const getOpportunityById = asyncHandler(async (req: Request, res: Respons
 export const scanOpportunities = asyncHandler(async (req: Request, res: Response) => {
   const { tokens, chains, forceRefresh = false } = req.body;
 
+  const toArray = <T,>(value: T | T[] | undefined): T[] => {
+    if (value === undefined || value === null) return [];
+    return Array.isArray(value) ? value : [value];
+  };
+
   try {
     const dataService = DataService.getInstance();
-    const mlService = MLService.getInstance();
+    const supportedChains = dataService.getSupportedChains() as SupportedChain[];
+    const supportedTokens = dataService.getSupportedTokens() as SupportedToken[];
 
-    // Refresh token prices first
     if (forceRefresh) {
-      // This would typically be called separately, but we can refresh here too
       const priceData = await dataService.fetchTokenPrices();
-      
+
       for (const priceInfo of priceData) {
-        const supportedChains = dataService.getSupportedChains();
-        const tokenContracts = TOKEN_CONTRACTS[priceInfo.symbol as keyof typeof TOKEN_CONTRACTS] || {};
+        const tokenContracts =
+          TOKEN_CONTRACTS[priceInfo.symbol as keyof typeof TOKEN_CONTRACTS] || {};
+
         for (const chain of supportedChains) {
           if (!Object.prototype.hasOwnProperty.call(tokenContracts, chain)) {
             continue;
@@ -122,10 +131,10 @@ export const scanOpportunities = asyncHandler(async (req: Request, res: Response
           }
 
           await Token.findOneAndUpdate(
-            { symbol: priceInfo.symbol, chain: chain },
-            { 
-              currentPrice: chainPrice, 
-              lastUpdated: priceInfo.timestamp 
+            { symbol: priceInfo.symbol, chain },
+            {
+              currentPrice: chainPrice,
+              lastUpdated: priceInfo.timestamp
             },
             { upsert: true }
           );
@@ -133,72 +142,70 @@ export const scanOpportunities = asyncHandler(async (req: Request, res: Response
       }
     }
 
-    // Get tokens to analyze
-    let tokensToAnalyze = tokens || dataService.getSupportedTokens();
-    let chainsToAnalyze = chains || dataService.getSupportedChains();
+    const tokensToAnalyze = (() => {
+      const filtered = toArray<string>(tokens)
+        .map((token) => String(token).toUpperCase())
+        .filter((token): token is SupportedToken =>
+          supportedTokens.includes(token as SupportedToken)
+        );
+      return filtered.length > 0 ? filtered : [...supportedTokens];
+    })();
+
+    const chainsToAnalyze = (() => {
+      const filtered = toArray<string>(chains)
+        .map((chain) => String(chain).toLowerCase())
+        .filter((chain): chain is SupportedChain =>
+          supportedChains.includes(chain as SupportedChain)
+        );
+      return filtered.length > 0 ? filtered : [...supportedChains];
+    })();
+
+    const context = await buildArbitrageContext();
 
     let opportunitiesFound = 0;
-    const results: any[] = [];
+    let opportunitiesUpdated = 0;
+    const results: Array<{
+      token: SupportedToken;
+      chainFrom: SupportedChain;
+      chainTo: SupportedChain;
+      profitable: boolean;
+      netProfitUsd: number;
+      priceDiffUsd: number;
+      priceDiffPercent: number;
+      gasCostUsd: number;
+      roi: number | null;
+      score: number;
+      priceFrom: number;
+      priceTo: number;
+      opportunityId?: string;
+    }> = [];
 
-    // Analyze each token on each directional chain pair
     for (const tokenSymbol of tokensToAnalyze) {
-      for (let i = 0; i < chainsToAnalyze.length; i++) {
-        for (let j = 0; j < chainsToAnalyze.length; j++) {
-          if (i === j) continue; // Skip same chain pairs
-          const chainFrom = chainsToAnalyze[i];
-          const chainTo = chainsToAnalyze[j];
+      for (const chainFrom of chainsToAnalyze) {
+        for (const chainTo of chainsToAnalyze) {
+          if (chainFrom === chainTo) continue;
 
           try {
-            // Get ML analysis from the FastAPI service
-            const analysis = await mlService.getArbitrageOpportunity({
-              token: tokenSymbol.toLowerCase(),
-              chain_a: chainFrom,
-              chain_b: chainTo
-            });
-
-            // Get token document
-            const token = await Token.findOne({ symbol: tokenSymbol.toUpperCase() });
-            if (!token) continue;
-
-            // Check if opportunity already exists
-            const existingOpportunity = await Opportunity.findOne({
-              tokenId: token._id,
+            const evaluation = await evaluateOpportunity(
+              tokenSymbol,
               chainFrom,
               chainTo,
-              status: 'active'
-            });
+              context
+            );
 
-            if (existingOpportunity) {
-              // Update existing opportunity If profitable, update score and additional info.
-              if (analysis.profitable) {
-                existingOpportunity.priceDiff = analysis.spread_usd;
-                existingOpportunity.gasCost = analysis.total_gas_cost_usd;
-                existingOpportunity.estimatedProfit = analysis.net_profit_usd;
-                existingOpportunity.roi = ((analysis.net_profit_usd / analysis.total_gas_cost_usd) * 100);
-                existingOpportunity.netProfit = analysis.net_profit_usd;
-                await existingOpportunity.save();
+            if (!evaluation) {
+              continue;
+            }
+
+            const { opportunity, isNew } = await upsertOpportunity(evaluation, context);
+
+            let opportunityId: string | undefined;
+            if (opportunity) {
+              opportunityId = opportunity._id.toString();
+              if (isNew) {
                 opportunitiesFound++;
               } else {
-                // Mark as expired if no longer profitable.
-                existingOpportunity.status = 'expired';
-                await existingOpportunity.save();
-              }
-            } else {
-              // Create new opportunity if profitable.
-              if (analysis.profitable) {
-                await Opportunity.create({
-                  tokenId: token._id,
-                  chainFrom,
-                  chainTo,
-                  priceDiff: analysis.spread_usd,
-                  gasCost: analysis.total_gas_cost_usd,
-                  estimatedProfit: analysis.net_profit_usd,
-                  score: 0.7, // Default score, could be enhanced with ML prediction
-                  roi: ((analysis.net_profit_usd / analysis.total_gas_cost_usd) * 100),
-                  netProfit: analysis.net_profit_usd,
-                  status: 'active'
-                });
-                opportunitiesFound++;
+                opportunitiesUpdated++;
               }
             }
 
@@ -206,15 +213,19 @@ export const scanOpportunities = asyncHandler(async (req: Request, res: Response
               token: tokenSymbol,
               chainFrom,
               chainTo,
-              profitable: analysis.profitable,
-              netProfit: analysis.net_profit_usd,
-              spread: analysis.spread_usd,
-              gasCost: analysis.total_gas_cost_usd
+              profitable: evaluation.profitable,
+              netProfitUsd: evaluation.netProfitUsd,
+              priceDiffUsd: evaluation.priceDiffUsd,
+              priceDiffPercent: evaluation.priceDiffPercent,
+              gasCostUsd: evaluation.gasCostUsd,
+              roi: evaluation.roi,
+              score: evaluation.score,
+              priceFrom: evaluation.priceFrom,
+              priceTo: evaluation.priceTo,
+              opportunityId
             });
           } catch (error) {
             console.error(`Error analyzing ${tokenSymbol} ${chainFrom} -> ${chainTo}:`, error);
-            // Continue with other pairs even if one fails.
-            continue;
           }
         }
       }
@@ -224,13 +235,18 @@ export const scanOpportunities = asyncHandler(async (req: Request, res: Response
       success: true,
       message: 'Opportunity scan completed',
       opportunitiesFound,
+      opportunitiesUpdated,
       tokensAnalyzed: tokensToAnalyze.length,
       chainPairsAnalyzed: results.length,
-      results: results.slice(0, 10) // Return first 10 results for preview
+      results: results.slice(0, 25)
     });
   } catch (error: any) {
-    res.status(500);
-    throw new Error(`Failed to scan opportunities: ${error.message}`);
+    console.error('Error scanning opportunities:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to scan opportunities',
+      error: error?.message ?? 'Unknown error'
+    });
   }
 });
 

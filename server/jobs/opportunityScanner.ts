@@ -1,8 +1,15 @@
 import cron from 'node-cron';
 import { Opportunity, Token, UserPreference } from '../models';
-import { dataService, mlService, webSocketService } from '../services';
-import { TOKEN_CONTRACTS } from '../config/tokens';
+import { dataService, webSocketService } from '../services';
+import { TOKEN_CONTRACTS, type SupportedChain, type SupportedToken } from '../config/tokens';
 import { Alert } from '../models';
+import {
+  buildArbitrageContext,
+  evaluateOpportunity,
+  isOpportunityProfitable,
+  upsertOpportunity,
+  type ArbitrageContext
+} from '../services/ArbitrageService';
 
 interface ScanResult {
   opportunitiesFound: number;
@@ -67,12 +74,12 @@ class OpportunityScanner {
         result.errors.push(`Token price refresh failed: ${error}`);
       }
 
+      const context = await buildArbitrageContext();
+
       // Get all active opportunities to check for expiration
       const activeOpportunities = await Opportunity.find({ status: 'active' });
-      
-      // Check for expired opportunities
       for (const opportunity of activeOpportunities) {
-        const isStillProfitable = await this.checkOpportunityProfitability(opportunity);
+        const isStillProfitable = await this.checkOpportunityProfitability(opportunity, context);
         if (!isStillProfitable) {
           opportunity.status = 'expired';
           await opportunity.save();
@@ -80,21 +87,22 @@ class OpportunityScanner {
         }
       }
 
-      // Scan for new opportunities
-      for (const tokenSymbol of supportedTokens) {
-        for (let i = 0; i < supportedChains.length; i++) {
-          for (let j = i + 1; j < supportedChains.length; j++) {
-            const chainFrom = supportedChains[i];
-            const chainTo = supportedChains[j];
+      // Scan for new opportunities across all chain directions
+      for (const tokenSymbol of supportedTokens as SupportedToken[]) {
+        for (const chainFrom of supportedChains as SupportedChain[]) {
+          for (const chainTo of supportedChains as SupportedChain[]) {
+            if (chainFrom === chainTo) {
+              continue;
+            }
 
             try {
-              const opportunityResult = await this.scanTokenPair(tokenSymbol, chainFrom, chainTo);
+              const opportunityResult = await this.scanTokenPair(tokenSymbol, chainFrom, chainTo, context);
               if (opportunityResult) {
-                result.opportunitiesFound++;
-                
-                // Create alert for new profitable opportunity
                 if (opportunityResult.isNew) {
+                  result.opportunitiesFound++;
                   await this.createOpportunityAlerts(opportunityResult.opportunity);
+                } else {
+                  result.opportunitiesUpdated++;
                 }
               }
             } catch (error) {
@@ -170,62 +178,24 @@ class OpportunityScanner {
   /**
    * Scan a specific token pair for arbitrage opportunities
    */
-  private async scanTokenPair(tokenSymbol: string, chainFrom: string, chainTo: string): Promise<any> {
+  private async scanTokenPair(
+    tokenSymbol: SupportedToken,
+    chainFrom: SupportedChain,
+    chainTo: SupportedChain,
+    context: ArbitrageContext
+  ): Promise<{ opportunity: any; isNew: boolean } | null> {
     try {
-      // Get ML analysis
-      const analysis = await mlService.getArbitrageOpportunity({
-        token: tokenSymbol,
-        chain_a: chainFrom,
-        chain_b: chainTo
-      });
-
-      if (!analysis.profitable) {
+      const evaluation = await evaluateOpportunity(tokenSymbol, chainFrom, chainTo, context);
+      if (!evaluation) {
         return null;
       }
 
-      // Find or create token
-      const token = await Token.findOne({ symbol: tokenSymbol.toUpperCase() });
-      if (!token) {
-        throw new Error(`Token ${tokenSymbol} not found`);
+      const { opportunity, isNew } = await upsertOpportunity(evaluation, context);
+      if (!opportunity) {
+        return null;
       }
 
-      // Check for existing opportunity
-      const existingOpportunity = await Opportunity.findOne({
-        tokenId: token._id,
-        chainFrom,
-        chainTo,
-        status: 'active'
-      });
-
-      if (existingOpportunity) {
-        // Update existing opportunity
-        existingOpportunity.priceDiff = analysis.spread_usd;
-        existingOpportunity.gasCost = analysis.total_gas_cost_usd;
-        existingOpportunity.estimatedProfit = analysis.net_profit_usd;
-        existingOpportunity.roi = ((analysis.net_profit_usd / analysis.total_gas_cost_usd) * 100);
-        existingOpportunity.netProfit = analysis.net_profit_usd;
-        existingOpportunity.score = analysis.profitable ? 1 : 0;
-        await existingOpportunity.save();
-
-        return { opportunity: existingOpportunity, isNew: false };
-      } else {
-        // Create new opportunity
-        const newOpportunity = await Opportunity.create({
-          tokenId: token._id,
-          chainFrom,
-          chainTo,
-          priceDiff: analysis.spread_usd,
-          gasCost: analysis.total_gas_cost_usd,
-          estimatedProfit: analysis.net_profit_usd,
-          score: analysis.profitable ? 1 : 0,
-          timestamp: new Date(),
-          status: 'active',
-          roi: ((analysis.net_profit_usd / analysis.total_gas_cost_usd) * 100),
-          netProfit: analysis.net_profit_usd,
-        });
-
-        return { opportunity: newOpportunity, isNew: true };
-      }
+      return evaluation.profitable ? { opportunity, isNew } : null;
     } catch (error) {
       console.error(`Error scanning ${tokenSymbol} ${chainFrom}->${chainTo}:`, error);
       throw error;
@@ -235,15 +205,9 @@ class OpportunityScanner {
   /**
    * Check if an existing opportunity is still profitable
    */
-  private async checkOpportunityProfitability(opportunity: any): Promise<boolean> {
+  private async checkOpportunityProfitability(opportunity: any, context: ArbitrageContext): Promise<boolean> {
     try {
-      const analysis = await mlService.getArbitrageOpportunity({
-        token: (opportunity.tokenId as any)?.symbol || 'ETH',
-        chain_a: opportunity.chainFrom,
-        chain_b: opportunity.chainTo
-      });
-
-      return analysis.profitable;
+      return await isOpportunityProfitable(opportunity, context);
     } catch (error) {
       console.error('Error checking opportunity profitability:', error);
       return false;

@@ -7,7 +7,10 @@ export interface IOpportunity extends Document {
   tokenId: Types.ObjectId;
   chainFrom: string;
   chainTo: string;
+  priceFrom?: number;
+  priceTo?: number;
   priceDiff: number;
+  priceDiffPercent?: number;
   gasCost: number;
   estimatedProfit: number;
   score: number;
@@ -35,9 +38,20 @@ const opportunitySchema: Schema<IOpportunity> = new mongoose.Schema(
       required: true,
       lowercase: true
     },
+    priceFrom: {
+      type: Number,
+      min: 0
+    },
+    priceTo: {
+      type: Number,
+      min: 0
+    },
     priceDiff: { 
       type: Number, 
       required: true 
+    },
+    priceDiffPercent: {
+      type: Number
     },
     gasCost: { 
       type: Number, 
@@ -88,6 +102,15 @@ opportunitySchema.index({ estimatedProfit: -1 });
 
 // Pre-save middleware to calculate derived fields
 opportunitySchema.pre('save', function(next) {
+  if (this.isModified('priceFrom') || this.isModified('priceTo')) {
+    const from = this.priceFrom ?? null;
+    const to = this.priceTo ?? null;
+    if (from !== null && to !== null) {
+      this.priceDiff = to - from;
+      this.priceDiffPercent = from !== 0 ? ((to - from) / from) * 100 : undefined;
+    }
+  }
+
   if (this.isModified('estimatedProfit') || this.isModified('gasCost')) {
     this.netProfit = this.estimatedProfit - this.gasCost;
     if (this.gasCost > 0) {
