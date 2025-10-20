@@ -22,7 +22,7 @@ const ContactSupportSidebar = ({
     { name: "Profile", icon: <User className="w-5 h-5 text-white" />, path: "/profile" },
     { name: "Contact Support", icon: <Mail className="w-5 h-5 text-white" /> },
     { name: "FAQ", icon: <HelpCircle className="w-5 h-5 text-white" />, path: "/faq" },
-    { name: "About Us", icon: <Info className="w-5 h-5 text-white" />, path: "/about us" },
+  { name: "About Us", icon: <Info className="w-5 h-5 text-white" />, path: "/about-us" },
     { name: "Settings", icon: <Settings className="w-5 h-5 text-white" />, path: "/settings" }
   ];
 
