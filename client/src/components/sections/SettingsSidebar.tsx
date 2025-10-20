@@ -24,7 +24,7 @@ const SettingsSidebar: React.FC<SettingsSidebarProps> = ({
     { name: "Profile", icon: <User className="w-5 h-5" />, path: "/profile" },
     { name: "Contact Support", icon: <Phone className="w-5 h-5" />, path: "/contact-support" },
     { name: "FAQ", icon: <HelpCircle className="w-5 h-5" />, path: "/faq" },
-    { name: "About Us", icon: <Info className="w-5 h-5" />, path: "/about us" },
+  { name: "About Us", icon: <Info className="w-5 h-5" />, path: "/about-us" },
     { name: "Settings", icon: <Settings className="w-5 h-5" /> }
   ];
 

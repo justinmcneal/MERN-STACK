@@ -39,7 +39,16 @@ const Header = () => {
           <nav className="hidden lg:flex gap-14 text-slate-300">
             <a className="hover:text-cyan-400 transition-colors font-medium" href="#features">Features</a>
             <a className="hover:text-cyan-400 transition-colors font-medium" href="#dashboard">Dashboard</a>
-            <a className="hover:text-cyan-400 transition-colors font-medium" href="about-us">About</a>
+            <a
+              className="hover:text-cyan-400 transition-colors font-medium"
+              href="/about"
+              onClick={(event) => {
+                event.preventDefault();
+                navigate('/about');
+              }}
+            >
+              About
+            </a>
           </nav>
         </div>
 
@@ -131,7 +140,17 @@ const Header = () => {
         <div className="lg:hidden mt-4 px-4 py-3 bg-slate-900/95 backdrop-blur-xl rounded-xl shadow-xl flex flex-col gap-4 text-slate-200">
           <a href="#features" className="hover:text-cyan-400">Features</a>
           <a href="#dashboard" className="hover:text-cyan-400">Dashboard</a>
-          <a href="about-us" className="hover:text-cyan-400">About</a>
+          <a
+            href="/about"
+            className="hover:text-cyan-400"
+            onClick={(event) => {
+              event.preventDefault();
+              navigate('/about');
+              setMobileMenuOpen(false);
+            }}
+          >
+            About
+          </a>
           
           {isAuthenticated ? (
             <>
