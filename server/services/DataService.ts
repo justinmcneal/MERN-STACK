@@ -51,21 +51,6 @@ interface BlocknativeResponse {
   }>;
 }
 
-<<<<<<< Updated upstream
-interface DexScreenerLiquidity {
-  usd?: number;
-}
-
-interface DexScreenerPair {
-  chainId?: string;
-  priceUsd?: string | number;
-  liquidity?: number | DexScreenerLiquidity | null;
-}
-
-interface DexScreenerTokenResponse {
-  schemaVersion?: string;
-  pairs?: DexScreenerPair[];
-=======
 interface DexPrice {
   symbol: string;
   chain: string;
@@ -95,17 +80,15 @@ interface DexScreenerPair {
 interface DexScreenerResponse {
   schemaVersion: string;
   pairs: DexScreenerPair[] | null;
->>>>>>> Stashed changes
 }
 
 export class DataService {
   private static instance: DataService;
   private readonly coinGeckoBaseUrl = 'https://api.coingecko.com/api/v3';
-  private readonly dexScreenerBaseUrl = 'https://api.dexscreener.com/latest/dex/tokens';
+  private readonly dexScreenerBaseUrl = 'https://api.dexscreener.com/latest/dex';
   private readonly polygonGasUrl = 'https://gasstation.polygon.technology/v2';
   private readonly bscGasUrl = 'https://bscgas.info/gas';
   private readonly blocknativeUrl = 'https://api.blocknative.com/gasprices/blockprices';
-  private readonly dexScreenerBaseUrl = 'https://api.dexscreener.com/latest/dex';
 
   private readonly tokenIdMap = COINGECKO_TOKEN_IDS;
   // In-memory cooldown timestamp for CoinGecko rate limit (ms since epoch)
@@ -306,7 +289,7 @@ export class DataService {
         { timeout: 10000 }
       );
 
-      const pairs = (response?.data as DexScreenerTokenResponse | undefined)?.pairs;
+      const pairs = (response?.data as DexScreenerResponse | undefined)?.pairs;
       if (!Array.isArray(pairs) || pairs.length === 0) {
         return null;
       }
@@ -320,9 +303,7 @@ export class DataService {
         .map((pair) => {
           const price = typeof pair.priceUsd === 'string' ? Number(pair.priceUsd) : Number((pair as any)?.priceUsd ?? 0);
           const liquidityField = pair.liquidity;
-          const liquidityUsd = typeof liquidityField === 'number'
-            ? liquidityField
-            : Number((liquidityField as DexScreenerLiquidity | undefined)?.usd ?? 0);
+          const liquidityUsd = liquidityField?.usd ?? 0;
           return { price, liquidityUsd };
         })
         .filter((entry) => Number.isFinite(entry.price) && entry.price > 0)
@@ -403,7 +384,6 @@ export class DataService {
     }
   }
 
-<<<<<<< Updated upstream
   private async fetchCoinGeckoSimplePrices(symbols: SupportedToken[]): Promise<Record<string, number>> {
     if (symbols.length === 0) {
       return {};
@@ -507,7 +487,49 @@ export class DataService {
             priceMap.set(item.token, {});
           }
           priceMap.get(item.token)![chain] = price;
-=======
+        }
+      }
+    }
+
+    const tokensMissingGlobal: SupportedToken[] = [];
+    for (const token of SUPPORTED_TOKENS as readonly SupportedToken[]) {
+      const chainPrices = priceMap.get(token);
+      if (!chainPrices || Object.keys(chainPrices).length === 0) {
+        tokensMissingGlobal.push(token);
+      }
+    }
+
+    if (tokensMissingGlobal.length > 0 && canQueryCoinGecko) {
+      const fallbackPrices = await this.fetchCoinGeckoSimplePrices(tokensMissingGlobal);
+
+      for (const token of tokensMissingGlobal) {
+        const fallbackPrice = fallbackPrices[token];
+        if (fallbackPrice === undefined) continue;
+
+        const chainMap = TOKEN_CONTRACTS[token] || {};
+        if (!priceMap.has(token)) {
+          priceMap.set(token, {});
+        }
+        for (const chain of SUPPORTED_CHAINS as readonly SupportedChain[]) {
+          if (!chainMap[chain]) continue;
+          priceMap.get(token)![chain] = fallbackPrice;
+        }
+      }
+    }
+
+    return (SUPPORTED_TOKENS as readonly SupportedToken[]).map((token) => {
+      const chainPrices = priceMap.get(token) || {};
+      const primaryPrice = chainPrices['ethereum'] ?? Object.values(chainPrices)[0] ?? 0;
+
+      return {
+        symbol: token,
+        price: primaryPrice,
+        timestamp,
+        chainPrices
+      };
+    });
+  }
+
   /**
    * Fetch chain-specific DEX prices from DexScreener API
    * Maps chain names to DexScreener chain IDs and fetches prices for each token
@@ -563,50 +585,10 @@ export class DataService {
           await new Promise(resolve => setTimeout(resolve, 300));
         } catch (err) {
           console.error(`Error fetching DEX price for ${symbol} on ${chain}:`, err);
->>>>>>> Stashed changes
         }
       }
     }
 
-<<<<<<< Updated upstream
-    const tokensMissingGlobal: SupportedToken[] = [];
-    for (const token of SUPPORTED_TOKENS as readonly SupportedToken[]) {
-      const chainPrices = priceMap.get(token);
-      if (!chainPrices || Object.keys(chainPrices).length === 0) {
-        tokensMissingGlobal.push(token);
-      }
-    }
-
-    if (tokensMissingGlobal.length > 0 && canQueryCoinGecko) {
-      const fallbackPrices = await this.fetchCoinGeckoSimplePrices(tokensMissingGlobal);
-
-      for (const token of tokensMissingGlobal) {
-        const fallbackPrice = fallbackPrices[token];
-        if (fallbackPrice === undefined) continue;
-
-        const chainMap = TOKEN_CONTRACTS[token] || {};
-        if (!priceMap.has(token)) {
-          priceMap.set(token, {});
-        }
-        for (const chain of SUPPORTED_CHAINS as readonly SupportedChain[]) {
-          if (!chainMap[chain]) continue;
-          priceMap.get(token)![chain] = fallbackPrice;
-        }
-      }
-    }
-
-    return (SUPPORTED_TOKENS as readonly SupportedToken[]).map((token) => {
-      const chainPrices = priceMap.get(token) || {};
-      const primaryPrice = chainPrices['ethereum'] ?? Object.values(chainPrices)[0] ?? 0;
-
-      return {
-        symbol: token,
-        price: primaryPrice,
-        timestamp,
-        chainPrices
-      };
-    });
-=======
     console.info(`Fetched ${dexPrices.length} DEX prices from DexScreener`);
     return dexPrices;
   }
@@ -670,7 +652,6 @@ export class DataService {
       }
       return null;
     }
->>>>>>> Stashed changes
   }
 
   async fetchEthereumGasPrice(): Promise<GasPrice> {

@@ -114,22 +114,15 @@ export const scanOpportunities = asyncHandler(async (req: Request, res: Response
     const supportedTokens = dataService.getSupportedTokens() as SupportedToken[];
 
     if (forceRefresh) {
-<<<<<<< Updated upstream
-      const priceData = await dataService.fetchTokenPrices();
-
-      for (const priceInfo of priceData) {
-        const tokenContracts =
-          TOKEN_CONTRACTS[priceInfo.symbol as keyof typeof TOKEN_CONTRACTS] || {};
-
-=======
       console.log('🔄 Refreshing prices (CEX + DEX)...');
       
       // Fetch CEX prices
       const priceData = await dataService.fetchTokenPrices();
-      const supportedChains = dataService.getSupportedChains();
       
       for (const priceInfo of priceData) {
->>>>>>> Stashed changes
+        const tokenContracts =
+          TOKEN_CONTRACTS[priceInfo.symbol as keyof typeof TOKEN_CONTRACTS] || {};
+
         for (const chain of supportedChains) {
           if (!Object.prototype.hasOwnProperty.call(tokenContracts, chain)) {
             continue;
