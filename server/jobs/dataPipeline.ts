@@ -38,8 +38,8 @@ class DataPipeline {
       await this.updateTokenPrices();
     });
 
-    // Update gas prices every 120 seconds (2 minutes)
-    cron.schedule('*/600 * * * * *', async () => {
+    // Update gas prices every hour
+    cron.schedule('0 * * * *', async () => {
       await this.updateGasPrices();
     });
 
@@ -49,8 +49,8 @@ class DataPipeline {
     });
 
     console.log('🔄 Data pipeline started:');
-    console.log('   - Token prices: every 60 seconds');
-    console.log('   - Gas prices: every 120 seconds');
+    console.log('   - Token prices: every hour');
+    console.log('   - Gas prices: every hour');
     console.log('   - Data cleanup: every hour');
   }
 

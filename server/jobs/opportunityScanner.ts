@@ -21,7 +21,7 @@ interface ScanResult {
 class OpportunityScanner {
   private isRunning: boolean = false;
   private lastScanTime: Date | null = null;
-  private scanInterval: number = 30; // minutes
+  private scanInterval: number = 60; // minutes
 
   constructor() {
     this.startScheduledScans();
@@ -31,14 +31,14 @@ class OpportunityScanner {
    * Start the scheduled opportunity scanning
    */
   public startScheduledScans(): void {
-    // Run every 30 minutes
-    cron.schedule('*/30 * * * *', async () => {
+    // Run every hour
+    cron.schedule('0 * * * *', async () => {
       if (!this.isRunning) {
         await this.scanAllOpportunities();
       }
     });
 
-    console.log('🔄 Opportunity scanner started - running every 30 minutes');
+    console.log('🔄 Opportunity scanner started - running every hour');
   }
 
   /**
