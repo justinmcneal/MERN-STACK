@@ -91,20 +91,12 @@ const OpportunityService = {
         tokenName: tokenName ?? undefined,
         chainFrom: item.chainFrom,
         chainTo: item.chainTo,
-<<<<<<< Updated upstream
-  priceDiffUsd: item.priceDiff,
-=======
         priceDiffUsd: item.priceDiff,
->>>>>>> Stashed changes
         priceDiffPerTokenUsd: item.priceDiffPerToken,
         priceDiffPercent,
         gasCostUsd: item.gasCost,
         netProfitUsd,
-<<<<<<< Updated upstream
-  grossProfitUsd: item.priceDiff ?? item.estimatedProfit,
-=======
         grossProfitUsd: item.priceDiff ?? item.estimatedProfit,
->>>>>>> Stashed changes
         score: item.score,
         roi: item.roi ?? null,
         tradeVolumeUsd: item.volume ?? undefined,
@@ -118,13 +110,10 @@ const OpportunityService = {
         updatedAt: item.updatedAt
       } satisfies OpportunityDto;
     });
-<<<<<<< Updated upstream
-=======
   },
 
   async triggerScan(forceRefresh: boolean = true): Promise<void> {
     await apiClient.post('/opportunities/scan', { forceRefresh });
->>>>>>> Stashed changes
   }
 };
 

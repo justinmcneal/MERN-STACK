@@ -8,10 +8,7 @@ import StatCardsWrapper from "../components/dashboard/StatCards";
 import ChartComponent from "../components/dashboard/ChartComponent";
 import ArbitrageTable from "../components/dashboard/ArbitrageTable";
 import useOpportunities from "../hooks/useOpportunities";
-<<<<<<< Updated upstream
-=======
 import useAlerts from "../hooks/useAlerts";
->>>>>>> Stashed changes
 
 const Dashboard = () => {
   useAuth();
@@ -27,45 +24,6 @@ const Dashboard = () => {
   const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
   const [notificationOpen, setNotificationOpen] = useState(false);
 
-<<<<<<< Updated upstream
-  const notifications = [
-    {
-      type: "price",
-      title: "Price Target Hit",
-      pair: "ETH/USDT",
-      target: "$0.45",
-      current: "$0.4523",
-      time: "now",
-    },
-    {
-      type: "arbitrage",
-      title: "New Arbitrage Alert",
-      details: "BNB on Uniswap → BNB on Sushiswap = +2.8% spread",
-      profit: "$567",
-      gas: "$15",
-      score: 91,
-      time: "now",
-    },
-    {
-      type: "price",
-      title: "Price Target Hit",
-      pair: "ETH/USDT",
-      target: "$0.45",
-      current: "$0.4523",
-      time: "36m ago",
-    },
-    {
-      type: "arbitrage",
-      title: "New Arbitrage Alert",
-      details: "BNB on Uniswap → BNB on Sushiswap = +2.8% spread",
-      profit: "$567",
-      gas: "$15",
-      score: 91,
-      time: "1h ago",
-    },
-  ];
-
-=======
   // Memoize alert query to prevent infinite re-renders
   const alertQuery = useMemo(() => ({ limit: 10 }), []);
   
@@ -73,21 +31,10 @@ const Dashboard = () => {
   const { alerts } = useAlerts({ pollIntervalMs: 60000, query: alertQuery });
 
   // Fetch live opportunities
->>>>>>> Stashed changes
   const opportunityQuery = useMemo(
     () => ({ status: 'active', sortBy: 'score', sortOrder: 'desc' as const, limit: 25 }),
     []
   );
-<<<<<<< Updated upstream
-
-  const {
-    opportunities,
-    loading: opportunitiesLoading,
-    error: opportunitiesError,
-    refresh: refreshOpportunities
-  } = useOpportunities({ pollIntervalMs: 60000, query: opportunityQuery });
-=======
->>>>>>> Stashed changes
 
   const {
     opportunities,
@@ -162,13 +109,15 @@ const Dashboard = () => {
               onNotificationToggle={() => setNotificationOpen(!notificationOpen)}
               profileDropdownOpen={profileDropdownOpen}
               onProfileDropdownToggle={() => setProfileDropdownOpen(!profileDropdownOpen)}
-              notifications={notifications as import('../components/dashboard/DashboardHeader').NotificationItem[]}
+              notifications={alerts as import('../components/dashboard/DashboardHeader').NotificationItem[]}
             />
 
-<<<<<<< Updated upstream
             {/* Main Dashboard Content */}
             <main className="flex-1 overflow-y-auto p-4 lg:p-6">
-              <StatCardsWrapper />
+              <StatCardsWrapper 
+                bestOpportunity={stats.bestOpportunity}
+                topToken={stats.topToken}
+              />
 
               <div className="grid grid-cols-1 xl:grid-cols-2 gap-8 mb-8">
                 <div className="bg-slate-800/50 backdrop-blur border border-slate-700/50 rounded-2xl p-6">
@@ -206,39 +155,6 @@ const Dashboard = () => {
                         By Token
                       </button>
                     </div>
-=======
-        {/* Main Content */}
-        <div className={`flex-1 overflow-y-auto transition-all duration-300
-              ${sidebarOpen ? "fixed inset-0 backdrop-blur-5xl bg-black/60 z-40 lg:static lg:backdrop-blur-5xl lg:bg-black/60" : ""}`}
-        onClick={() => setSidebarOpen(false)} >
-          
-  <DashboardHeader
-    onSidebarToggle={() => setSidebarOpen(!sidebarOpen)}
-    notificationOpen={notificationOpen}
-    onNotificationToggle={() => setNotificationOpen(!notificationOpen)}
-    profileDropdownOpen={profileDropdownOpen}
-    onProfileDropdownToggle={() => setProfileDropdownOpen(!profileDropdownOpen)}
-    notifications={alerts as import('../components/dashboard/DashboardHeader').NotificationItem[]}
-  />
-
-          {/* Main Dashboard Content */}
-          <main className="flex-1 overflow-y-auto p-4 lg:p-6">
-            <StatCardsWrapper 
-              bestOpportunity={stats.bestOpportunity}
-              topToken={stats.topToken}
-            />
-
-            <div className="grid grid-cols-1 xl:grid-cols-2 gap-8 mb-8">
-              <div className="bg-slate-800/50 backdrop-blur border border-slate-700/50 rounded-2xl p-6">
-                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
-                  <h3 className="text-lg font-semibold text-slate-200 flex items-center gap-2">
-                    <svg className="w-5 h-5 text-cyan-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg> Price Table
-                  </h3>
-                  <div className="flex gap-2">
-                    <button onClick={() => { setPriceFilter('all'); setSelectedChain(null); setSelectedToken(''); }} className={`px-3 py-1 text-xs rounded-lg ${priceFilter === 'all' ? 'bg-cyan-600 text-white' : 'bg-slate-700/50 text-slate-400'} hover:text-slate-300 border border-slate-600/50 transition-all`}>All Chains</button>
-                    <button onClick={() => { setPriceFilter('byChain'); setSelectedToken(''); }} className={`px-3 py-1 text-xs rounded-lg ${priceFilter === 'byChain' ? 'bg-cyan-600 text-white' : 'bg-slate-700/50 text-slate-400'} hover:text-slate-300 border border-slate-600/50 transition-all`}>By Chain</button>
-                    <button onClick={() => { setPriceFilter('byToken'); setSelectedChain(null); }} className={`px-3 py-1 text-xs rounded-lg ${priceFilter === 'byToken' ? 'bg-cyan-600 text-white' : 'bg-slate-700/50 text-slate-400'} hover:text-slate-300 border border-slate-600/50 transition-all`}>By Token</button>
->>>>>>> Stashed changes
                   </div>
                   <PriceTable
                     filterMode={priceFilter}
@@ -257,25 +173,11 @@ const Dashboard = () => {
                 />
               </div>
 
-<<<<<<< Updated upstream
               <ChartComponent />
             </main>
+
             {notificationOpen && (
               <div
-=======
-              <ArbitrageTable
-                opportunities={opportunities}
-                loading={opportunitiesLoading}
-                error={opportunitiesError}
-                onRefresh={refreshOpportunities}
-              />
-            </div>
-
-            <ChartComponent />
-          </main>
-          {notificationOpen && (
-            <div
->>>>>>> Stashed changes
                 className="fixed inset-0 bg-black/40 lg:hidden z-40"
                 onClick={() => {}}
               />
