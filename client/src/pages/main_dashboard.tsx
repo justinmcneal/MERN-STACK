@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import { useAuth } from "../context/AuthContext";
+import { usePreferences } from "../hooks/usePreferences";
 import { TokenProvider } from "../context/TokenContext";
 import Sidebar from "../components/dashboard/Sidebar";
 import DashboardHeader from "../components/dashboard/DashboardHeader";
@@ -14,34 +15,53 @@ const Dashboard = () => {
   useAuth();
 
   const [activeTab] = useState("Dashboard");
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
+  const [notificationOpen, setNotificationOpen] = useState(false);
 
   // Price table filtering
   const [priceFilter, setPriceFilter] = useState<'all' | 'byChain' | 'byToken'>('all');
   const [selectedChain, setSelectedChain] = useState<string | null>(null);
   const [selectedToken, setSelectedToken] = useState<string>('');
 
-  const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
-  const [notificationOpen, setNotificationOpen] = useState(false);
+  // Get user preferences from settings
+  const { preferences } = usePreferences();
+
+  // Fixed polling interval - server updates data hourly, so no need for user customization
+  // Poll every 60 seconds to check for new data from scheduled server updates
+  const pollIntervalMs = 60000; // Fixed at 60 seconds
 
   // Memoize alert query to prevent infinite re-renders
   const alertQuery = useMemo(() => ({ limit: 10 }), []);
   
   // Fetch live alerts
-  const { alerts } = useAlerts({ pollIntervalMs: 60000, query: alertQuery });
+  const { alerts } = useAlerts({ pollIntervalMs, query: alertQuery });
 
-  // Fetch live opportunities
-  const opportunityQuery = useMemo(
-    () => ({ status: 'active', sortBy: 'score', sortOrder: 'desc' as const, limit: 25 }),
-    []
-  );
+  // Fetch live opportunities with user preferences
+  const opportunityQuery = useMemo(() => {
+    if (!preferences) {
+      return { status: 'active', sortBy: 'score', sortOrder: 'desc' as const, limit: 25 };
+    }
+
+    // Apply user's alert thresholds from settings
+    return {
+      status: 'active',
+      sortBy: 'score',
+      sortOrder: 'desc' as const,
+      limit: 25,
+      minProfit: preferences.alertThresholds.minProfit,
+      maxGasCost: preferences.alertThresholds.maxGasCost,
+      minROI: preferences.alertThresholds.minROI,
+      minScore: preferences.alertThresholds.minScore
+    };
+  }, [preferences]);
 
   const {
     opportunities,
     loading: opportunitiesLoading,
     error: opportunitiesError,
     refresh: refreshOpportunities
-  } = useOpportunities({ pollIntervalMs: 60000, query: opportunityQuery });
+  } = useOpportunities({ pollIntervalMs, query: opportunityQuery });
 
   // Calculate stats from opportunities
   const stats = useMemo(() => {
@@ -49,12 +69,25 @@ const Dashboard = () => {
       return { bestOpportunity: null, topToken: null };
     }
 
+    // Filter opportunities based on user's tracked tokens if set
+    let filteredOpportunities = opportunities;
+    if (preferences?.tokensTracked && preferences.tokensTracked.length > 0) {
+      filteredOpportunities = opportunities.filter(opp =>
+        preferences.tokensTracked.includes(opp.tokenSymbol.toUpperCase())
+      );
+    }
+
+    // If no opportunities after filtering, return empty stats
+    if (filteredOpportunities.length === 0) {
+      return { bestOpportunity: null, topToken: null };
+    }
+
     // Best opportunity (highest net profit)
-    const bestOpp = [...opportunities].sort((a, b) => b.netProfitUsd - a.netProfitUsd)[0];
+    const bestOpp = [...filteredOpportunities].sort((a, b) => b.netProfitUsd - a.netProfitUsd)[0];
 
     // Calculate average spread per token
     const tokenStats = new Map<string, { spreads: number[]; chains: Set<string> }>();
-    opportunities.forEach(opp => {
+    filteredOpportunities.forEach(opp => {
       const symbol = opp.tokenSymbol;
       if (!tokenStats.has(symbol)) {
         tokenStats.set(symbol, { spreads: [], chains: new Set() });
@@ -88,32 +121,59 @@ const Dashboard = () => {
       } : null,
       topToken
     };
-  }, [opportunities]);
+  }, [opportunities, preferences]);
 
   return (
-    <TokenProvider pollIntervalMs={60000}>
+    <TokenProvider pollIntervalMs={pollIntervalMs}>
       <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 text-white">
         {/* Background */}
         <div className="fixed inset-0 bg-[radial-gradient(ellipse_at_top_left,theme(colors.cyan.900)/10,theme(colors.slate.950),theme(colors.purple.900)/10)]"></div>
+        
         <div className="relative z-50 flex h-screen">
-          <Sidebar sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} activeTab={activeTab} />
+          {/* Sidebar */}
+          <Sidebar 
+            sidebarOpen={sidebarOpen} 
+            setSidebarOpen={setSidebarOpen} 
+            activeTab={activeTab} 
+          />
 
           {/* Main Content */}
           <div
             className={`flex-1 overflow-y-auto transition-all duration-300 ${sidebarOpen ? "fixed inset-0 backdrop-blur-5xl bg-black/60 z-40 lg:static lg:backdrop-blur-5xl lg:bg-black/60" : ""}`}
             onClick={() => setSidebarOpen(false)}
           >
+            {/* Header */}
             <DashboardHeader
               onSidebarToggle={() => setSidebarOpen(!sidebarOpen)}
               notificationOpen={notificationOpen}
               onNotificationToggle={() => setNotificationOpen(!notificationOpen)}
               profileDropdownOpen={profileDropdownOpen}
               onProfileDropdownToggle={() => setProfileDropdownOpen(!profileDropdownOpen)}
-              notifications={alerts as import('../components/dashboard/DashboardHeader').NotificationItem[]}
+              notifications={
+                preferences?.notificationSettings?.dashboard 
+                  ? (alerts as import('../components/dashboard/DashboardHeader').NotificationItem[])
+                  : []
+              }
             />
 
             {/* Main Dashboard Content */}
             <main className="flex-1 overflow-y-auto p-4 lg:p-6">
+              {/* User Preferences Info Banner */}
+              {preferences && preferences.tokensTracked.length > 0 && (
+                <div className="mb-6 bg-cyan-500/10 border border-cyan-500/30 rounded-xl p-4">
+                  <div className="flex items-center gap-3">
+                    <svg className="w-5 h-5 text-cyan-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <p className="text-cyan-300 text-sm">
+                      Tracking {preferences.tokensTracked.length} token(s): {preferences.tokensTracked.join(', ')} | 
+                      Min Profit: ${preferences.alertThresholds.minProfit} | 
+                      Max Gas: ${preferences.alertThresholds.maxGasCost}
+                    </p>
+                  </div>
+                </div>
+              )}
+
               <StatCardsWrapper 
                 bestOpportunity={stats.bestOpportunity}
                 topToken={stats.topToken}
@@ -123,7 +183,10 @@ const Dashboard = () => {
                 <div className="bg-slate-800/50 backdrop-blur border border-slate-700/50 rounded-2xl p-6">
                   <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
                     <h3 className="text-lg font-semibold text-slate-200 flex items-center gap-2">
-                      <svg className="w-5 h-5 text-cyan-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg> Price Table
+                      <svg className="w-5 h-5 text-cyan-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"/>
+                      </svg>
+                      Price Table
                     </h3>
                     <div className="flex gap-2">
                       <button
@@ -187,7 +250,10 @@ const Dashboard = () => {
 
         {/* Mobile overlay */}
         {sidebarOpen && (
-          <div className="fixed inset-0 bg-black/50 z-40 lg:hidden" onClick={() => setSidebarOpen(false)}></div>
+          <div 
+            className="fixed inset-0 bg-black/50 z-40 lg:hidden" 
+            onClick={() => setSidebarOpen(false)}
+          />
         )}
       </div>
     </TokenProvider>
