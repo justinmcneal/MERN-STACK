@@ -7,6 +7,9 @@ export interface IToken extends Document {
   symbol: string;
   chain: string;
   currentPrice: number;
+  dexPrice?: number; // Chain-specific DEX price
+  dexName?: string; // Name of the DEX (e.g., 'uniswap-v3', 'pancakeswap-v3')
+  liquidity?: number; // Liquidity in USD on the DEX
   lastUpdated: Date;
   name?: string;
   decimals?: number;
@@ -29,6 +32,17 @@ const tokenSchema: Schema<IToken> = new mongoose.Schema(
       type: Number, 
       required: true,
       min: 0 
+    },
+    dexPrice: {
+      type: Number,
+      min: 0
+    },
+    dexName: {
+      type: String
+    },
+    liquidity: {
+      type: Number,
+      min: 0
     },
     lastUpdated: { 
       type: Date, 

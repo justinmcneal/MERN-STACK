@@ -114,12 +114,22 @@ export const scanOpportunities = asyncHandler(async (req: Request, res: Response
     const supportedTokens = dataService.getSupportedTokens() as SupportedToken[];
 
     if (forceRefresh) {
+<<<<<<< Updated upstream
       const priceData = await dataService.fetchTokenPrices();
 
       for (const priceInfo of priceData) {
         const tokenContracts =
           TOKEN_CONTRACTS[priceInfo.symbol as keyof typeof TOKEN_CONTRACTS] || {};
 
+=======
+      console.log('🔄 Refreshing prices (CEX + DEX)...');
+      
+      // Fetch CEX prices
+      const priceData = await dataService.fetchTokenPrices();
+      const supportedChains = dataService.getSupportedChains();
+      
+      for (const priceInfo of priceData) {
+>>>>>>> Stashed changes
         for (const chain of supportedChains) {
           if (!Object.prototype.hasOwnProperty.call(tokenContracts, chain)) {
             continue;
@@ -140,6 +150,26 @@ export const scanOpportunities = asyncHandler(async (req: Request, res: Response
           );
         }
       }
+
+      // Fetch DEX prices for real arbitrage
+      console.log('💱 Fetching chain-specific DEX prices...');
+      const dexPrices = await dataService.fetchDexPrices();
+      
+      let dexUpdated = 0;
+      for (const dexPrice of dexPrices) {
+        await Token.findOneAndUpdate(
+          { symbol: dexPrice.symbol, chain: dexPrice.chain },
+          {
+            dexPrice: dexPrice.price,
+            dexName: dexPrice.dexName,
+            liquidity: dexPrice.liquidity,
+            lastUpdated: new Date()
+          },
+          { new: true }
+        );
+        dexUpdated++;
+      }
+      console.log(`✅ Updated ${dexPrices.length} CEX prices and ${dexUpdated} DEX prices`);
     }
 
     const tokensToAnalyze = (() => {

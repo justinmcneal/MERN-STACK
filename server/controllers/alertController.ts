@@ -35,7 +35,14 @@ export const getUserAlerts = asyncHandler(async (req: Request, res: Response) =>
   sort[sortBy as string] = sortOrder === 'asc' ? 1 : -1;
 
   const alerts = await Alert.find(query)
-    .populate('opportunityId', 'tokenId chainFrom chainTo estimatedProfit score status')
+    .populate({
+      path: 'opportunityId',
+      select: 'tokenId chainFrom chainTo estimatedProfit score status',
+      populate: {
+        path: 'tokenId',
+        select: 'symbol name'
+      }
+    })
     .sort(sort)
     .limit(Number(limit))
     .skip(Number(skip));
@@ -56,7 +63,14 @@ export const getAlertById = asyncHandler(async (req: Request, res: Response) => 
   const userId = req.user!._id;
 
   const alert = await Alert.findOne({ _id: id, userId })
-    .populate('opportunityId', 'tokenId chainFrom chainTo estimatedProfit score status');
+    .populate({
+      path: 'opportunityId',
+      select: 'tokenId chainFrom chainTo estimatedProfit score status',
+      populate: {
+        path: 'tokenId',
+        select: 'symbol name'
+      }
+    });
 
   if (!alert) {
     res.status(404);

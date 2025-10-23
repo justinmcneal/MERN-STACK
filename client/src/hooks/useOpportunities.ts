@@ -31,7 +31,36 @@ export function useOpportunities(options?: UseOpportunitiesOptions) {
     } finally {
       setLoading(false);
     }
+<<<<<<< Updated upstream
   }, [query]);
+=======
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [JSON.stringify(query)]);
+
+  const refresh = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+
+    try {
+      // Trigger a scan with price refresh
+      await OpportunityService.triggerScan(true);
+      // Then fetch updated opportunities
+      const list = await OpportunityService.listOpportunities(query);
+      setOpportunities(list);
+    } catch (err: unknown) {
+      let message = 'Failed to refresh opportunities';
+      if (err instanceof Error && err.message) {
+        message = err.message;
+      } else if (typeof err === 'string') {
+        message = err;
+      }
+      setError(message);
+    } finally {
+      setLoading(false);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [JSON.stringify(query)]);
+>>>>>>> Stashed changes
 
   useEffect(() => {
     fetch();
@@ -49,7 +78,11 @@ export function useOpportunities(options?: UseOpportunitiesOptions) {
     };
   }, [fetch, pollIntervalMs]);
 
+<<<<<<< Updated upstream
   return { opportunities, loading, error, refresh: fetch };
+=======
+  return { opportunities, loading, error, refresh };
+>>>>>>> Stashed changes
 }
 
 export default useOpportunities;

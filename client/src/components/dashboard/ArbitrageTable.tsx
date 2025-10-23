@@ -112,21 +112,33 @@ const ArbitrageTable: React.FC<ArbitrageTableProps> = ({ opportunities, loading,
               })}
               {!loading && !hasData && (
                 <tr>
+<<<<<<< Updated upstream
                   <td className="py-6 px-4 text-center text-slate-400" colSpan={6}>
+=======
+                  <td className="py-6 px-4 text-center text-slate-400" colSpan={7}>
+>>>>>>> Stashed changes
                     No opportunities available yet. Try refreshing shortly.
                   </td>
                 </tr>
               )}
               {loading && (
                 <tr>
+<<<<<<< Updated upstream
                   <td className="py-6 px-4 text-center text-slate-400" colSpan={6}>
+=======
+                  <td className="py-6 px-4 text-center text-slate-400" colSpan={7}>
+>>>>>>> Stashed changes
                     Loading opportunities…
                   </td>
                 </tr>
               )}
               {error && !loading && (
                 <tr>
+<<<<<<< Updated upstream
                   <td className="py-6 px-4 text-center text-rose-400" colSpan={6}>
+=======
+                  <td className="py-6 px-4 text-center text-rose-400" colSpan={7}>
+>>>>>>> Stashed changes
                     {error}
                   </td>
                 </tr>

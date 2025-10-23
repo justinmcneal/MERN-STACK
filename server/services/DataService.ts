@@ -51,6 +51,7 @@ interface BlocknativeResponse {
   }>;
 }
 
+<<<<<<< Updated upstream
 interface DexScreenerLiquidity {
   usd?: number;
 }
@@ -64,6 +65,37 @@ interface DexScreenerPair {
 interface DexScreenerTokenResponse {
   schemaVersion?: string;
   pairs?: DexScreenerPair[];
+=======
+interface DexPrice {
+  symbol: string;
+  chain: string;
+  price: number;
+  timestamp: Date;
+  dexName?: string;
+  liquidity?: number;
+}
+
+interface DexScreenerPair {
+  chainId: string;
+  dexId: string;
+  priceUsd: string;
+  liquidity?: {
+    usd: number;
+  };
+  baseToken: {
+    address: string;
+    symbol: string;
+  };
+  quoteToken: {
+    address: string;
+    symbol: string;
+  };
+}
+
+interface DexScreenerResponse {
+  schemaVersion: string;
+  pairs: DexScreenerPair[] | null;
+>>>>>>> Stashed changes
 }
 
 export class DataService {
@@ -73,6 +105,7 @@ export class DataService {
   private readonly polygonGasUrl = 'https://gasstation.polygon.technology/v2';
   private readonly bscGasUrl = 'https://bscgas.info/gas';
   private readonly blocknativeUrl = 'https://api.blocknative.com/gasprices/blockprices';
+  private readonly dexScreenerBaseUrl = 'https://api.dexscreener.com/latest/dex';
 
   private readonly tokenIdMap = COINGECKO_TOKEN_IDS;
   // In-memory cooldown timestamp for CoinGecko rate limit (ms since epoch)
@@ -158,7 +191,13 @@ export class DataService {
 
       return prices;
     } catch (err: any) {
-      console.error('Error fetching token history from CoinGecko:', err?.message || err);
+      // Don't log 401 errors (rate limit/auth) as errors, they're expected with free tier
+      if (err?.response?.status === 401) {
+        console.warn(`CoinGecko API requires authentication for ${symbol} history`);
+      } else {
+        console.warn(`CoinGecko history unavailable for ${symbol}:`, err?.message);
+      }
+      
       // As a fallback, if we have a cache file (stale allowed), return it
       try {
         if (fs.existsSync(cachePath)) {
@@ -169,7 +208,7 @@ export class DataService {
           }
         }
       } catch (cacheErr) {
-        console.warn('Failed to read fallback history cache:', cacheErr);
+        // Silent fallback
       }
 
       // No cache available — return empty array so callers can fallback gracefully
@@ -364,6 +403,7 @@ export class DataService {
     }
   }
 
+<<<<<<< Updated upstream
   private async fetchCoinGeckoSimplePrices(symbols: SupportedToken[]): Promise<Record<string, number>> {
     if (symbols.length === 0) {
       return {};
@@ -467,10 +507,68 @@ export class DataService {
             priceMap.set(item.token, {});
           }
           priceMap.get(item.token)![chain] = price;
+=======
+  /**
+   * Fetch chain-specific DEX prices from DexScreener API
+   * Maps chain names to DexScreener chain IDs and fetches prices for each token
+   */
+  async fetchDexPrices(): Promise<DexPrice[]> {
+    const chainIdMap: Record<string, string> = {
+      ethereum: 'ethereum',
+      polygon: 'polygon',
+      bsc: 'bsc'
+    };
+
+    const dexPrices: DexPrice[] = [];
+    const timestamp = new Date();
+
+    // Import TOKEN_CONTRACTS to get contract addresses
+    const { TOKEN_CONTRACTS } = await import('../config/tokens');
+
+    for (const chain of SUPPORTED_CHAINS) {
+      const chainId = chainIdMap[chain];
+      if (!chainId) {
+        console.warn(`No DexScreener chainId mapping for ${chain}`);
+        continue;
+      }
+
+      for (const symbol of SUPPORTED_TOKENS) {
+        try {
+          const tokenContracts = TOKEN_CONTRACTS[symbol];
+          const contractAddr = tokenContracts?.[chain];
+
+          if (!contractAddr || contractAddr === 'NATIVE') {
+            // For native tokens, use wrapped token pairs (WETH, WBNB, WMATIC)
+            const wrappedAddresses: Record<string, string> = {
+              'ethereum-ETH': '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2', // WETH
+              'bsc-BNB': '0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c', // WBNB
+              'polygon-MATIC': '0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270' // WMATIC
+            };
+            const wrappedKey = `${chain}-${symbol}`;
+            const wrappedAddr = wrappedAddresses[wrappedKey];
+            
+            if (wrappedAddr) {
+              const price = await this.fetchDexPriceForToken(chainId, wrappedAddr, symbol, chain);
+              if (price) dexPrices.push({ ...price, timestamp });
+            } else {
+              console.warn(`No wrapped address for native token ${symbol} on ${chain}`);
+            }
+          } else {
+            // Regular ERC20 tokens
+            const price = await this.fetchDexPriceForToken(chainId, contractAddr, symbol, chain);
+            if (price) dexPrices.push({ ...price, timestamp });
+          }
+
+          // Rate limit: 300ms delay between requests to avoid hitting DexScreener limits
+          await new Promise(resolve => setTimeout(resolve, 300));
+        } catch (err) {
+          console.error(`Error fetching DEX price for ${symbol} on ${chain}:`, err);
+>>>>>>> Stashed changes
         }
       }
     }
 
+<<<<<<< Updated upstream
     const tokensMissingGlobal: SupportedToken[] = [];
     for (const token of SUPPORTED_TOKENS as readonly SupportedToken[]) {
       const chainPrices = priceMap.get(token);
@@ -508,6 +606,71 @@ export class DataService {
         chainPrices
       };
     });
+=======
+    console.info(`Fetched ${dexPrices.length} DEX prices from DexScreener`);
+    return dexPrices;
+  }
+
+  /**
+   * Helper method to fetch price for a specific token from DexScreener
+   */
+  private async fetchDexPriceForToken(
+    chainId: string,
+    tokenAddress: string,
+    symbol: string,
+    chain: string
+  ): Promise<DexPrice | null> {
+    try {
+      const url = `${this.dexScreenerBaseUrl}/tokens/${tokenAddress}`;
+      const response = await axios.get<DexScreenerResponse>(url, { timeout: 10000 });
+
+      if (!response.data?.pairs || response.data.pairs.length === 0) {
+        console.warn(`No DEX pairs found for ${symbol} (${tokenAddress}) on ${chain}`);
+        return null;
+      }
+
+      // Filter pairs for the specific chain and sort by liquidity
+      const chainPairs = response.data.pairs.filter((pair: DexScreenerPair) => 
+        pair.chainId === chainId
+      );
+
+      if (chainPairs.length === 0) {
+        console.warn(`No pairs on ${chainId} for ${symbol}`);
+        return null;
+      }
+
+      // Sort by liquidity and take the most liquid pair
+      const sortedPairs = chainPairs.sort((a: DexScreenerPair, b: DexScreenerPair) => {
+        const liqA = a.liquidity?.usd || 0;
+        const liqB = b.liquidity?.usd || 0;
+        return liqB - liqA;
+      });
+
+      const bestPair = sortedPairs[0];
+      const priceUsd = parseFloat(bestPair.priceUsd);
+
+      if (isNaN(priceUsd) || priceUsd <= 0) {
+        console.warn(`Invalid price for ${symbol} on ${chain}: ${bestPair.priceUsd}`);
+        return null;
+      }
+
+      return {
+        symbol,
+        chain,
+        price: priceUsd,
+        timestamp: new Date(),
+        dexName: bestPair.dexId,
+        liquidity: bestPair.liquidity?.usd
+      };
+    } catch (err: any) {
+      if (err.response?.status === 404) {
+        console.warn(`Token ${symbol} (${tokenAddress}) not found on DexScreener for ${chain}`);
+      } else {
+        console.error(`DexScreener API error for ${symbol} on ${chain}:`, err?.message || err);
+      }
+      return null;
+    }
+>>>>>>> Stashed changes
   }
 
   async fetchEthereumGasPrice(): Promise<GasPrice> {
@@ -586,7 +749,7 @@ export class DataService {
     try {
       const response = await axios.get<BSCGasResponse>(
         this.bscGasUrl,
-        { timeout: 10000 }
+        { timeout: 5000 } // Reduced timeout
       );
 
       return {
@@ -595,8 +758,13 @@ export class DataService {
         timestamp: new Date()
       };
     } catch (error) {
-      console.error('Error fetching BSC gas price:', error);
-      throw new Error('Failed to fetch BSC gas price');
+      console.warn('BSC gas API failed, using fallback value (5 gwei)');
+      // Fallback to reasonable default for BSC (typically 3-5 gwei)
+      return {
+        chain: 'bsc',
+        gasPrice: 5,
+        timestamp: new Date()
+      };
     }
   }
 

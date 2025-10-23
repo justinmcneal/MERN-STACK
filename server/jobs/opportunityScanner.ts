@@ -142,6 +142,7 @@ class OpportunityScanner {
    */
   private async refreshTokenPrices(): Promise<void> {
     try {
+      // Fetch CEX prices
       const prices = await dataService.fetchTokenPrices();
       const supportedChains = dataService.getSupportedChains();
 
@@ -169,6 +170,25 @@ class OpportunityScanner {
           );
         }
       }
+
+      // Fetch chain-specific DEX prices for real arbitrage detection
+      console.log('🔄 Fetching DEX prices for arbitrage detection...');
+      const dexPrices = await dataService.fetchDexPrices();
+      
+      for (const dexPrice of dexPrices) {
+        await Token.findOneAndUpdate(
+          { symbol: dexPrice.symbol, chain: dexPrice.chain },
+          {
+            dexPrice: dexPrice.price,
+            dexName: dexPrice.dexName,
+            liquidity: dexPrice.liquidity,
+            lastUpdated: new Date()
+          },
+          { new: true }
+        );
+      }
+
+      console.log(`✅ Refreshed ${prices.length} CEX prices and ${dexPrices.length} DEX prices`);
     } catch (error) {
       console.error('Error refreshing token prices:', error);
       throw error;

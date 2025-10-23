@@ -113,7 +113,10 @@ class DataPipeline {
       this.status.errors = []; // Clear previous errors on success
 
       const duration = Date.now() - startTime;
-      console.log(`✅ Updated ${tokensUpdated} token prices in ${duration}ms`);
+      console.log(`✅ Updated ${tokensUpdated} CEX token prices in ${duration}ms`);
+
+      // Now fetch DEX prices for chain-specific arbitrage
+      await this.updateDexPrices();
 
     } catch (error) {
       const errorMsg = `Error updating token prices: ${error}`;
@@ -121,6 +124,61 @@ class DataPipeline {
       this.status.errors.push(errorMsg);
     } finally {
       this.isRunning = false;
+    }
+  }
+
+  /**
+   * Update DEX prices for chain-specific arbitrage detection
+   */
+  public async updateDexPrices(): Promise<void> {
+    const startTime = Date.now();
+
+    try {
+      console.log('💱 Updating DEX prices from DexScreener...');
+
+      const dexPrices = await dataService.fetchDexPrices();
+      let tokensUpdated = 0;
+
+      if (!dexPrices || dexPrices.length === 0) {
+        console.log('No DEX price data returned. Skipping DEX price updates.');
+        return;
+      }
+
+      // Update each token with its chain-specific DEX price
+      for (const dexPrice of dexPrices) {
+        try {
+          const update = {
+            dexPrice: dexPrice.price,
+            dexName: dexPrice.dexName,
+            liquidity: dexPrice.liquidity,
+            lastUpdated: new Date()
+          };
+
+          const result = await Token.findOneAndUpdate(
+            { symbol: dexPrice.symbol, chain: dexPrice.chain },
+            update,
+            { new: true }
+          );
+
+          if (result) {
+            tokensUpdated++;
+            // Only log if there's a significant price
+            if (tokensUpdated <= 3 || dexPrice.price > 100) {
+              console.log(`  ✓ ${dexPrice.symbol}/${dexPrice.chain}: $${dexPrice.price.toFixed(2)}`);
+            }
+          }
+        } catch (err) {
+          console.error(`Error updating DEX price for ${dexPrice.symbol}/${dexPrice.chain}:`, err);
+        }
+      }
+
+      const duration = Date.now() - startTime;
+      console.log(`✅ Updated ${tokensUpdated} DEX token prices in ${duration}ms`);
+
+    } catch (error) {
+      const errorMsg = `Error updating DEX prices: ${error}`;
+      console.error(errorMsg);
+      this.status.errors.push(errorMsg);
     }
   }
 
