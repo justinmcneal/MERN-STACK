@@ -106,10 +106,14 @@ export const refreshTokenPrices = asyncHandler(async (req: Request, res: Respons
           continue;
         }
         // Use atomic upsert to avoid race conditions and reduce DB calls
+        const chainPrice = priceInfo.chainPrices?.[chain] ?? priceInfo.price;
+        if (chainPrice === undefined || chainPrice === null) {
+          continue;
+        }
         const update = {
           symbol: priceInfo.symbol,
           chain: chain,
-          currentPrice: priceInfo.price,
+          currentPrice: chainPrice,
           lastUpdated: priceInfo.timestamp,
           name: getTokenName(priceInfo.symbol)
         } as any;

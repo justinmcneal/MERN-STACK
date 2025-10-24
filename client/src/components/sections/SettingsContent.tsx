@@ -60,14 +60,11 @@ const SettingsContent: React.FC = () => {
         {/* General Settings */}
         <GeneralSettings
           themeMode={settings.themeMode}
-          dataRefreshInterval={settings.dataRefreshInterval}
           defaultCurrency={settings.defaultCurrency}
           onThemeModeChange={() => updateSetting('themeMode', !settings.themeMode)}
-          onDataRefreshIntervalChange={(value) => updateSetting('dataRefreshInterval', value)}
           onDefaultCurrencyChange={(value) => updateSetting('defaultCurrency', value)}
           errors={{
             themeMode: errors.themeMode,
-            dataRefreshInterval: errors.dataRefreshInterval,
             defaultCurrency: errors.defaultCurrency
           }}
         />

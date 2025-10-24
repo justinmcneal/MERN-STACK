@@ -8,6 +8,7 @@ import ProfilePreferences from "../components/sections/ProfilePreferences";
 import ProfileSecurity from "../components/sections/ProfileSecurity";
 import { useProfile } from "../hooks/useProfile";
 import { usePreferences } from "../hooks/usePreferences";
+import { useAlerts } from "../hooks/useAlerts";
 import type { UpdatePreferencesData } from "../services/profileService";
 
 const ProfilePage = () => {
@@ -32,6 +33,10 @@ const ProfilePage = () => {
     errors: preferencesErrors,
     updatePreferences
   } = usePreferences();
+
+  // Fetch live alerts for notifications
+  const alertQuery = useMemo(() => ({ limit: 10 }), []);
+  const { alerts } = useAlerts({ pollIntervalMs: 60000, query: alertQuery });
 
   // Original state for comparison
   const [originalState, setOriginalState] = useState({
@@ -284,44 +289,6 @@ const ProfilePage = () => {
       console.error('Failed to save changes:', error);
     }
   };
-  
-  // Static notification data (can be moved to API later)
-  const notifications = [
-    {
-        type: "price",
-        title: "Price Target Hit",
-        pair: "ETH/USDT",
-        target: "$0.45",
-        current: "$0.4523",
-        time: "now",
-    },
-    {
-        type: "arbitrage",
-        title: "New Arbitrage Alert",
-        details: "BNB on Uniswap → BNB on Sushiswap = +2.8% spread",
-        profit: "$567",
-        gas: "$15",
-        score: 91,
-        time: "now",
-    },
-    {
-        type: "price",
-        title: "Price Target Hit",
-        pair: "ETH/USDT",
-        target: "$0.45",
-        current: "$0.4523",
-        time: "36m ago",
-    },
-    {
-        type: "arbitrage",
-        title: "New Arbitrage Alert",
-        details: "BNB on Uniswap → BNB on Sushiswap = +2.8% spread",
-        profit: "$567",
-        gas: "$15",
-        score: 91,
-        time: "1h ago",
-    },
-];
 
   const avatars = [
     { id: 0, initials: "JW", gradient: "from-cyan-400 to-purple-500" },
@@ -394,7 +361,7 @@ const ProfilePage = () => {
             notificationOpen={notificationOpen}
             profileDropdownOpen={profileDropdownOpen}
             setProfileDropdownOpen={setProfileDropdownOpen}
-            notifications={notifications}
+            notifications={alerts}
           />
 
           {/* Profile Content */}

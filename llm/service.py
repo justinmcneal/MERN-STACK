@@ -6,10 +6,21 @@ from predict import predict_opportunity
 import requests
 import os
 from dotenv import load_dotenv
+from pymongo import MongoClient
 
 load_dotenv()
 
 app = FastAPI()
+
+# MongoDB connection for fetching chain-specific DEX prices
+MONGODB_URI = os.getenv("MONGODB_URI", "mongodb://localhost:27017/arbitrader")
+mongo_client = None
+
+def get_mongo_client():
+    global mongo_client
+    if mongo_client is None:
+        mongo_client = MongoClient(MONGODB_URI)
+    return mongo_client
 
 class OppInput(BaseModel):
     token: str
@@ -37,44 +48,48 @@ class ArbitrageInput(BaseModel):
 def arbitrage_opportunity(data: ArbitrageInput):
     """
     Returns arbitrage opportunity details for a token between two chains.
+    Fetches chain-specific DEX prices from MongoDB database.
     """
     try:
-        token = data.token.lower()
+        token = data.token.upper()  # Keep uppercase for MongoDB query
         chain_a = data.chain_a.lower()
         chain_b = data.chain_b.lower()
 
-        # Map for CoinGecko token ids
-        TOKEN_ID_MAP = {
-            "eth": "ethereum",
-            "usdt": "tether",
-            "usdc": "usd-coin",
-            "bnb": "binancecoin",
-            "matic": "matic-network"
-        }
-        token_id = TOKEN_ID_MAP.get(token)
-        if not token_id:
-            raise HTTPException(status_code=400, detail=f"Token {token} not supported.")
-
-        # Fetch price from CoinGecko (only once, since per-chain price is not available)
-        def fetch_token_price(token_id):
-            url = "https://api.coingecko.com/api/v3/simple/price"
-            params = {"ids": token_id, "vs_currencies": "usd"}
-            print(f"Fetching CoinGecko price for {token_id}...")
-            resp = requests.get(url, params=params, timeout=5)
+        # Fetch chain-specific DEX prices from MongoDB
+        def fetch_dex_price(token_symbol, chain):
             try:
-                resp.raise_for_status()
-                data = resp.json()
-                print(f"CoinGecko response: {data}")
-                if not isinstance(data, dict) or token_id not in data or not isinstance(data[token_id], dict) or "usd" not in data[token_id]:
-                    raise HTTPException(status_code=502, detail=f"Unexpected CoinGecko response: {data}")
-                return data[token_id]["usd"]
+                client = get_mongo_client()
+                db = client.get_database()
+                tokens_collection = db['tokens']
+                
+                token_doc = tokens_collection.find_one({
+                    'symbol': token_symbol,
+                    'chain': chain
+                })
+                
+                if token_doc:
+                    # Prefer dexPrice over currentPrice for arbitrage
+                    dex_price = token_doc.get('dexPrice')
+                    if dex_price and dex_price > 0:
+                        print(f"Found DEX price for {token_symbol} on {chain}: ${dex_price}")
+                        return dex_price
+                    
+                    # Fallback to currentPrice if dexPrice not available
+                    current_price = token_doc.get('currentPrice')
+                    if current_price and current_price > 0:
+                        print(f"Using CEX price for {token_symbol} on {chain}: ${current_price} (DEX price not available)")
+                        return current_price
+                
+                raise HTTPException(
+                    status_code=404, 
+                    detail=f"No price found for {token_symbol} on {chain}. Price may not have been fetched yet."
+                )
             except Exception as e:
-                raise HTTPException(status_code=502, detail=f"CoinGecko error: {str(e)}; response: {getattr(resp, 'text', '')}")
+                print(f"Error fetching price from MongoDB: {e}")
+                raise HTTPException(status_code=502, detail=f"Database error: {str(e)}")
 
-        price = fetch_token_price(token_id)
-        price_a = price
-        price_b = price
-        # Note: CoinGecko does not provide per-chain prices for stablecoins, so this is a simplification.
+        price_a = fetch_dex_price(token, chain_a)
+        price_b = fetch_dex_price(token, chain_b)
 
         # Fetch gas price (gwei) for each chain
         def fetch_gas_price(chain):
@@ -122,14 +137,21 @@ def arbitrage_opportunity(data: ArbitrageInput):
         gas_a = fetch_gas_price(chain_a)
         gas_b = fetch_gas_price(chain_b)
 
-        # Estimate gas cost in USD (simple transfer, 21000 gas units)
-        def estimate_gas_cost(chain, gas_price_gwei):
-            # All use the same price for demo
-            token_price = price
-            return gas_price_gwei * 21000 * 1e-9 * token_price
+        # Estimate gas cost in USD using native token prices
+        def estimate_gas_cost(chain, gas_price_gwei, token_price):
+            # For accurate gas costs, we need the native token price (ETH, BNB, MATIC)
+            # Using the traded token price is incorrect - we should fetch native token prices
+            # For now, use average native token prices as fallback
+            native_prices = {
+                'ethereum': 3900.0,  # ETH price
+                'polygon': 0.80,     # MATIC price
+                'bsc': 600.0         # BNB price
+            }
+            native_price = native_prices.get(chain, token_price)
+            return gas_price_gwei * 21000 * 1e-9 * native_price
 
-        cost_a = estimate_gas_cost(chain_a, gas_a)
-        cost_b = estimate_gas_cost(chain_b, gas_b)
+        cost_a = estimate_gas_cost(chain_a, gas_a, price_a)
+        cost_b = estimate_gas_cost(chain_b, gas_b, price_b)
         total_gas_cost = cost_a + cost_b
 
         # Calculate spread and net profit

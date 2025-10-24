@@ -5,7 +5,6 @@ import { useTheme } from '../context/ThemeContext';
 export interface SettingsData {
   // General Settings
   themeMode: boolean; // true = dark, false = light (mapped from theme)
-  dataRefreshInterval: string; // Display string (mapped from refreshInterval)
   defaultCurrency: string; // Client-side only for now
   
   // Monitoring Settings
@@ -15,7 +14,6 @@ export interface SettingsData {
 
 export interface SettingsErrors {
   themeMode?: string;
-  dataRefreshInterval?: string;
   defaultCurrency?: string;
   minProfitThreshold?: string;
   maxGasFee?: string;
@@ -36,7 +34,6 @@ export const useSettings = () => {
 
   const [settings, setSettings] = useState<SettingsData>({
     themeMode: true, // Default to dark mode
-    dataRefreshInterval: "Every 30 seconds",
     defaultCurrency: "USD ($)",
     minProfitThreshold: 1.5,
     maxGasFee: 75
@@ -51,9 +48,6 @@ export const useSettings = () => {
       const newSettings: SettingsData = {
         // Theme mapping: 'dark' -> true, 'light' -> false, 'auto' -> true (default to dark)
         themeMode: preferences.theme === 'dark' || preferences.theme === 'auto',
-        
-        // Refresh interval mapping: number -> display string
-        dataRefreshInterval: getRefreshIntervalString(preferences.refreshInterval),
         
         // Default currency (client-side only for now)
         defaultCurrency: "USD ($)",
@@ -74,28 +68,6 @@ export const useSettings = () => {
       setTheme(preferences.theme);
     }
   }, [preferences?.theme, theme, setTheme]);
-
-  // Convert refresh interval string to number
-  const getRefreshIntervalNumber = (intervalString: string): number => {
-    switch (intervalString) {
-      case "Every 10 seconds": return 10;
-      case "Every 30 seconds": return 30;
-      case "Every 1 minute": return 60;
-      case "Every 5 minutes": return 300;
-      default: return 30;
-    }
-  };
-
-  // Convert refresh interval number to string
-  const getRefreshIntervalString = (intervalNumber: number): string => {
-    switch (intervalNumber) {
-      case 10: return "Every 10 seconds";
-      case 30: return "Every 30 seconds";
-      case 60: return "Every 1 minute";
-      case 300: return "Every 5 minutes";
-      default: return "Every 30 seconds";
-    }
-  };
 
   // Convert theme boolean to API format
   const getThemeValue = (themeMode: boolean): 'light' | 'dark' | 'auto' => {
@@ -130,10 +102,9 @@ export const useSettings = () => {
     try {
       setErrors({});
       
-      // Prepare appearance settings update
+      // Prepare appearance settings update (no refresh interval - server-controlled)
       const appearanceUpdate = {
-        theme: getThemeValue(settings.themeMode),
-        refreshInterval: getRefreshIntervalNumber(settings.dataRefreshInterval)
+        theme: getThemeValue(settings.themeMode)
       };
 
       // Prepare alert thresholds update
@@ -148,7 +119,7 @@ export const useSettings = () => {
       // Update appearance settings
       const appearanceResult = await updateAppearanceSettings(
         appearanceUpdate.theme,
-        appearanceUpdate.refreshInterval
+        undefined // No refresh interval - server-controlled
       );
 
       if (!appearanceResult.success) {
@@ -194,7 +165,6 @@ export const useSettings = () => {
     if (preferences) {
       const originalSettings: SettingsData = {
         themeMode: preferences.theme === 'dark' || preferences.theme === 'auto',
-        dataRefreshInterval: getRefreshIntervalString(preferences.refreshInterval),
         defaultCurrency: "USD ($)",
         minProfitThreshold: preferences.alertThresholds.minProfit,
         maxGasFee: preferences.alertThresholds.maxGasCost
