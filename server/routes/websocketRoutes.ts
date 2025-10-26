@@ -1,4 +1,3 @@
-// routes/websocketRoutes.ts
 import { Router } from 'express';
 import {
   getWebSocketStatus,

@@ -1,12 +1,12 @@
-import os
-from dotenv import load_dotenv
-import requests
 import csv
+import os
 import time
 from datetime import datetime
+from typing import Dict, List, Optional
 
-# --- CONFIG ---
-# --- CONFIG ---
+import requests
+from dotenv import load_dotenv
+
 COINGECKO_URL = "https://api.coingecko.com/api/v3/simple/price"
 CRYPTOCOMPARE_URL = "https://min-api.cryptocompare.com/data/v2/histohour"
 TOKENS = {
@@ -14,143 +14,155 @@ TOKENS = {
     "ripple": "XRP",
     "solana": "SOL",
     "binancecoin": "BNB",
-    "matic-network": "MATIC"
+    "matic-network": "MATIC",
 }
 VS_CURRENCY = "usd"
 
-# Load environment variables from .env file
 load_dotenv()
 
 ETHERSCAN_API_KEY = os.getenv("ETHERSCAN_API_KEY")
 
 GAS_APIS = {
-    "ethereum": f"https://api.etherscan.io/api?module=gastracker&action=gasoracle&apikey={ETHERSCAN_API_KEY}",
-    "polygon": f"https://api.polygonscan.com/api?module=gastracker&action=gasoracle&apikey={ETHERSCAN_API_KEY}",
-    "bsc": f"https://api.bscscan.com/api?module=gastracker&action=gasoracle&apikey={ETHERSCAN_API_KEY}"
+    "ethereum": (
+        f"https://api.etherscan.io/api?module=gastracker&action=gasoracle&apikey={ETHERSCAN_API_KEY}"
+        if ETHERSCAN_API_KEY
+        else None
+    ),
+    "polygon": (
+        f"https://api.polygonscan.com/api?module=gastracker&action=gasoracle&apikey={ETHERSCAN_API_KEY}"
+        if ETHERSCAN_API_KEY
+        else None
+    ),
+    "bsc": (
+        f"https://api.bscscan.com/api?module=gastracker&action=gasoracle&apikey={ETHERSCAN_API_KEY}"
+        if ETHERSCAN_API_KEY
+        else None
+    ),
 }
 
-def get_prices():
-    ids = ",".join(TOKENS.keys())
-    params = {
-        "ids": ids,
-        "vs_currencies": VS_CURRENCY
-    }
-    print(f"[INFO] Fetching prices from CoinGecko for: {ids}")
-    r = requests.get(COINGECKO_URL, params=params)
-    r.raise_for_status()
-    data = r.json()
-    prices = {TOKENS[k]: data.get(k, {}).get(VS_CURRENCY, None) for k in TOKENS}
-    print(f"[INFO] Prices fetched: {prices}")
-    return prices
 
-# --- CryptoCompare Historical Data ---
-def get_historical_prices():
-    # Map token symbol to CryptoCompare symbol
-    symbol_map = {
-        "ETH": "ETH",
-        "XRP": "XRP",
-        "SOL": "SOL",
-        "BNB": "BNB",
-        "MATIC": "MATIC"
-    }
-    historical = {}
-    for symbol in symbol_map.values():
-        params = {
-            "fsym": symbol,
-            "tsym": "USD",
-            "limit": 24  # last 24 hours
-        }
+def _open_csv_with_headers(path: str, headers: List[str]):
+    should_write_header = not os.path.exists(path) or os.path.getsize(path) == 0
+    handle = open(path, "a", newline="")
+    writer = csv.writer(handle)
+    if should_write_header:
+        writer.writerow(headers)
+        handle.flush()
+    return writer, handle
+
+
+def get_prices() -> Dict[str, Optional[float]]:
+    response = requests.get(
+        COINGECKO_URL,
+        params={"ids": ",".join(TOKENS.keys()), "vs_currencies": VS_CURRENCY},
+        timeout=10,
+    )
+    response.raise_for_status()
+    payload = response.json()
+    return {symbol: payload.get(token, {}).get(VS_CURRENCY) for token, symbol in TOKENS.items()}
+
+
+def get_historical_prices() -> Dict[str, List[dict]]:
+    historical: Dict[str, List[dict]] = {}
+    for symbol in ("ETH", "XRP", "SOL", "BNB", "MATIC"):
+        params = {"fsym": symbol, "tsym": "USD", "limit": 24}
         try:
-            print(f"[INFO] Fetching historical prices for {symbol} from CryptoCompare")
-            r = requests.get(CRYPTOCOMPARE_URL, params=params)
-            r.raise_for_status()
-            data = r.json()
-            historical[symbol] = data["Data"]["Data"]  # List of dicts with 'time', 'close', etc.
-            print(f"[INFO] {symbol} historical data points: {len(historical[symbol])}")
-        except Exception as e:
-            print(f"[ERROR] Failed to fetch historical for {symbol}: {e}")
+            response = requests.get(CRYPTOCOMPARE_URL, params=params, timeout=10)
+            response.raise_for_status()
+            payload = response.json()
+            data_points = payload.get("Data", {}).get("Data", [])
+            historical[symbol] = data_points if isinstance(data_points, list) else []
+        except (requests.RequestException, ValueError, TypeError):
             historical[symbol] = []
     return historical
 
-def get_gas_fees():
-    gas = {}
+
+def get_gas_fees() -> Dict[str, Optional[str]]:
+    gas: Dict[str, Optional[str]] = {}
     for chain, url in GAS_APIS.items():
+        if not url:
+            gas[chain] = None
+            continue
         try:
-            print(f"[INFO] Fetching gas fee for {chain} from {url}")
-            r = requests.get(url)
-            r.raise_for_status()
-            result = r.json().get("result", {})
+            response = requests.get(url, timeout=10)
+            response.raise_for_status()
+            result = response.json().get("result", {})
             gas[chain] = result.get("ProposeGasPrice") or result.get("proposeGasPrice")
-            print(f"[INFO] {chain} gas: {gas[chain]}")
-        except Exception as e:
-            print(f"[ERROR] Failed to fetch gas for {chain}: {e}")
+        except (requests.RequestException, ValueError, TypeError):
             gas[chain] = None
     return gas
 
 
-def main():
-    # --- Real-time data ---
-    with open("data/raw/market_data.csv", "a", newline="") as f:
-        writer = csv.writer(f)
-        # Write header if file is empty
-        f.seek(0, 2)
-        if f.tell() == 0:
-            writer.writerow([
-                "timestamp",
-                "ETH_price",
-                "XRP_price",
-                "SOL_price",
-                "BNB_price",
-                "MATIC_price",
-                "eth_gas_gwei",
-                "polygon_gas_gwei",
-                "bsc_gas_gwei"
-            ])
-        # --- Historical data ---
-        with open("data/raw/historical_data.csv", "a", newline="") as hist_f:
-            hist_writer = csv.writer(hist_f)
-            # Write header if file is empty
-            hist_f.seek(0, 2)
-            if hist_f.tell() == 0:
-                hist_writer.writerow([
-                    "token", "timestamp", "close", "high", "low", "open", "volumefrom", "volumeto"
-                ])
-            while True:
-                now = datetime.utcnow().isoformat()
-                prices = get_prices()
-                gas = get_gas_fees()
-                row = [
-                    now,
-                    prices["ETH"],
-                    prices["XRP"],
-                    prices["SOL"],
-                    prices["BNB"],
-                    prices["MATIC"],
-                    gas["ethereum"],
-                    gas["polygon"],
-                    gas["bsc"]
+def _resolve_timestamp(value: Optional[float]) -> str:
+    if isinstance(value, (int, float)):
+        return datetime.utcfromtimestamp(value).isoformat()
+    return datetime.utcnow().isoformat()
+
+
+def main() -> None:
+    market_headers = [
+        "timestamp",
+        "ETH_price",
+        "XRP_price",
+        "SOL_price",
+        "BNB_price",
+        "MATIC_price",
+        "eth_gas_gwei",
+        "polygon_gas_gwei",
+        "bsc_gas_gwei",
+    ]
+    historical_headers = [
+        "token",
+        "timestamp",
+        "close",
+        "high",
+        "low",
+        "open",
+        "volumefrom",
+        "volumeto",
+    ]
+
+    market_writer, market_handle = _open_csv_with_headers("data/raw/market_data.csv", market_headers)
+    historical_writer, historical_handle = _open_csv_with_headers("data/raw/historical_data.csv", historical_headers)
+
+    try:
+        while True:
+            timestamp = datetime.utcnow().isoformat()
+            prices = get_prices()
+            gas = get_gas_fees()
+
+            market_writer.writerow(
+                [
+                    timestamp,
+                    *[prices.get(symbol) for symbol in TOKENS.values()],
+                    gas.get("ethereum"),
+                    gas.get("polygon"),
+                    gas.get("bsc"),
                 ]
-                writer.writerow(row)
-                f.flush()
-                print(f"[INFO] Wrote real-time data row: {row}")
-                # Fetch and write historical data
-                historical = get_historical_prices()
-                for token, data_points in historical.items():
-                    for dp in data_points:
-                        hist_writer.writerow([
+            )
+            market_handle.flush()
+
+            historical = get_historical_prices()
+            for token, data_points in historical.items():
+                for data_point in data_points:
+                    historical_writer.writerow(
+                        [
                             token,
-                            datetime.utcfromtimestamp(dp["time"]).isoformat(),
-                            dp.get("close"),
-                            dp.get("high"),
-                            dp.get("low"),
-                            dp.get("open"),
-                            dp.get("volumefrom"),
-                            dp.get("volumeto")
-                        ])
-                hist_f.flush()
-                print(f"[INFO] Wrote historical data for all tokens.")
-                print(f"[INFO] Saved snapshot at {now}")
-                time.sleep(60)
+                            _resolve_timestamp(data_point.get("time")),
+                            data_point.get("close"),
+                            data_point.get("high"),
+                            data_point.get("low"),
+                            data_point.get("open"),
+                            data_point.get("volumefrom"),
+                            data_point.get("volumeto"),
+                        ]
+                    )
+            historical_handle.flush()
+            time.sleep(60)
+    finally:
+        market_handle.close()
+        historical_handle.close()
+
 
 if __name__ == "__main__":
     main()
