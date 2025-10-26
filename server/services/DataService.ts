@@ -201,22 +201,31 @@ export class DataService {
     const tokensWithPrices = Array.from(priceMap.keys()).length;
     console.log(`✅ Retrieved prices for ${tokensWithPrices} tokens from DexScreener`);
 
-    // Build result array
-    return (SUPPORTED_TOKENS as readonly SupportedToken[]).map((token) => {
-      const chainPrices = priceMap.get(token) || {};
-      const primaryPrice = chainPrices['ethereum'] ?? Object.values(chainPrices)[0] ?? 0;
+    const results: TokenPrice[] = [];
 
-      if (primaryPrice === 0) {
-        console.warn(`⚠️  No price data available for ${token}`);
+    for (const token of SUPPORTED_TOKENS as readonly SupportedToken[]) {
+      const rawChainPrices = priceMap.get(token) || {};
+      const sanitizedEntries = Object.entries(rawChainPrices)
+        .filter(([, value]) => typeof value === 'number' && Number.isFinite(value) && value > 0)
+        .map(([chain, value]) => [chain, Number(value)] as const);
+
+      if (sanitizedEntries.length === 0) {
+        console.warn(`⚠️  Skipping ${token}: no live price data returned by DexScreener.`);
+        continue;
       }
 
-      return {
+      const preferred = sanitizedEntries.find(([chain]) => chain === 'ethereum') ?? sanitizedEntries[0];
+      const [_, primaryPrice] = preferred;
+
+      results.push({
         symbol: token,
         price: primaryPrice,
         timestamp,
-        chainPrices
-      };
-    });
+        chainPrices: Object.fromEntries(sanitizedEntries)
+      });
+    }
+
+    return results;
   }
 
   /**

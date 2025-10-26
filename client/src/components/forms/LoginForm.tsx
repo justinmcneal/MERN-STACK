@@ -250,7 +250,7 @@ const LoginForm: React.FC<LoginFormProps> = ({ className = "" }) => {
         {/* Sign Up Link */}
         <div className="text-center pt-4">
           <p className="text-slate-400">
-            New to ArbiTrader Pro?{' '}
+            New to Arbitrage Pro?{' '}
             <button 
               type="button"
               onClick={() => navigate("/signUp")} 

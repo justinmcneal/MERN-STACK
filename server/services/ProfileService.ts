@@ -1,4 +1,3 @@
-// services/ProfileService.ts
 import User, { IUser } from '../models/User';
 import UserPreference, { IUserPreference } from '../models/UserPreference';
 import { createError } from '../middleware/errorMiddleware';
@@ -12,7 +11,6 @@ export interface ProfileUpdateData {
   name?: string;
   profilePicture?: string;
   avatar?: number;
-  // email?: string; // Email changes are disabled for security
 }
 
 export interface PasswordChangeData {
@@ -36,16 +34,10 @@ export interface ProfileResponse {
 export class ProfileService {
   private static readonly PASSWORD_REGEX = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]).{8,}$/;
 
-  /**
-   * Validate password strength
-   */
   static validatePassword(password: string): boolean {
     return this.PASSWORD_REGEX.test(password);
   }
 
-  /**
-   * Get user profile with preferences
-   */
   static async getProfile(userId: string): Promise<ProfileResponse> {
     const user = await User.findById(userId).select('-password -refreshTokens -failedLoginAttempts -lockUntil');
     if (!user) {
@@ -68,34 +60,25 @@ export class ProfileService {
     };
   }
 
-  /**
-   * Update user profile
-   */
   static async updateProfile(userId: string, data: ProfileUpdateData): Promise<ProfileResponse> {
     const user = await User.findById(userId);
     if (!user) {
       throw createError('User not found', 404);
     }
 
-    // Email changes are disabled for security reasons
     if ('email' in data && data.email !== undefined) {
       throw createError('Email address cannot be changed. Please contact support if you need to update your email.', 400);
     }
 
-    // Update user fields
     if (data.name) user.name = data.name;
     if (data.profilePicture !== undefined) user.profilePicture = data.profilePicture;
     if (data.avatar !== undefined) user.avatar = data.avatar;
 
     await user.save();
 
-    // Get updated profile with preferences
     return this.getProfile(userId);
   }
 
-  /**
-   * Change user password
-   */
   static async changePassword(userId: string, data: PasswordChangeData): Promise<void> {
     const { currentPassword, newPassword } = data;
 
@@ -112,20 +95,15 @@ export class ProfileService {
       throw createError('User not found', 404);
     }
 
-    // Verify current password
     const isCurrentPasswordValid = await user.matchPassword(currentPassword);
     if (!isCurrentPasswordValid) {
       throw createError('Current password is incorrect', 400);
     }
 
-    // Update password
     user.password = newPassword;
     await user.save();
   }
 
-  /**
-   * Delete user account
-   */
   static async deleteAccount(userId: string, password: string): Promise<void> {
     if (!password) {
       throw createError('Password is required to delete account', 400);
@@ -136,22 +114,16 @@ export class ProfileService {
       throw createError('User not found', 404);
     }
 
-    // Verify password
     const isPasswordValid = await user.matchPassword(password);
     if (!isPasswordValid) {
       throw createError('Password is incorrect', 400);
     }
 
-    // Delete user preferences
     await UserPreference.deleteOne({ userId });
 
-    // Delete user
     await User.findByIdAndDelete(userId);
   }
 
-  /**
-   * Get user statistics (for dashboard)
-   */
   static async getUserStats(userId: string): Promise<{
     totalOpportunities: number;
     totalAlerts: number;

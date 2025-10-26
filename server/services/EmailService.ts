@@ -1,4 +1,3 @@
-// services/EmailService.ts
 import nodemailer from 'nodemailer';
 
 export interface EmailOptions {
@@ -11,22 +10,16 @@ export interface EmailOptions {
 export class EmailService {
   private static transporter: nodemailer.Transporter | null = null;
 
-  /**
-   * Initialize email transporter
-   */
   private static async getTransporter(): Promise<nodemailer.Transporter> {
     console.log('📧 [EmailService] Initializing email transporter...');
     console.log('📧 [EmailService] NODE_ENV:', process.env.NODE_ENV);
     
     if (!this.transporter) {
-      // Read and sanitize email credentials from environment
       const envUserRaw = process.env.EMAIL_USER || '';
       const envPassRaw = process.env.EMAIL_PASS || '';
       const emailUser = envUserRaw.trim();
-      // Some providers (and UI displays) show app passwords grouped with spaces — remove whitespace
       const emailPass = envPassRaw.replace(/\s+/g, '');
 
-      // Check if email credentials are configured
       const hasEmailConfig = !!emailUser && !!emailPass;
 
       if (hasEmailConfig) {
@@ -37,14 +30,13 @@ export class EmailService {
           secure: (process.env.EMAIL_SECURE || 'false') === 'true',
           user: emailUser ? '***hidden***' : 'NOT_SET',
           pass: envPassRaw ? (envPassRaw.includes(' ') ? '***hidden (contains spaces)***' : '***hidden***') : 'NOT_SET',
-          from: process.env.EMAIL_FROM || emailUser || 'noreply@arbitrader.com'
+          from: process.env.EMAIL_FROM || emailUser || 'noreply@arbitrage.com'
         });
 
         if (envPassRaw && /\s/.test(envPassRaw)) {
           console.warn('📧 [EmailService] EMAIL_PASS contains whitespace. Removing whitespace before using it. If this is an app password, ensure you copied it correctly (no spaces).');
         }
 
-        // Use configured SMTP (works for both development and production)
         this.transporter = nodemailer.createTransport({
           host: process.env.EMAIL_HOST || 'smtp.gmail.com',
           port: parseInt(process.env.EMAIL_PORT || '587'),
@@ -59,7 +51,6 @@ export class EmailService {
           await this.transporter.verify();
           console.log('📧 [EmailService] SMTP transporter verified successfully');
         } catch (error: any) {
-          // More detailed logging for SMTP verification failures
           console.error('📧 [EmailService] Failed to verify SMTP:');
           console.error('  message:', error && error.message ? error.message : error);
           if (error && error.response) console.error('  response:', error.response);
@@ -87,7 +78,6 @@ export class EmailService {
             },
           });
           
-          // Test the connection
           await this.transporter.verify();
           console.log('📧 [EmailService] Ethereal transporter verified successfully');
         } catch (error: any) {
@@ -101,7 +91,6 @@ export class EmailService {
         }
       } else if (process.env.NODE_ENV === 'test') {
         console.log('📧 [EmailService] Using JSON transport for tests');
-        // For tests, use a noop transport that logs to memory
         this.transporter = nodemailer.createTransport({
           jsonTransport: true,
         });
@@ -113,9 +102,6 @@ export class EmailService {
     return this.transporter;
   }
 
-  /**
-   * Send email
-   */
   static async sendEmail(options: EmailOptions): Promise<void> {
     console.log('📧 [EmailService] Attempting to send email...');
     console.log('📧 [EmailService] Email options:', {
@@ -129,7 +115,7 @@ export class EmailService {
       const transporter = await this.getTransporter();
       
       const mailOptions = {
-        from: process.env.EMAIL_FROM || 'noreply@arbitrader.com',
+        from: process.env.EMAIL_FROM || 'noreply@arbitrage.com',
         to: options.to,
         subject: options.subject,
         html: options.html,
@@ -147,7 +133,6 @@ export class EmailService {
       console.log('📧 [EmailService] Email sent successfully!');
       console.log('📧 [EmailService] Message ID:', info.messageId);
       
-      // In development with Ethereal, log the preview URL
       if (process.env.NODE_ENV === 'development' && !process.env.EMAIL_USER) {
         const previewUrl = nodemailer.getTestMessageUrl(info);
         console.log('📧 [EmailService] Preview URL:', previewUrl);
@@ -156,7 +141,6 @@ export class EmailService {
         }
       }
     } catch (error: any) {
-      // Log detailed nodemailer error information to help debug SMTP failures
       console.error('📧 [EmailService] Email sending failed:');
       console.error('  message:', error && error.message ? error.message : error);
       if (error && error.response) console.error('  response:', error.response);
@@ -165,14 +149,10 @@ export class EmailService {
       if (error && error.accepted) console.error('  accepted:', error.accepted);
       if (error && error.code) console.error('  code:', error.code);
       if (error && error.stack) console.error('  stack:', error.stack);
-      // Keep behavior unchanged: surface a generic error to callers
       throw new Error('Failed to send email');
     }
   }
 
-  /**
-   * Send email verification email
-   */
   static async sendVerificationEmail(email: string, name: string, verificationToken: string): Promise<void> {
   const clientUrl = process.env.CLIENT_URL || 'http://localhost:5173';
   const verificationUrl = `${clientUrl}/verify-email?token=${verificationToken}`;
@@ -183,7 +163,7 @@ export class EmailService {
         <head>
           <meta charset="utf-8">
           <meta name="viewport" content="width=device-width, initial-scale=1.0">
-          <title>Verify Your Email - ArbiTrader Pro</title>
+          <title>Verify Your Email - Arbitrage Pro</title>
           <style>
             body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
             .container { max-width: 600px; margin: 0 auto; padding: 20px; }
@@ -196,12 +176,12 @@ export class EmailService {
         <body>
           <div class="container">
             <div class="header">
-              <h1>Welcome to ArbiTrader Pro!</h1>
+              <h1>Welcome to Arbitrage Pro!</h1>
               <p>Please verify your email address</p>
             </div>
             <div class="content">
               <h2>Hi ${name},</h2>
-              <p>Thank you for registering with ArbiTrader Pro! To complete your registration and start monitoring arbitrage opportunities, please verify your email address by clicking the button below:</p>
+              <p>Thank you for registering with Arbitrage Pro! To complete your registration and start monitoring arbitrage opportunities, please verify your email address by clicking the button below:</p>
               
               <div style="text-align: center;">
                 <a href="${verificationUrl}" class="button">Verify Email Address</a>
@@ -212,10 +192,10 @@ export class EmailService {
               
               <p><strong>This verification link will expire in 24 hours.</strong></p>
               
-              <p>If you didn't create an account with ArbiTrader Pro, you can safely ignore this email.</p>
+              <p>If you didn't create an account with Arbitrage Pro, you can safely ignore this email.</p>
             </div>
             <div class="footer">
-              <p>© 2024 ArbiTrader Pro. All rights reserved.</p>
+              <p>© 2024 Arbitrage Pro. All rights reserved.</p>
               <p>This is an automated message, please do not reply to this email.</p>
             </div>
           </div>
@@ -224,26 +204,26 @@ export class EmailService {
     `;
 
     const text = `
-      Welcome to ArbiTrader Pro!
+      Welcome to Arbitrage Pro!
       
       Hi ${name},
-      
-      Thank you for registering with ArbiTrader Pro! To complete your registration, please verify your email address by visiting this link:
-      
+
+      Thank you for registering with Arbitrage Pro! To complete your registration, please verify your email address by visiting this link:
+
       ${verificationUrl}
       
       This verification link will expire in 24 hours.
-      
-      If you didn't create an account with ArbiTrader Pro, you can safely ignore this email.
-      
-      © 2024 ArbiTrader Pro. All rights reserved.
+
+      If you didn't create an account with Arbitrage Pro, you can safely ignore this email.
+
+      © 2024 Arbitrage Pro. All rights reserved.
     `;
 
     console.log('📧 [EmailService] Calling sendEmail with verification details...');
     
     await this.sendEmail({
       to: email,
-      subject: 'Verify Your Email - ArbiTrader Pro',
+      subject: 'Verify Your Email - Arbitrage Pro',
       html,
       text,
     });
@@ -251,10 +231,6 @@ export class EmailService {
     console.log('📧 [EmailService] Verification email process completed successfully!');
   }
 
-
-  /**
-   * Send password reset email
-   */
   static async sendPasswordResetEmail(email: string, name: string, resetToken: string): Promise<void> {
     const resetUrl = `${process.env.CLIENT_URL || 'http://localhost:5173'}/reset-password?token=${resetToken}`;
     
@@ -264,7 +240,7 @@ export class EmailService {
         <head>
           <meta charset="utf-8">
           <meta name="viewport" content="width=device-width, initial-scale=1.0">
-          <title>Reset Your Password - ArbiTrader Pro</title>
+          <title>Reset Your Password - Arbitrage Pro</title>
           <style>
             body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #333; }
             .container { max-width: 600px; margin: 0 auto; padding: 20px; }
@@ -278,13 +254,13 @@ export class EmailService {
         <body>
           <div class="container">
             <div class="header">
-              <h1 style="margin: 0; font-size: 24px;">ArbiTrader Pro</h1>
+              <h1 style="margin: 0; font-size: 24px;">Arbitrage Pro</h1>
               <p style="margin: 10px 0 0 0; opacity: 0.9;">Professional Trading Platform</p>
             </div>
             <div class="content">
               <h2 style="color: #1e293b; margin-top: 0;">Password Reset Request</h2>
               <p>Hello ${name},</p>
-              <p>We received a request to reset your password for your ArbiTrader Pro account. If you made this request, click the button below to reset your password:</p>
+              <p>We received a request to reset your password for your Arbitrage Pro account. If you made this request, click the button below to reset your password:</p>
               
               <div style="text-align: center;">
                 <a href="${resetUrl}" class="button">Reset My Password</a>
@@ -298,12 +274,11 @@ export class EmailService {
               </div>
               
               <p>If you have any questions or need assistance, please contact our support team.</p>
-              
-              <p>Best regards,<br>The ArbiTrader Pro Team</p>
+              <p>Best regards,<br>The Arbitrage Pro Team</p>
             </div>
             <div class="footer">
               <p>This email was sent to ${email}. If you didn't request this, please ignore it.</p>
-              <p>&copy; 2024 ArbiTrader Pro. All rights reserved.</p>
+              <p>&copy; 2024 Arbitrage Pro. All rights reserved.</p>
             </div>
           </div>
         </body>
@@ -312,14 +287,11 @@ export class EmailService {
 
     await this.sendEmail({
       to: email,
-      subject: 'Reset Your Password - ArbiTrader Pro',
+      subject: 'Reset Your Password - Arbitrage Pro',
       html,
     });
   }
 
-  /**
-   * Send support ticket confirmation email to user
-   */
   static async sendSupportTicketConfirmation(
     email: string, 
     name: string, 
@@ -333,7 +305,7 @@ export class EmailService {
         <head>
           <meta charset="utf-8">
           <meta name="viewport" content="width=device-width, initial-scale=1.0">
-          <title>Support Ticket Confirmation - ArbiTrader Pro</title>
+          <title>Support Ticket Confirmation - Arbitrage Pro</title>
           <style>
             body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #333; }
             .container { max-width: 600px; margin: 0 auto; padding: 20px; }
@@ -350,13 +322,13 @@ export class EmailService {
         <body>
           <div class="container">
             <div class="header">
-              <h1 style="margin: 0; font-size: 24px;">ArbiTrader Pro</h1>
+              <h1 style="margin: 0; font-size: 24px;">Arbitrage Pro</h1>
               <p style="margin: 10px 0 0 0; opacity: 0.9;">Professional Trading Platform</p>
             </div>
             <div class="content">
               <h2 style="color: #1e293b; margin-top: 0;">Support Ticket Received</h2>
               <p>Hello ${name},</p>
-              <p>Thank you for contacting ArbiTrader Pro support. We have received your request and will get back to you within 2 hours.</p>
+              <p>Thank you for contacting Arbitrage Pro support. We have received your request and will get back to you within 2 hours.</p>
               
               <div class="ticket-info">
                 <h3 style="margin-top: 0; color: #1e293b;">Ticket Details</h3>
@@ -367,12 +339,12 @@ export class EmailService {
               </div>
               
               <p>Our support team will review your request and respond via email. For urgent matters, please contact us directly.</p>
-              
-              <p>Best regards,<br>The ArbiTrader Pro Support Team</p>
+
+              <p>Best regards,<br>The Arbitrage Pro Support Team</p>
             </div>
             <div class="footer">
               <p>This email was sent to ${email} regarding ticket ${ticketId}.</p>
-              <p>&copy; 2024 ArbiTrader Pro. All rights reserved.</p>
+              <p>&copy; 2024 Arbitrage Pro. All rights reserved.</p>
             </div>
           </div>
         </body>
@@ -386,9 +358,6 @@ export class EmailService {
     });
   }
 
-  /**
-   * Send support ticket notification email to support team
-   */
   static async sendSupportTicketNotification(
     fullName: string,
     email: string,
@@ -398,7 +367,7 @@ export class EmailService {
     priorityLevel: string,
     ticketId: string
   ): Promise<void> {
-    const supportEmail = process.env.SUPPORT_EMAIL || process.env.EMAIL_USER || 'support@arbitrader.com';
+    const supportEmail = process.env.SUPPORT_EMAIL || process.env.EMAIL_USER || 'support@arbitragepro.com';
     
     const html = `
       <!DOCTYPE html>
@@ -425,7 +394,7 @@ export class EmailService {
           <div class="container">
             <div class="header">
               <h1 style="margin: 0; font-size: 24px;">New Support Ticket</h1>
-              <p style="margin: 10px 0 0 0; opacity: 0.9;">ArbiTrader Pro Support</p>
+              <p style="margin: 10px 0 0 0; opacity: 0.9;">Arbitrage Pro Support</p>
             </div>
             <div class="content">
               <h2 style="color: #1e293b; margin-top: 0;">Ticket #${ticketId}</h2>
@@ -449,7 +418,7 @@ export class EmailService {
             </div>
             <div class="footer">
               <p>This notification was generated automatically for ticket ${ticketId}.</p>
-              <p>&copy; 2024 ArbiTrader Pro. All rights reserved.</p>
+              <p>&copy; 2024 Arbitrage Pro. All rights reserved.</p>
             </div>
           </div>
         </body>

@@ -106,7 +106,7 @@ export const refreshTokenPrices = asyncHandler(async (req: Request, res: Respons
           continue;
         }
         // Use atomic upsert to avoid race conditions and reduce DB calls
-        const chainPrice = priceInfo.chainPrices?.[chain] ?? priceInfo.price;
+        const chainPrice = priceInfo.chainPrices?.[chain];
         if (chainPrice === undefined || chainPrice === null) {
           continue;
         }
@@ -180,19 +180,14 @@ export const getTokenHistory = async (req: Request, res: Response) => {
   const { symbol, chain } = req.params;
   const { tf = '7d' } = req.query;
 
-  // Historical data temporarily disabled due to API provider limitations
-  // Client-side fallback will generate mock historical data
-  // Future: Implement database-backed historical price tracking
-  console.log(`Historical data requested for ${symbol}/${chain}/${tf} - using client fallback`);
-
-  res.json({
-    success: true,
+  res.status(503).json({
+    success: false,
     symbol: symbol.toUpperCase(),
     chain: chain.toLowerCase(),
     timeframe: String(tf),
     count: 0,
     data: [],
-    message: 'Historical data temporarily unavailable - using client-side fallback'
+    message: 'Historical price data is not available yet. Real-time monitoring continues to operate normally.'
   });
 };
 

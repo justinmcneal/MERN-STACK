@@ -1,10 +1,8 @@
-// Export all services
 export { default as DataService } from './DataService';
 export { default as MLService } from './MLService';
 export { default as WebSocketService } from './WebSocketService';
 export { ProfileService } from './ProfileService';
 
-// Export service instances
 import DataService from './DataService';
 import MLService from './MLService';
 import WebSocketService from './WebSocketService';

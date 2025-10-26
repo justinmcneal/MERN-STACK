@@ -119,7 +119,7 @@ export const FAQ_ITEMS: FAQItemData[] = [
   {
     question: "What browsers are supported?",
     answer:
-      "ArbiTrader Pro works best with Chrome, Firefox, Safari, and Edge (latest versions). We recommend using Chrome for the optimal experience with all features fully supported.",
+      "Arbitrage Pro works best with Chrome, Firefox, Safari, and Edge (latest versions). We recommend using Chrome for the optimal experience with all features fully supported.",
     category: "technical",
   },
   {
@@ -149,7 +149,7 @@ export const FAQ_ITEMS: FAQItemData[] = [
   {
     question: "Does the monitoring tool provide visual charts or reports?",
     answer:
-      "Yes, ArbiTrader Pro includes comprehensive visual analytics with real-time charts, historical trend analysis, P&L tracking, and customizable reporting for tax compliance and strategy optimization.",
+      "Yes, Arbitrage Pro includes comprehensive visual analytics with real-time charts, historical trend analysis, P&L tracking, and customizable reporting for tax compliance and strategy optimization.",
     category: "getting-started",
   },
 ];

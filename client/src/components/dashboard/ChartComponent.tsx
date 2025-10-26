@@ -6,23 +6,7 @@ const ChartComponent: React.FC = () => {
   const { tokens, loading } = useTokenContext();
   const [timeframe, setTimeframe] = useState<'1h'|'24h'|'7d'>('24h');
   const [selectedSymbol, setSelectedSymbol] = useState<string>('');
-
-  // Helper: deterministic PRNG based on seed string
-  const seedFromString = (s: string) => {
-    let h = 2166136261 >>> 0;
-    for (let i = 0; i < s.length; i++) {
-      h ^= s.charCodeAt(i);
-      h = Math.imul(h, 16777619) >>> 0;
-    }
-    return h;
-  };
-  const mulberry32 = (a: number) => () => {
-    a |= 0;
-    a = a + 0x6D2B79F5 | 0;
-    let t = Math.imul(a ^ a >>> 15, 1 | a);
-    t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
-    return ((t ^ t >>> 14) >>> 0) / 4294967296;
-  };
+  const [historyNotice, setHistoryNotice] = useState<string | null>(null);
 
   // Choose a token object to base the chart on: prefer selectedSymbol else first token symbol
   // When picking a token object for anchor price (for mocks), prefer the ethereum chain, then polygon, then bsc
@@ -48,21 +32,24 @@ const ChartComponent: React.FC = () => {
   // Number of points per timeframe
   const pointsCount = timeframe === '1h' ? 12 : timeframe === '24h' ? 24 : 7 * 12; // 7d -> 84 points
 
-  // Generate deterministic mock series around currentPrice
   const [seriesByChain, setSeriesByChain] = useState<Record<string, number[]>>({});
 
-  // Try to fetch real history from server; if it fails, fallback to deterministic mock
+  // Try to fetch real history from server; if unavailable show notice
   useEffect(() => {
     let mounted = true;
     const fetchHistory = async () => {
       if (!baseToken) {
         setSeriesByChain({});
+        setHistoryNotice('Select a token to view historical pricing.');
         return;
       }
 
       const chains = ['polygon', 'ethereum', 'bsc'];
       const tfParam = timeframe === '1h' ? '24h' : timeframe === '24h' ? '24h' : '7d';
       const results: Record<string, number[]> = {};
+      let hasData = false;
+      let notice: string | null = null;
+      setHistoryNotice(null);
 
       await Promise.all(chains.map(async (chain) => {
         try {
@@ -78,31 +65,33 @@ const ChartComponent: React.FC = () => {
                 if (sampled.length >= pointsCount) break;
               }
               results[chain] = sampled;
+              hasData = true;
               return;
             }
             results[chain] = prices;
+            hasData = true;
             return;
           }
-        } catch {
-          // ignore and fallback to mock for this chain
+          if (resp?.message) {
+            notice = resp.message;
+          }
+        } catch (error: unknown) {
+          const err = error as { response?: { data?: { message?: string } } };
+          if (err?.response?.data?.message) {
+            notice = err.response.data.message;
+          }
         }
-
-        // Fallback seeded mock per chain using token currentPrice as anchor
-        const startPrice = Number(baseToken.currentPrice) || 1;
-        const seed = seedFromString(`${baseToken.symbol}-${chain}-${timeframe}`);
-        const rand = mulberry32(seed);
-        const volatility = timeframe === '1h' ? 0.004 : timeframe === '24h' ? 0.01 : 0.03;
-        const vals: number[] = [startPrice];
-        for (let i = 1; i < pointsCount; i++) {
-          const pct = (rand() - 0.5) * 2 * volatility;
-          const next = Math.max(0.0000001, vals[i-1] * (1 + pct));
-          vals.push(next);
-        }
-        results[chain] = vals;
       }));
 
       if (!mounted) return;
-      setSeriesByChain(results);
+      setSeriesByChain(hasData ? results : {});
+      if (hasData) {
+        setHistoryNotice(null);
+        return;
+      }
+      setHistoryNotice(
+        notice || 'Historical price data is not available yet. Real-time pricing will continue to refresh normally.'
+      );
     };
     fetchHistory();
     return () => { mounted = false; };
@@ -153,6 +142,8 @@ const ChartComponent: React.FC = () => {
     if (!combinedSeries || combinedSeries.length === 0) return { minP: 0, maxP: 0 };
     return { minP: Math.min(...combinedSeries), maxP: Math.max(...combinedSeries) };
   }, [combinedSeries]);
+
+  const hasSeries = combinedSeries.length > 0;
 
   return (
     <div className="bg-slate-800/50 backdrop-blur border border-slate-700/50 rounded-2xl p-6">
@@ -219,12 +210,17 @@ const ChartComponent: React.FC = () => {
           })()}
 
           {/* y labels based on combined min/max */}
-          {combinedSeries.length > 0 && [0,0.25,0.5,0.75,1].map((f, idx) => {
+          {hasSeries && [0,0.25,0.5,0.75,1].map((f, idx) => {
             const val = combinedMin + (1 - f) * (combinedMax - combinedMin || 1);
             const y = padding + innerH * f;
             return <text key={idx} x={6} y={y+3} fill="#64748b" fontSize="10">{`$${Number(val).toLocaleString(undefined, {maximumFractionDigits:2})}`}</text>;
           })}
         </svg>
+        {!hasSeries && historyNotice && (
+          <div className="absolute inset-0 flex items-center justify-center px-8 text-center">
+            <p className="text-sm text-slate-400">{historyNotice}</p>
+          </div>
+        )}
       </div>
 
       {/* Legend moved outside the SVG to avoid overlap and ensure responsive layout */}
