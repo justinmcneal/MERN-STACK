@@ -27,15 +27,16 @@ const Dashboard = () => {
   // Get user preferences from settings
   const { preferences } = usePreferences();
 
-  // Fixed polling interval - server updates data hourly, so no need for user customization
-  // Poll every 60 seconds to check for new data from scheduled server updates
-  const pollIntervalMs = 60000; // Fixed at 60 seconds
+  // ALL polling intervals aligned with server hourly updates (cron jobs run every hour)
+  // Server fetches fresh data from external APIs (DexScreener) every hour
+  // Polling more frequently than hourly wastes resources since data doesn't update faster
+  const pollInterval = 3600000; // 1 hour (3600000ms) for ALL data fetching
 
   // Memoize alert query to prevent infinite re-renders
   const alertQuery = useMemo(() => ({ limit: 10 }), []);
   
   // Fetch live alerts
-  const { alerts } = useAlerts({ pollIntervalMs, query: alertQuery });
+  const { alerts } = useAlerts({ pollIntervalMs: pollInterval, query: alertQuery });
 
   // Fetch live opportunities with user preferences
   const opportunityQuery = useMemo(() => {
@@ -61,7 +62,7 @@ const Dashboard = () => {
     loading: opportunitiesLoading,
     error: opportunitiesError,
     refresh: refreshOpportunities
-  } = useOpportunities({ pollIntervalMs, query: opportunityQuery });
+  } = useOpportunities({ pollIntervalMs: pollInterval, query: opportunityQuery });
 
   // Calculate stats from opportunities
   const stats = useMemo(() => {
@@ -124,7 +125,7 @@ const Dashboard = () => {
   }, [opportunities, preferences]);
 
   return (
-    <TokenProvider pollIntervalMs={pollIntervalMs}>
+    <TokenProvider pollIntervalMs={pollInterval}>
       <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 text-white">
         {/* Background */}
         <div className="fixed inset-0 bg-[radial-gradient(ellipse_at_top_left,theme(colors.cyan.900)/10,theme(colors.slate.950),theme(colors.purple.900)/10)]"></div>

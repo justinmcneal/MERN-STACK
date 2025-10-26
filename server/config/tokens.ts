@@ -16,15 +16,6 @@ export const TOKEN_NAMES: Record<SupportedToken, string> = {
   'MATIC': 'Polygon'
 } as const;
 
-// CoinGecko API token IDs
-export const COINGECKO_TOKEN_IDS: Record<SupportedToken, string> = {
-  'ETH': 'ethereum',
-  'USDT': 'tether',
-  'USDC': 'usd-coin',
-  'BNB': 'binancecoin',
-  'MATIC': 'matic-network'
-} as const;
-
 // Mapping of token -> chain -> contract address (or 'NATIVE' for native chain token)
 // If a chain is not present for a token, we consider the token unsupported on that chain
 export const TOKEN_CONTRACTS: Record<SupportedToken, Partial<Record<SupportedChain, string>>> = {
@@ -66,12 +57,6 @@ export const TOKEN_CONTRACTS: Record<SupportedToken, Partial<Record<SupportedCha
   }
 };
 
-export const COINGECKO_CHAIN_IDS: Record<SupportedChain, string> = {
-  ethereum: 'ethereum',
-  polygon: 'polygon-pos',
-  bsc: 'binance-smart-chain'
-};
-
 export const CHAIN_NATIVE_TOKENS: Record<SupportedChain, SupportedToken> = {
   ethereum: 'ETH',
   polygon: 'MATIC',
@@ -102,9 +87,4 @@ export function getTokenName(symbol: string): string {
 // Get chain name with fallback
 export function getChainName(chain: string): string {
   return CHAIN_NAMES[chain as SupportedChain] || chain;
-}
-
-// Get CoinGecko token ID
-export function getCoinGeckoTokenId(symbol: string): string | null {
-  return COINGECKO_TOKEN_IDS[symbol as SupportedToken] || null;
 }
