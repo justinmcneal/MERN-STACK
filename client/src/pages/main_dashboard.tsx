@@ -26,6 +26,11 @@ const Dashboard = () => {
 
   // Get user preferences from settings
   const { preferences } = usePreferences();
+  const trackedTokens = useMemo(
+    () => (preferences?.tokensTracked ? [...preferences.tokensTracked] : []),
+    [preferences]
+  );
+  const thresholds = preferences?.alertThresholds;
 
   // ALL polling intervals aligned with server hourly updates (cron jobs run every hour)
   // Server fetches fresh data from external APIs (DexScreener) every hour
@@ -40,7 +45,7 @@ const Dashboard = () => {
 
   // Fetch live opportunities with user preferences
   const opportunityQuery = useMemo(() => {
-    if (!preferences) {
+    if (!preferences || !thresholds) {
       return { status: 'active', sortBy: 'score', sortOrder: 'desc' as const, limit: 25 };
     }
 
@@ -50,12 +55,12 @@ const Dashboard = () => {
       sortBy: 'score',
       sortOrder: 'desc' as const,
       limit: 25,
-      minProfit: preferences.alertThresholds.minProfit,
-      maxGasCost: preferences.alertThresholds.maxGasCost,
-      minROI: preferences.alertThresholds.minROI,
-      minScore: preferences.alertThresholds.minScore
+      minProfit: thresholds.minProfit,
+      maxGasCost: thresholds.maxGasCost,
+      minROI: thresholds.minROI,
+      minScore: thresholds.minScore
     };
-  }, [preferences]);
+  }, [preferences, thresholds]);
 
   const {
     opportunities,
@@ -72,9 +77,9 @@ const Dashboard = () => {
 
     // Filter opportunities based on user's tracked tokens if set
     let filteredOpportunities = opportunities;
-    if (preferences?.tokensTracked && preferences.tokensTracked.length > 0) {
+    if (trackedTokens.length > 0) {
       filteredOpportunities = opportunities.filter(opp =>
-        preferences.tokensTracked.includes(opp.tokenSymbol.toUpperCase())
+        trackedTokens.includes(opp.tokenSymbol.toUpperCase())
       );
     }
 
@@ -122,7 +127,7 @@ const Dashboard = () => {
       } : null,
       topToken
     };
-  }, [opportunities, preferences]);
+  }, [opportunities, trackedTokens]);
 
   return (
     <TokenProvider pollIntervalMs={pollInterval}>
@@ -160,16 +165,16 @@ const Dashboard = () => {
             {/* Main Dashboard Content */}
             <main className="flex-1 overflow-y-auto p-4 lg:p-6">
               {/* User Preferences Info Banner */}
-              {preferences && preferences.tokensTracked.length > 0 && (
+              {trackedTokens.length > 0 && thresholds && (
                 <div className="mb-6 bg-cyan-500/10 border border-cyan-500/30 rounded-xl p-4">
                   <div className="flex items-center gap-3">
                     <svg className="w-5 h-5 text-cyan-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                     </svg>
                     <p className="text-cyan-300 text-sm">
-                      Tracking {preferences.tokensTracked.length} token(s): {preferences.tokensTracked.join(', ')} | 
-                      Min Profit: ${preferences.alertThresholds.minProfit} | 
-                      Max Gas: ${preferences.alertThresholds.maxGasCost}
+                      Tracking {trackedTokens.length} token(s): {trackedTokens.join(', ')} | 
+                      Min Profit: ${thresholds.minProfit} | 
+                      Max Gas: ${thresholds.maxGasCost}
                     </p>
                   </div>
                 </div>

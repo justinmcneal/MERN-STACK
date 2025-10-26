@@ -4,15 +4,22 @@ import type { TokenDto } from '../services/TokenService';
 
 export function useTokens(pollIntervalMs?: number) {
   const [tokens, setTokens] = useState<TokenDto[]>([]);
-  const [loading, setLoading] = useState<boolean>(false);
+  const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+  const [isRefreshing, setIsRefreshing] = useState<boolean>(false);
   const intervalRef = useRef<number | null>(null);
+  const isInitialLoadRef = useRef<boolean>(true);
 
   const fetch = useCallback(async () => {
-    setLoading(true);
+    if (isInitialLoadRef.current) {
+      setLoading(true);
+    }
+    setIsRefreshing(true);
     setError(null);
     try {
-      const list = await TokenService.listTokens();
+      const list = await TokenService.listTokens({
+        fields: 'symbol,chain,name,currentPrice,dexPrice,dexName,liquidity,lastUpdated,contractAddress'
+      });
       setTokens(list || []);
     } catch (err: unknown) {
       let message = 'Failed to load tokens';
@@ -28,7 +35,11 @@ export function useTokens(pollIntervalMs?: number) {
       }
       setError(message || 'Failed to load tokens');
     } finally {
-      setLoading(false);
+      if (isInitialLoadRef.current) {
+        setLoading(false);
+        isInitialLoadRef.current = false;
+      }
+      setIsRefreshing(false);
     }
   }, []);
 
@@ -46,5 +57,5 @@ export function useTokens(pollIntervalMs?: number) {
     };
   }, [fetch, pollIntervalMs]);
 
-  return { tokens, loading, error, refresh: fetch };
+  return { tokens, loading, error, refresh: fetch, isRefreshing };
 }

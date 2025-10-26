@@ -7,7 +7,7 @@ import { getTokenName, TOKEN_CONTRACTS } from '../config/tokens';
 
 // GET /api/tokens - Get all tokens
 export const getTokens = asyncHandler(async (req: Request, res: Response) => {
-  const { symbol, chain, limit = 50, skip = 0 } = req.query;
+  const { symbol, chain, limit = 50, skip = 0, fields } = req.query;
 
   let query: any = {};
   
@@ -19,7 +19,39 @@ export const getTokens = asyncHandler(async (req: Request, res: Response) => {
     query.chain = chain as string;
   }
 
-  const tokens = await Token.find(query)
+  const allowedFields = new Set([
+    '_id',
+    'symbol',
+    'chain',
+    'currentPrice',
+    'dexPrice',
+    'dexName',
+    'liquidity',
+    'lastUpdated',
+    'name',
+    'decimals',
+    'contractAddress',
+    'updatedAt',
+    'createdAt'
+  ]);
+
+  let projection: string | undefined;
+  if (typeof fields === 'string') {
+    const requested = fields
+      .split(',')
+      .map((field) => field.trim())
+      .filter((field) => allowedFields.has(field));
+    if (requested.length > 0) {
+      projection = requested.join(' ');
+    }
+  }
+
+  let tokenQuery = Token.find(query);
+  if (projection) {
+    tokenQuery = tokenQuery.select(projection);
+  }
+
+  const tokens = await tokenQuery
     .limit(Number(limit))
     .skip(Number(skip))
     .sort({ symbol: 1, chain: 1 });

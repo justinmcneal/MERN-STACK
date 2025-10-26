@@ -9,12 +9,16 @@ export type TokenDto = {
   name?: string;
   decimals?: number;
   contractAddress?: string;
+  dexPrice?: number;
+  dexName?: string;
+  liquidity?: number;
 }
 type ListParams = {
   symbol?: string;
   chain?: string;
   limit?: number;
   skip?: number;
+  fields?: string;
 };
 
 const listTokens = async (params?: ListParams): Promise<TokenDto[]> => {

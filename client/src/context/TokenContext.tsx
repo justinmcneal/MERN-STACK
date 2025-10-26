@@ -8,15 +8,16 @@ type TokenContextValue = {
   loading: boolean;
   error: string | null;
   refresh: () => Promise<void>;
+  isRefreshing: boolean;
 };
 
 const TokenContext = createContext<TokenContextValue | undefined>(undefined);
 
 export const TokenProvider = ({ children, pollIntervalMs }: { children: ReactNode; pollIntervalMs?: number }) => {
-  const { tokens, loading, error, refresh } = useTokens(pollIntervalMs);
+  const { tokens, loading, error, refresh, isRefreshing } = useTokens(pollIntervalMs);
 
   return (
-    <TokenContext.Provider value={{ tokens, loading, error, refresh }}>
+    <TokenContext.Provider value={{ tokens, loading, error, refresh, isRefreshing }}>
       {children}
     </TokenContext.Provider>
   );
