@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import { usePreferences } from "../hooks/usePreferences";
 import { TokenProvider } from "../context/TokenContext";
+import useTokenContext from "../context/useTokenContext";
 import Sidebar from "../components/dashboard/Sidebar";
 import DashboardHeader from "../components/dashboard/DashboardHeader";
 import PriceTable from "../components/dashboard/PriceTable";
@@ -10,7 +11,7 @@ import ArbitrageTable from "../components/dashboard/ArbitrageTable";
 import useOpportunities from "../hooks/useOpportunities";
 import useAlerts from "../hooks/useAlerts";
 
-const Dashboard = () => {
+const DashboardContent = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
   const [notificationOpen, setNotificationOpen] = useState(false);
@@ -19,6 +20,13 @@ const Dashboard = () => {
   const [priceFilter, setPriceFilter] = useState<'all' | 'byChain' | 'byToken'>('all');
   const [selectedChain, setSelectedChain] = useState<string | null>(null);
   const [selectedToken, setSelectedToken] = useState<string>('');
+
+  // Get token data for unique count
+  const { tokens } = useTokenContext();
+  const uniqueTokensInDb = useMemo(() => {
+    if (!tokens || tokens.length === 0) return 0;
+    return new Set(tokens.map((t: {symbol: string}) => t.symbol.toUpperCase())).size;
+  }, [tokens]);
 
   // Get user preferences from settings
   const { preferences } = usePreferences();
@@ -125,12 +133,11 @@ const Dashboard = () => {
   }, [opportunities]);
 
   return (
-    <TokenProvider pollIntervalMs={pollInterval}>
-      <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 text-white">
-        {/* Background */}
-        <div className="fixed inset-0 bg-[radial-gradient(ellipse_at_top_left,theme(colors.cyan.900)/10,theme(colors.slate.950),theme(colors.purple.900)/10)]"></div>
-        
-        <div className="relative z-50 flex h-screen">
+    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 text-white">
+      {/* Background */}
+      <div className="fixed inset-0 bg-[radial-gradient(ellipse_at_top_left,theme(colors.cyan.900)/10,theme(colors.slate.950),theme(colors.purple.900)/10)]"></div>
+      
+      <div className="relative z-50 flex h-screen">
           {/* Sidebar */}
           <Sidebar 
             sidebarOpen={sidebarOpen} 
@@ -174,19 +181,21 @@ const Dashboard = () => {
                       You're tracking {trackedTokens.length} token{trackedTokens.length > 1 ? 's' : ''}: <span className="font-semibold">{trackedTokens.join(', ')}</span>
                       {' • '}Min Profit: <span className="font-semibold">${thresholds.minProfit}</span>
                       {' • '}Max Gas: <span className="font-semibold">${thresholds.maxGasCost}</span>
-                      {thresholds.minROI && ` • Min ROI: ${thresholds.minROI}%`}
-                      {thresholds.minScore && ` • Min Score: ${thresholds.minScore}`}
+                      {thresholds.minROI !== undefined && thresholds.minROI > 0 && ` • Min ROI: ${thresholds.minROI}%`}
+                      {thresholds.minScore !== undefined && thresholds.minScore > 0 && ` • Min Score: ${(thresholds.minScore * 100).toFixed(0)}%`}
                     </p>
                     <p className="text-cyan-400/60 text-xs mt-1 italic">
-                      Note: System monitors all 5 tokens (ETH, XRP, SOL, BNB, MATIC) across 3 chains. Your preferences only filter alerts/notifications you receive.
+                      Note: System currently has live data for {uniqueTokensInDb} of 5 tracked tokens{uniqueTokensInDb < trackedTokens.length ? '. SOL data temporarily unavailable from DexScreener' : ''}.
                     </p>
                   </div>
                 </div>
               </div>
-            )}              <StatCardsWrapper 
-                bestOpportunity={stats.bestOpportunity}
-                topToken={stats.topToken}
-              />
+            )}
+            
+            <StatCardsWrapper 
+              bestOpportunity={stats.bestOpportunity}
+              topToken={stats.topToken}
+            />
 
               <div className="grid grid-cols-1 xl:grid-cols-2 gap-8 mb-8">
                 <div className="bg-slate-800/50 backdrop-blur border border-slate-700/50 rounded-2xl p-6">
@@ -255,18 +264,23 @@ const Dashboard = () => {
               />
             )}
           </div>
-        </div>
 
-        {/* Mobile overlay */}
-        {sidebarOpen && (
-          <div 
-            className="fixed inset-0 bg-black/50 z-40 lg:hidden" 
-            onClick={() => setSidebarOpen(false)}
-          />
-        )}
+          {/* Mobile overlay */}
+          {sidebarOpen && (
+            <div 
+              className="fixed inset-0 bg-black/50 z-40 lg:hidden" 
+              onClick={() => setSidebarOpen(false)}
+            />
+          )}
+        </div>
       </div>
-    </TokenProvider>
   );
 };
+
+const Dashboard = () => (
+  <TokenProvider pollIntervalMs={3600000}>
+    <DashboardContent />
+  </TokenProvider>
+);
 
 export default Dashboard;

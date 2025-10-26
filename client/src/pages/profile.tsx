@@ -81,7 +81,8 @@ const ProfilePage = () => {
       setLocalProfitThreshold(preferences.alertThresholds.minROI);
       setLocalMinProfit(preferences.alertThresholds.minProfit);
       setLocalMaxGasCost(preferences.alertThresholds.maxGasCost);
-      setLocalMinScore(preferences.alertThresholds.minScore);
+      // Convert minScore from 0-1 (backend) to 0-100 (UI)
+      setLocalMinScore(preferences.alertThresholds.minScore * 100);
       setLocalName(profile?.user.name || '');
       setLocalProfilePicture(profile?.user.profilePicture || null);
       setSelectedAvatar(profile?.user.avatar || 0);
@@ -101,7 +102,8 @@ const ProfilePage = () => {
           profitThreshold: preferences.alertThresholds.minROI,
           minProfit: preferences.alertThresholds.minProfit,
           maxGasCost: preferences.alertThresholds.maxGasCost,
-          minScore: preferences.alertThresholds.minScore
+          // Store as 0-100 for UI comparison
+          minScore: preferences.alertThresholds.minScore * 100
         }
       });
     }
@@ -294,7 +296,8 @@ const ProfilePage = () => {
             minROI: localProfitThreshold,
             minProfit: localMinProfit,
             maxGasCost: localMaxGasCost,
-            minScore: localMinScore
+            // Convert minScore from 0-100 (UI) to 0-1 (backend)
+            minScore: localMinScore / 100
           };
         }
 

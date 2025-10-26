@@ -128,16 +128,20 @@ const ChartComponent: React.FC = () => {
   const innerH = height - padding * 2;
 
   // Helper to build path/area and min/max for a numeric series
-  const buildPathForSeries = (s: number[]) => {
+  const buildPathForSeries = (s: number[], globalMin?: number, globalMax?: number) => {
     if (!s || s.length === 0) return { pathD: '', areaD: '', minP: 0, maxP: 0 };
-    const min = Math.min(...s);
-    const max = Math.max(...s);
+    
+    // Use global min/max if provided for consistent scaling across all chains
+    const min = globalMin !== undefined ? globalMin : Math.min(...s);
+    const max = globalMax !== undefined ? globalMax : Math.max(...s);
     const range = Math.max(1e-8, max - min);
+    
     const points = s.map((v, i) => {
-      const x = padding + (i / (s.length - 1)) * innerW;
+      const x = padding + (i / Math.max(1, s.length - 1)) * innerW;
       const y = padding + innerH - ((v - min) / range) * innerH;
       return { x, y };
     });
+    
     const path = points.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x.toFixed(2)} ${p.y.toFixed(2)}`).join(' ');
     const last = points[points.length - 1];
     const first = points[0];
@@ -219,19 +223,34 @@ const ChartComponent: React.FC = () => {
             </linearGradient>
           </defs>
 
-          {/* per-chain areas and lines */}
+          {/* per-chain areas and lines - use global min/max for consistent scaling */}
           {['polygon','ethereum','bsc'].map(chain => {
             const s = seriesByChain[chain] || [];
-            const { pathD, areaD } = buildPathForSeries(s);
+            if (s.length === 0) return null;
+            
+            const { pathD, areaD } = buildPathForSeries(s, combinedMin, combinedMax);
             const gradId = `areaGrad-${baseToken?.symbol || 'g'}-${chain}`;
+            const chainColor = colorByChain(chain);
+            const isSelectedChain = chain === selectedChain;
+            
             return (
               <g key={chain}>
                 <linearGradient id={gradId} x1="0%" y1="0%" x2="0%" y2="100%">
-                  <stop offset="0%" stopColor={colorByChain(chain)} stopOpacity="0.18" />
-                  <stop offset="100%" stopColor={colorByChain(chain)} stopOpacity="0" />
+                  <stop offset="0%" stopColor={chainColor} stopOpacity="0.2" />
+                  <stop offset="100%" stopColor={chainColor} stopOpacity="0" />
                 </linearGradient>
                 {areaD && <path d={areaD} fill={`url(#${gradId})`} stroke="none" />}
-                {pathD && <path d={pathD} stroke={colorByChain(chain)} strokeWidth={2} fill="none" strokeLinejoin="round" strokeLinecap="round" opacity={chain===selectedChain ? 1 : 0.65} />}
+                {pathD && (
+                  <path 
+                    d={pathD} 
+                    stroke={chainColor} 
+                    strokeWidth={isSelectedChain ? 2.5 : 2} 
+                    fill="none" 
+                    strokeLinejoin="round" 
+                    strokeLinecap="round" 
+                    opacity={isSelectedChain ? 1 : 0.7} 
+                  />
+                )}
               </g>
             );
           })}
