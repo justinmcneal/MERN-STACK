@@ -1,7 +1,7 @@
 import cron from 'node-cron';
 import { dataService, webSocketService } from '../services';
 import { Token, TokenHistory } from '../models';
-import { TOKEN_CONTRACTS } from '../config/tokens';
+import { TOKEN_CONTRACTS, SUPPORTED_TOKENS, isValidToken } from '../config/tokens';
 
 interface PipelineStatus {
   isRunning: boolean;
@@ -85,6 +85,12 @@ class DataPipeline {
         console.log('No price data returned (possible backoff). Skipping token upserts.');
       } else {
         for (const priceInfo of prices) {
+          // Safety check: Only process supported tokens
+          if (!isValidToken(priceInfo.symbol)) {
+            console.warn(`⚠️  Skipping unsupported token: ${priceInfo.symbol}`);
+            continue;
+          }
+          
           const tokenContracts = TOKEN_CONTRACTS[priceInfo.symbol as keyof typeof TOKEN_CONTRACTS] || {};
           for (const chain of supportedChains) {
             // Skip if token not mapped to this chain
@@ -171,6 +177,12 @@ class DataPipeline {
       // Update each token with its chain-specific DEX price
       for (const dexPrice of dexPrices) {
         try {
+          // Safety check: Only update supported tokens
+          if (!isValidToken(dexPrice.symbol)) {
+            console.warn(`⚠️  Skipping DEX price for unsupported token: ${dexPrice.symbol}`);
+            continue;
+          }
+          
           const update = {
             dexPrice: dexPrice.price,
             dexName: dexPrice.dexName,
