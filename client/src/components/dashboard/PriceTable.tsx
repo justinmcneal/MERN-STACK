@@ -223,15 +223,17 @@ const PriceTable: React.FC<Props> = ({ filterMode, selectedChain, onSelectChain,
                 ].map(({ label, key }) => {
                   const isActive = sortKey === key;
                   const directionIndicator = isActive ? (sortDirection === 'asc' ? '▲' : '▼') : '';
+                  const alignRight = ['currentPrice', 'dexPrice', 'spread', 'liquidity', 'lastUpdated'].includes(key);
+
                   return (
                     <th
                       key={key}
-                      className={`py-3 font-medium ${key === 'lastUpdated' || key === 'currentPrice' || key === 'dexPrice' || key === 'liquidity' || key === 'spread' ? 'text-right' : ''}`}
+                      className={`py-3 px-4 font-medium ${alignRight ? 'text-right' : 'text-left'}`}
                     >
                       <button
                         type="button"
                         onClick={() => handleSort(key)}
-                        className={`flex items-center gap-1 text-xs uppercase tracking-wider ${isActive ? 'text-cyan-300' : 'text-slate-400'} hover:text-cyan-200`}
+                        className={`flex items-center gap-1 text-xs uppercase tracking-wider ${isActive ? 'text-cyan-300' : 'text-slate-400'} hover:text-cyan-200 ${alignRight ? 'ml-auto' : ''}`}
                       >
                         <span>{label}</span>
                         {directionIndicator && <span>{directionIndicator}</span>}
@@ -269,13 +271,15 @@ const PriceTable: React.FC<Props> = ({ filterMode, selectedChain, onSelectChain,
                     key={rowKey}
                     className={`border-b border-slate-800/40 text-sm transition-colors ${isStale ? 'bg-slate-800/30' : 'hover:bg-slate-800/20'}`}
                   >
-                    <td className="py-3">
+                    <td className="py-3 px-4">
                       <div className="flex flex-col">
                         <span className="font-semibold text-slate-200">{token.symbol}</span>
-                        {token.name && <span className="text-xs text-slate-500">{token.name}</span>}
+                        {token.name && token.name.toLowerCase() !== token.symbol.toLowerCase() && (
+                          <span className="text-xs text-slate-500">{token.name}</span>
+                        )}
                       </div>
                     </td>
-                    <td className="py-3">
+                    <td className="py-3 px-4">
                       <span className={`px-2 py-1 rounded text-xs font-medium ${token.chain === 'ethereum'
                         ? 'bg-cyan-500/20 text-cyan-300'
                         : token.chain === 'bsc'
@@ -283,18 +287,18 @@ const PriceTable: React.FC<Props> = ({ filterMode, selectedChain, onSelectChain,
                           : 'bg-purple-500/20 text-purple-300'
                       }`}>{token.chain}</span>
                     </td>
-                    <td className="py-3 text-right text-slate-200">{formatCurrency(token.currentPrice)}</td>
-                    <td className="py-3 text-right text-slate-200">
+                    <td className="py-3 px-4 text-right text-slate-200">{formatCurrency(token.currentPrice)}</td>
+                    <td className="py-3 px-4 text-right text-slate-200">
                       <div className="flex flex-col items-end gap-1">
                         <span>{formatCurrency(token.dexPrice)}</span>
                         {token.dexName && <span className="text-[10px] uppercase tracking-wide text-slate-500">{token.dexName}</span>}
                       </div>
                     </td>
-                    <td className={`py-3 text-right ${spreadValue === null ? 'text-slate-400' : spreadValue >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
+                    <td className={`py-3 px-4 text-right ${spreadValue === null ? 'text-slate-400' : spreadValue >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
                       {formatPercent(spreadValue ?? undefined)}
                     </td>
-                    <td className="py-3 text-right text-slate-200">{formatLiquidity(token.liquidity)}</td>
-                    <td className="py-3 text-right text-xs text-slate-400">
+                    <td className="py-3 px-4 text-right text-slate-200">{formatLiquidity(token.liquidity)}</td>
+                    <td className="py-3 px-4 text-right text-xs text-slate-400">
                       <div className="flex flex-col items-end gap-1">
                         <span title={timestampMeta.absolute}>{timestampMeta.display}</span>
                         {isStale && (

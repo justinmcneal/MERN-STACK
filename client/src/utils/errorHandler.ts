@@ -92,11 +92,11 @@ export const ErrorHandler = {
         if (stringified !== '{}' && stringified !== 'null') {
           return `Error: ${stringified}`;
         }
-      } catch (e) {
+      } catch {
         // If JSON.stringify fails, try toString
         try {
           return error.toString();
-        } catch (e2) {
+        } catch {
           // Last resort
           return 'An unexpected error occurred. Please try again.';
         }

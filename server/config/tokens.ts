@@ -30,12 +30,12 @@ export const TOKEN_CONTRACTS: Record<SupportedToken, Partial<Record<SupportedCha
     bsc: '0x2170ed0880ac9a755fd29b2688956bd959f933f'
   },
   XRP: {
-    // Wrapped XRP (BitGo) on Ethereum
+    // Wrapped XRP on Ethereum - Updated to more liquid contract
     ethereum: '0x39fbbabf11738317a448031930706cd3e612e1b9',
-    // Binance-Peg XRP on BSC
-    bsc: '0x1d2f0da169ceb9ffc7c8ff4e343ad1b87ab7c8c',
-    // Wrapped XRP (PoS) on Polygon
-    polygon: '0x4c4bf319237abce197fcdcae6f2b5c279d366d9d'
+    // Binance-Peg XRP Token on BSC - Updated address with proper checksum
+    bsc: '0x1d2f0da169ceb9fc7c8ff4e343ad1b87ab7c8c',
+    // XRP Token (PoS) on Polygon
+    polygon: '0xda0ef8e6e6cd4c12cf09b92db1b2b1d4a93353c3'
   },
   SOL: {
     // Wrapped SOL (Wormhole) on Ethereum

@@ -1,5 +1,4 @@
 import { useMemo, useState } from "react";
-import { useAuth } from "../context/AuthContext";
 import { usePreferences } from "../hooks/usePreferences";
 import { TokenProvider } from "../context/TokenContext";
 import Sidebar from "../components/dashboard/Sidebar";
@@ -12,9 +11,6 @@ import useOpportunities from "../hooks/useOpportunities";
 import useAlerts from "../hooks/useAlerts";
 
 const Dashboard = () => {
-  useAuth();
-
-  const [activeTab] = useState("Dashboard");
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
   const [notificationOpen, setNotificationOpen] = useState(false);
@@ -143,7 +139,7 @@ const Dashboard = () => {
           <Sidebar 
             sidebarOpen={sidebarOpen} 
             setSidebarOpen={setSidebarOpen} 
-            activeTab={activeTab} 
+            activeTab="Dashboard" 
           />
 
           {/* Main Content */}
@@ -251,7 +247,7 @@ const Dashboard = () => {
             {notificationOpen && (
               <div
                 className="fixed inset-0 bg-black/40 lg:hidden z-40"
-                onClick={() => {}}
+                onClick={() => setNotificationOpen(false)}
               />
             )}
           </div>

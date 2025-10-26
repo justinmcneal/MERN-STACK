@@ -82,9 +82,13 @@ const ArbitrageTable: React.FC<ArbitrageTableProps> = ({ opportunities, loading,
           <table className="w-full">
             <thead>
               <tr className="border-b border-slate-700/50">
-                {['Token','From → To','Price Diff (%)','Trade Size','Gas Fee','Net Profit','Score'].map((h,i)=> (
-                  <th key={i} className="text-left text-xs text-slate-400 font-medium pb-3 px-4">{h}</th>
-                ))}
+                <th className="text-left text-xs text-slate-400 font-medium py-3 px-4">Token</th>
+                <th className="text-left text-xs text-slate-400 font-medium py-3 px-4">From → To</th>
+                <th className="text-right text-xs text-slate-400 font-medium py-3 px-4">Price Diff (%)</th>
+                <th className="text-right text-xs text-slate-400 font-medium py-3 px-4">Trade Size</th>
+                <th className="text-right text-xs text-slate-400 font-medium py-3 px-4">Gas Fee</th>
+                <th className="text-right text-xs text-slate-400 font-medium py-3 px-4">Net Profit</th>
+                <th className="text-right text-xs text-slate-400 font-medium py-3 px-4">Score</th>
               </tr>
             </thead>
             <tbody>
@@ -107,7 +111,7 @@ const ArbitrageTable: React.FC<ArbitrageTableProps> = ({ opportunities, loading,
                   >
                     <td className="py-3 px-4">
                       <span className="font-medium text-slate-200">{opportunity.tokenSymbol}</span>
-                      {opportunity.tokenName && (
+                      {opportunity.tokenName && opportunity.tokenName.toLowerCase() !== opportunity.tokenSymbol.toLowerCase() && (
                         <span className="block text-xs text-slate-400">{opportunity.tokenName}</span>
                       )}
                       {opportunity.flagged && flagDescription && (

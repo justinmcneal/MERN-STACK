@@ -10,7 +10,10 @@ import {
   type SupportedToken
 } from '../config/tokens';
 
-const MIN_LIQUIDITY_USD = 2500; // Skip illiquid pools that produce noisy quotes
+// Liquidity threshold: lowered to capture more DEX pairs while filtering out very illiquid pools
+// Original: 2500 was too restrictive and filtered out many valid trading pairs
+// New: 1000 provides better coverage while still avoiding extremely noisy data
+const MIN_LIQUIDITY_USD = 1000; // Skip illiquid pools that produce noisy quotes
 const STABLE_TOKENS = new Set<SupportedToken>();
 const STABLE_PRICE_MIN = 0.8;
 const STABLE_PRICE_MAX = 1.2;
