@@ -56,6 +56,7 @@ const describeFlags = (reasons: OpportunityFlagReason[] | undefined): string | n
 };
 
 const ArbitrageTable: React.FC<ArbitrageTableProps> = ({ opportunities, loading, error, onRefresh }) => {
+  // Filter out stablecoins - no meaningful arbitrage opportunities
   const hasData = opportunities.length > 0;
 
   return (

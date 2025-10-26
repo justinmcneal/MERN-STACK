@@ -170,28 +170,47 @@ const ChartComponent: React.FC = () => {
 
   return (
     <div className="bg-slate-800/50 backdrop-blur border border-slate-700/50 rounded-2xl p-6">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
+      <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center mb-6 gap-4">
         <h3 className="text-lg font-semibold text-slate-200 flex items-center gap-2">
-          <svg className="w-5 h-5 text-cyan-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>Token Trends
+          <svg className="w-5 h-5 text-cyan-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+          </svg>
+          Token Trends
         </h3>
-        <div className="flex gap-2 items-center">
+        <div className="flex flex-wrap gap-2 items-center">
           {(['1h','24h','7d'] as const).map(tf=> (
-            <button key={tf} onClick={() => setTimeframe(tf)} className={`px-3 py-1 text-xs rounded-lg transition-all ${timeframe===tf? 'bg-cyan-600 text-white' : 'bg-slate-700/50 text-slate-400'} hover:text-slate-300 border border-slate-600/50`}>{tf}</button>
+            <button 
+              key={tf} 
+              onClick={() => setTimeframe(tf)} 
+              className={`px-3 py-1.5 text-xs rounded-lg transition-all ${
+                timeframe===tf
+                  ? 'bg-cyan-600 text-white' 
+                  : 'bg-slate-700/50 text-slate-400 hover:text-slate-300'
+              } border border-slate-600/50`}
+            >
+              {tf}
+            </button>
           ))}
-          <div className="relative">
-            <select value={selectedSymbol || (baseToken?.symbol ?? '')} onChange={(e) => setSelectedSymbol(e.target.value)} className="appearance-none w-full px-3 py-2 text-xs rounded-lg bg-slate-800/50 border border-slate-700/50 text-slate-300 pr-8 focus:outline-none focus:ring-2 focus:ring-cyan-400/50 transition-all duration-300">
+          <div className="relative min-w-[140px]">
+            <select 
+              value={selectedSymbol || (baseToken?.symbol ?? '')} 
+              onChange={(e) => setSelectedSymbol(e.target.value)} 
+              className="appearance-none w-full px-3 py-1.5 text-xs rounded-lg bg-slate-800/50 border border-slate-700/50 text-slate-300 pr-8 focus:outline-none focus:ring-2 focus:ring-cyan-400/50 transition-all duration-300"
+            >
               <option value="">Select token</option>
               {(!loading ? Array.from(new Set(tokens.map(t => t.symbol))).map(sym => (
                 <option key={sym} value={sym} className="bg-slate-900 text-slate-300">{sym}</option>
               )) : [])}
             </select>
-            <svg className="w-4 h-4 text-slate-400 absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7"/></svg>
+            <svg className="w-4 h-4 text-slate-400 absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7"/>
+            </svg>
           </div>
         </div>
       </div>
 
-      {/* Use a responsive container that preserves the chart aspect ratio */}
-      <div className="relative w-full" style={{ aspectRatio: `${width} / ${height}`, width: '100%' }}>
+      {/* Chart container with responsive aspect ratio */}
+      <div className="relative w-full mb-4" style={{ aspectRatio: `${width} / ${height}`, minHeight: '200px' }}>
         <svg className="w-full h-full" viewBox={`0 0 ${width} ${height}`} preserveAspectRatio="xMidYMid meet">
           <defs>
             <linearGradient id={`areaGrad-${baseToken?.symbol || 'g'}`} x1="0%" y1="0%" x2="0%" y2="100%">
@@ -246,18 +265,18 @@ const ChartComponent: React.FC = () => {
         )}
       </div>
 
-      {/* Legend moved outside the SVG to avoid overlap and ensure responsive layout */}
-      <div className="mt-4 flex flex-wrap gap-6 text-xs items-center">
+      {/* Legend - improved layout and spacing */}
+      <div className="flex flex-wrap gap-4 lg:gap-6 text-xs items-center justify-center lg:justify-start pt-4 border-t border-slate-700/30">
         <div className="flex items-center gap-2">
-          <div style={{width:12,height:12,borderRadius:6,background:colorByChain('polygon')}}></div>
+          <div className="w-3 h-3 rounded-full" style={{ backgroundColor: colorByChain('polygon') }}></div>
           <span className="text-slate-400">Polygon</span>
         </div>
         <div className="flex items-center gap-2">
-          <div style={{width:12,height:12,borderRadius:6,background:colorByChain('ethereum')}}></div>
+          <div className="w-3 h-3 rounded-full" style={{ backgroundColor: colorByChain('ethereum') }}></div>
           <span className="text-slate-400">Ethereum</span>
         </div>
         <div className="flex items-center gap-2">
-          <div style={{width:12,height:12,borderRadius:6,background:colorByChain('bsc')}}></div>
+          <div className="w-3 h-3 rounded-full" style={{ backgroundColor: colorByChain('bsc') }}></div>
           <span className="text-slate-400">Binance Smart Chain</span>
         </div>
       </div>
