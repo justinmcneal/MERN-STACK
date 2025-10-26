@@ -73,10 +73,17 @@ const PriceTable: React.FC<Props> = ({ filterMode, selectedChain, onSelectChain,
     () => Array.from(new Set(tokens.map(t => t.chain))).sort((a, b) => a.localeCompare(b)),
     [tokens]
   );
-  const tokenSymbols = useMemo(
-    () => Array.from(new Set(tokens.map(t => t.symbol))).sort((a, b) => a.localeCompare(b)),
-    [tokens]
-  );
+  const tokenSymbols = useMemo(() => {
+    // Exclude stablecoins from token selector
+    const EXCLUDED_STABLECOINS = ['USDT', 'USDC', 'DAI', 'BUSD'];
+    return Array.from(
+      new Set(
+        tokens
+          .filter(t => !EXCLUDED_STABLECOINS.includes(t.symbol.toUpperCase()))
+          .map(t => t.symbol)
+      )
+    ).sort((a, b) => a.localeCompare(b));
+  }, [tokens]);
 
   const filtered = useMemo(() => {
     if (filterMode === 'all') return tokens;
