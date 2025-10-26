@@ -20,6 +20,16 @@ export interface IOpportunity extends Document {
   volume?: number; // assumed trade size in USD
   roi?: number;
   netProfit?: number;
+  anomalyFlags?: string[];
+  diagnostics?: {
+    priceDiffPercent?: number;
+    grossProfitUsd?: number;
+    gasCostUsd?: number;
+    chainFromPrice?: number;
+    chainToPrice?: number;
+    chainFromDexPrice?: number | null;
+    chainToDexPrice?: number | null;
+  };
 }
 
 const opportunitySchema: Schema<IOpportunity> = new mongoose.Schema(
@@ -90,6 +100,13 @@ const opportunitySchema: Schema<IOpportunity> = new mongoose.Schema(
     },
     netProfit: { 
       type: Number 
+    },
+    anomalyFlags: {
+      type: [String],
+      default: []
+    },
+    diagnostics: {
+      type: Schema.Types.Mixed
     }
   },
   { 

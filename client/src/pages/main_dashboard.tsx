@@ -88,12 +88,15 @@ const Dashboard = () => {
       return { bestOpportunity: null, topToken: null };
     }
 
+    const safeOpportunities = filteredOpportunities.filter(opp => !opp.flagged);
+    const opportunitiesForStats = safeOpportunities.length > 0 ? safeOpportunities : filteredOpportunities;
+
     // Best opportunity (highest net profit)
-    const bestOpp = [...filteredOpportunities].sort((a, b) => b.netProfitUsd - a.netProfitUsd)[0];
+    const bestOpp = [...opportunitiesForStats].sort((a, b) => b.netProfitUsd - a.netProfitUsd)[0];
 
     // Calculate average spread per token
     const tokenStats = new Map<string, { spreads: number[]; chains: Set<string> }>();
-    filteredOpportunities.forEach(opp => {
+    opportunitiesForStats.forEach(opp => {
       const symbol = opp.tokenSymbol;
       if (!tokenStats.has(symbol)) {
         tokenStats.set(symbol, { spreads: [], chains: new Set() });

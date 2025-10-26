@@ -34,6 +34,16 @@ export interface ArbitrageContext {
   nativePriceMap: Map<SupportedChain, number>;
 }
 
+export interface OpportunityDiagnostics {
+  priceDiffPercent: number;
+  grossProfitUsd: number;
+  gasCostUsd: number;
+  chainFromPrice: number;
+  chainToPrice: number;
+  chainFromDexPrice?: number | null;
+  chainToDexPrice?: number | null;
+}
+
 export interface ArbitrageEvaluation {
   tokenSymbol: SupportedToken;
   chainFrom: SupportedChain;
@@ -55,6 +65,8 @@ export interface ArbitrageEvaluation {
   profitable: boolean;
   tradeUsdAmount: number;
   tradeTokenAmount: number;
+  anomalyFlags: string[];
+  diagnostics: OpportunityDiagnostics | null;
 }
 
 const createTokenCacheKey = (symbol: SupportedToken, chain: SupportedChain): TokenCacheKey => {
@@ -152,6 +164,57 @@ export async function evaluateOpportunity(
   const profitable = netProfitUsd > 0;
   const roi = tradeUsdAmount > 0 ? (netProfitUsd / tradeUsdAmount) * 100 : null;
 
+  const anomalyFlags: string[] = [];
+  const chainFromDexPrice = Number.isFinite(Number(fromToken.dexPrice)) ? Number(fromToken.dexPrice) : null;
+  const chainToDexPrice = Number.isFinite(Number(toToken.dexPrice)) ? Number(toToken.dexPrice) : null;
+
+  if (Math.abs(priceDiffPercent) > 5000) {
+    anomalyFlags.push('spread-outlier');
+  }
+
+  if (chainFromDexPrice !== null && priceFrom > 0) {
+    const divergence = Math.abs(chainFromDexPrice - priceFrom) / priceFrom;
+    if (divergence > 1.5) {
+      anomalyFlags.push('from-dex-cex-divergence');
+    }
+  }
+
+  if (chainToDexPrice !== null && priceTo > 0) {
+    const divergence = Math.abs(chainToDexPrice - priceTo) / priceTo;
+    if (divergence > 1.5) {
+      anomalyFlags.push('to-dex-cex-divergence');
+    }
+  }
+
+  if (grossProfitUsd > 0 && gasCostUsd >= 0 && gasCostUsd < grossProfitUsd * 0.0001) {
+    anomalyFlags.push('gas-vs-profit-outlier');
+  }
+
+  const diagnostics: OpportunityDiagnostics = {
+    priceDiffPercent,
+    grossProfitUsd,
+    gasCostUsd,
+    chainFromPrice: priceFrom,
+    chainToPrice: priceTo,
+    chainFromDexPrice,
+    chainToDexPrice
+  };
+
+  if (anomalyFlags.length > 0) {
+    console.warn(
+      `[ArbitrageService] anomaly detected for ${symbol} ${chainFrom}->${chainTo}: ${anomalyFlags.join(', ')}`,
+      {
+        priceFrom,
+        priceTo,
+        chainFromDexPrice,
+        chainToDexPrice,
+        priceDiffPercent,
+        grossProfitUsd,
+        gasCostUsd
+      }
+    );
+  }
+
   let score = 0;
   if (!options?.skipScoring && profitable) {
     try {
@@ -188,7 +251,9 @@ export async function evaluateOpportunity(
     score,
     profitable,
     tradeUsdAmount,
-    tradeTokenAmount
+    tradeTokenAmount,
+    anomalyFlags,
+    diagnostics
   };
 }
 
@@ -230,7 +295,9 @@ export async function upsertOpportunity(
     roi: evaluation.roi,
     timestamp: new Date(),
     status: 'active',
-    volume: evaluation.tradeUsdAmount
+    volume: evaluation.tradeUsdAmount,
+    anomalyFlags: evaluation.anomalyFlags,
+    diagnostics: evaluation.diagnostics
   };
 
   if (existing) {

@@ -73,11 +73,53 @@ export const getOpportunities = asyncHandler(async (req: Request, res: Response)
 
   const total = await Opportunity.countDocuments(query);
 
+  const normalized = opportunities.map((opp) => {
+    const plain = opp.toObject();
+    const priceDiffPercent = plain.priceDiffPercent;
+    const estimatedProfit = plain.estimatedProfit;
+    const gasCost = plain.gasCost;
+
+    const anomalies = new Set<string>();
+    if (Array.isArray(plain.anomalyFlags)) {
+      for (const flag of plain.anomalyFlags) {
+        if (typeof flag === 'string' && flag.trim().length > 0) {
+          anomalies.add(flag);
+        }
+      }
+    }
+
+    if (typeof priceDiffPercent === 'number' && Math.abs(priceDiffPercent) > 5000) {
+      anomalies.add('spread-outlier');
+    }
+
+    if (
+      typeof estimatedProfit === 'number' &&
+      typeof gasCost === 'number' &&
+      estimatedProfit > 0 &&
+      gasCost >= 0 &&
+      gasCost < estimatedProfit * 0.0001
+    ) {
+      anomalies.add('gas-vs-profit-outlier');
+    }
+
+    if (anomalies.size === 0) {
+      return plain;
+    }
+
+    const flagReasons = Array.from(anomalies);
+    return {
+      ...plain,
+      flagged: true,
+      flagReason: flagReasons[0],
+      flagReasons
+    };
+  });
+
   res.json({
     success: true,
-    count: opportunities.length,
+    count: normalized.length,
     total,
-    data: opportunities
+    data: normalized
   });
 });
 
@@ -93,9 +135,48 @@ export const getOpportunityById = asyncHandler(async (req: Request, res: Respons
     throw new Error('Opportunity not found');
   }
 
+  const plain = opportunity.toObject();
+  const priceDiffPercent = plain.priceDiffPercent;
+  const estimatedProfit = plain.estimatedProfit;
+  const gasCost = plain.gasCost;
+
+  const responseBody = {
+    ...plain
+  } as typeof plain & { flagged?: boolean; flagReason?: string; flagReasons?: string[] };
+
+  const anomalies = new Set<string>();
+  if (Array.isArray(plain.anomalyFlags)) {
+    for (const flag of plain.anomalyFlags) {
+      if (typeof flag === 'string' && flag.trim().length > 0) {
+        anomalies.add(flag);
+      }
+    }
+  }
+
+  if (typeof priceDiffPercent === 'number' && Math.abs(priceDiffPercent) > 5000) {
+    anomalies.add('spread-outlier');
+  }
+
+  if (
+    typeof estimatedProfit === 'number' &&
+    typeof gasCost === 'number' &&
+    estimatedProfit > 0 &&
+    gasCost >= 0 &&
+    gasCost < estimatedProfit * 0.0001
+  ) {
+    anomalies.add('gas-vs-profit-outlier');
+  }
+
+  if (anomalies.size > 0) {
+    const flagReasons = Array.from(anomalies);
+    responseBody.flagged = true;
+    responseBody.flagReason = flagReasons[0];
+    responseBody.flagReasons = flagReasons;
+  }
+
   res.json({
     success: true,
-    data: opportunity
+    data: responseBody
   });
 });
 
