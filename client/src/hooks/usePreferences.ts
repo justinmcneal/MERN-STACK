@@ -130,12 +130,16 @@ export const usePreferences = () => {
   };
 
   // Update appearance settings
-  const updateAppearanceSettings = async (theme?: 'light' | 'dark' | 'auto', refreshInterval?: number) => {
+  const updateAppearanceSettings = async (
+    theme?: 'light' | 'dark' | 'auto', 
+    refreshInterval?: number,
+    currency?: 'USD' | 'EUR' | 'GBP' | 'JPY' | 'PHP'
+  ) => {
     try {
       setIsUpdating(true);
       setErrors({});
       
-      const updatedPreferences = await ProfileService.updateAppearanceSettings(theme, refreshInterval);
+      const updatedPreferences = await ProfileService.updateAppearanceSettings(theme, refreshInterval, currency);
       setPreferences(updatedPreferences);
       return { success: true };
     } catch (error: any) {

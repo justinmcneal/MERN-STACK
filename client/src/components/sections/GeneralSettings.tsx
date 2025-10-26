@@ -4,9 +4,9 @@ import { useThemeClasses } from "../ThemeAware";
 
 interface GeneralSettingsProps {
   themeMode: boolean;
-  defaultCurrency: string;
+  defaultCurrency: 'USD' | 'EUR' | 'GBP' | 'JPY' | 'PHP';
   onThemeModeChange: () => void;
-  onDefaultCurrencyChange: (value: string) => void;
+  onDefaultCurrencyChange: (value: 'USD' | 'EUR' | 'GBP' | 'JPY' | 'PHP') => void;
   errors?: {
     themeMode?: string;
     defaultCurrency?: string;
@@ -51,40 +51,28 @@ const GeneralSettings: React.FC<GeneralSettingsProps> = ({
           />
         </div>
 
-        {/* Data Refresh Info (Read-only) */}
-        <div className={`flex flex-col sm:flex-row sm:items-start justify-between gap-4 pb-6 border-b ${border}`}>
-          <div className="flex-1">
-            <h3 className={`${text} font-medium mb-1`}>Data Refresh Interval</h3>
-            <p className={`text-sm ${textSecondary}`}>Server updates price data every hour from external APIs. Dashboard automatically polls for updates every 60 seconds.</p>
-          </div>
-          <div className="flex items-center gap-2 px-4 py-2.5 bg-slate-700/30 border border-slate-600/30 rounded-xl">
-            <svg className="w-4 h-4 text-cyan-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-            <span className="text-sm text-slate-300">60 seconds</span>
-          </div>
-        </div>
-
         {/* Default Currency */}
         <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
           <div className="flex-1">
             <h3 className={`${text} font-medium mb-1`}>Default Currency</h3>
-            <p className={`text-sm ${textSecondary}`}>Primary currency for displaying values</p>
+            <p className={`text-sm ${textSecondary}`}>Primary currency for displaying profit/loss values and conversions</p>
             {errors.defaultCurrency && <p className="text-xs text-red-400 mt-1">{errors.defaultCurrency}</p>}
           </div>
-            <div className="relative w-full sm:w-48">
+          <div className="relative w-full sm:w-48">
             <select 
               value={defaultCurrency}
-              onChange={(e) => onDefaultCurrencyChange(e.target.value)}
+              onChange={(e) => onDefaultCurrencyChange(e.target.value as 'USD' | 'EUR' | 'GBP' | 'JPY' | 'PHP')}
               className={`w-full appearance-none px-4 py-2.5 ${input} border rounded-xl focus:outline-none focus:ring-2 transition-all cursor-pointer ${
                 errors.defaultCurrency 
                   ? 'border-red-500 focus:ring-red-500/50' 
                   : 'focus:ring-cyan-400/50'
               }`}
             >
-              {["USD ($)","EUR (€)","GBP (£)","JPY (¥)","PHP (₱)"].map(t => 
-                <option key={t} value={t} className="">{t}</option>
-              )}
+              <option value="USD">USD ($) - US Dollar</option>
+              <option value="EUR">EUR (€) - Euro</option>
+              <option value="GBP">GBP (£) - British Pound</option>
+              <option value="JPY">JPY (¥) - Japanese Yen</option>
+              <option value="PHP">PHP (₱) - Philippine Peso</option>
             </select>
             <svg className="w-4 h-4 text-slate-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />

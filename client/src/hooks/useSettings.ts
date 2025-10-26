@@ -5,7 +5,7 @@ import { useTheme } from '../context/ThemeContext';
 export interface SettingsData {
   // General Settings
   themeMode: boolean; // true = dark, false = light (mapped from theme)
-  defaultCurrency: string; // Client-side only for now
+  defaultCurrency: 'USD' | 'EUR' | 'GBP' | 'JPY' | 'PHP'; // Stored in backend
   
   // Monitoring Settings
   minProfitThreshold: number; // Mapped from alertThresholds.minProfit
@@ -34,7 +34,7 @@ export const useSettings = () => {
 
   const [settings, setSettings] = useState<SettingsData>({
     themeMode: true, // Default to dark mode
-    defaultCurrency: "USD ($)",
+    defaultCurrency: 'USD',
     minProfitThreshold: 1.5,
     maxGasFee: 75
   });
@@ -49,8 +49,8 @@ export const useSettings = () => {
         // Theme mapping: 'dark' -> true, 'light' -> false, 'auto' -> true (default to dark)
         themeMode: preferences.theme === 'dark' || preferences.theme === 'auto',
         
-        // Default currency (client-side only for now)
-        defaultCurrency: "USD ($)",
+        // Currency from backend
+        defaultCurrency: preferences.currency || 'USD',
         
         // Alert thresholds mapping
         minProfitThreshold: preferences.alertThresholds.minProfit,
@@ -102,9 +102,10 @@ export const useSettings = () => {
     try {
       setErrors({});
       
-      // Prepare appearance settings update (no refresh interval - server-controlled)
+      // Prepare appearance settings update (includes currency)
       const appearanceUpdate = {
-        theme: getThemeValue(settings.themeMode)
+        theme: getThemeValue(settings.themeMode),
+        currency: settings.defaultCurrency
       };
 
       // Prepare alert thresholds update
@@ -119,7 +120,8 @@ export const useSettings = () => {
       // Update appearance settings
       const appearanceResult = await updateAppearanceSettings(
         appearanceUpdate.theme,
-        undefined // No refresh interval - server-controlled
+        undefined, // No refresh interval - server-controlled
+        appearanceUpdate.currency
       );
 
       if (!appearanceResult.success) {
@@ -165,7 +167,7 @@ export const useSettings = () => {
     if (preferences) {
       const originalSettings: SettingsData = {
         themeMode: preferences.theme === 'dark' || preferences.theme === 'auto',
-        defaultCurrency: "USD ($)",
+        defaultCurrency: preferences.currency || 'USD',
         minProfitThreshold: preferences.alertThresholds.minProfit,
         maxGasFee: preferences.alertThresholds.maxGasCost
       };

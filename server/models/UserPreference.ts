@@ -20,6 +20,7 @@ export interface IUserPreference extends Document {
   };
   refreshInterval: number; // in seconds
   theme: 'light' | 'dark' | 'auto';
+  currency: 'USD' | 'EUR' | 'GBP' | 'JPY' | 'PHP';
 }
 
 const userPreferenceSchema: Schema<IUserPreference> = new mongoose.Schema(
@@ -86,6 +87,11 @@ const userPreferenceSchema: Schema<IUserPreference> = new mongoose.Schema(
       type: String, 
       enum: ['light', 'dark', 'auto'],
       default: 'auto' 
+    },
+    currency: {
+      type: String,
+      enum: ['USD', 'EUR', 'GBP', 'JPY', 'PHP'],
+      default: 'USD'
     }
   },
   { 

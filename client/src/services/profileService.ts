@@ -29,6 +29,7 @@ export interface UserPreference {
   };
   refreshInterval: number;
   theme: 'light' | 'dark' | 'auto';
+  currency: 'USD' | 'EUR' | 'GBP' | 'JPY' | 'PHP';
 }
 
 export interface ProfileResponse {
@@ -61,6 +62,7 @@ export interface UpdatePreferencesData {
   notificationSettings?: Partial<UserPreference['notificationSettings']>;
   refreshInterval?: number;
   theme?: 'light' | 'dark' | 'auto';
+  currency?: 'USD' | 'EUR' | 'GBP' | 'JPY' | 'PHP';
 }
 
 export interface DeleteAccountData {
@@ -189,9 +191,16 @@ class ProfileService {
   /**
    * Update appearance settings
    */
-  static async updateAppearanceSettings(theme?: 'light' | 'dark' | 'auto', refreshInterval?: number): Promise<UserPreference> {
+  static async updateAppearanceSettings(
+    theme?: 'light' | 'dark' | 'auto', 
+    refreshInterval?: number,
+    currency?: 'USD' | 'EUR' | 'GBP' | 'JPY' | 'PHP'
+  ): Promise<UserPreference> {
     try {
-      const response = await apiClient.put<{ success: boolean; data: UserPreference; message: string }>('/preferences/appearance', { theme, refreshInterval });
+      const response = await apiClient.put<{ success: boolean; data: UserPreference; message: string }>(
+        '/preferences/appearance', 
+        { theme, refreshInterval, currency }
+      );
       return response.data.data;
     } catch (error: any) {
       throw this.handleError(error);

@@ -28,7 +28,8 @@ export const getUserPreferences = asyncHandler(async (req: Request, res: Respons
         discord: false
       },
       refreshInterval: 30,
-      theme: 'auto'
+      theme: 'auto',
+      currency: 'USD'
     });
   }
 
@@ -88,6 +89,11 @@ export const updateUserPreferences = asyncHandler(async (req: Request, res: Resp
   // Validate theme
   if (updates.theme && !['light', 'dark', 'auto'].includes(updates.theme)) {
     updates.theme = 'auto';
+  }
+
+  // Validate currency
+  if (updates.currency && !['USD', 'EUR', 'GBP', 'JPY', 'PHP'].includes(updates.currency)) {
+    updates.currency = 'USD';
   }
 
   const preferences = await UserPreference.findOneAndUpdate(
