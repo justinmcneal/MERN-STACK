@@ -1,12 +1,15 @@
-import React, { useMemo, useState, useEffect } from 'react';
+import React, { useMemo, useState, useEffect, useRef } from 'react';
 import { useTokenContext } from '../../context/useTokenContext';
 import TokenService from '../../services/TokenService';
+
+const CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
 
 const ChartComponent: React.FC = () => {
   const { tokens, loading } = useTokenContext();
   const [timeframe, setTimeframe] = useState<'1h'|'24h'|'7d'>('24h');
   const [selectedSymbol, setSelectedSymbol] = useState<string>('');
   const [historyNotice, setHistoryNotice] = useState<string | null>(null);
+  const historyCacheRef = useRef<Map<string, { data: number[]; message?: string; fetchedAt: number }>>(new Map());
 
   // Choose a token object to base the chart on: prefer selectedSymbol else first token symbol
   // When picking a token object for anchor price (for mocks), prefer the ethereum chain, then polygon, then bsc
@@ -49,14 +52,28 @@ const ChartComponent: React.FC = () => {
       const results: Record<string, number[]> = {};
       let hasData = false;
       let notice: string | null = null;
-      setHistoryNotice(null);
 
       await Promise.all(chains.map(async (chain) => {
+        const cacheKey = `${baseToken.symbol.toUpperCase()}::${chain}::${tfParam}`;
+        const now = Date.now();
+        const cached = historyCacheRef.current.get(cacheKey);
+
+        if (cached && now - cached.fetchedAt < CACHE_TTL_MS) {
+          if (cached.data.length > 0) {
+            results[chain] = cached.data;
+            hasData = true;
+          } else if (cached.message && !notice) {
+            notice = cached.message;
+          }
+          return;
+        }
+
         try {
           const resp = await TokenService.history(baseToken.symbol, chain, tfParam);
           const data = resp?.data || [];
           if (Array.isArray(data) && data.length > 0) {
             const prices = data.map((p: { price: number | string }) => Number(p.price));
+            let processed = prices;
             if (prices.length > pointsCount) {
               const step = Math.floor(prices.length / pointsCount) || 1;
               const sampled: number[] = [];
@@ -64,34 +81,40 @@ const ChartComponent: React.FC = () => {
                 sampled.push(prices[i]);
                 if (sampled.length >= pointsCount) break;
               }
-              results[chain] = sampled;
-              hasData = true;
-              return;
+              processed = sampled;
             }
-            results[chain] = prices;
+            results[chain] = processed;
             hasData = true;
+            historyCacheRef.current.set(cacheKey, { data: processed, fetchedAt: Date.now() });
             return;
           }
-          if (resp?.message) {
-            notice = resp.message;
+
+          const message = resp?.message as string | undefined;
+          if (message && !notice) {
+            notice = message;
           }
+          historyCacheRef.current.set(cacheKey, { data: [], message, fetchedAt: Date.now() });
         } catch (error: unknown) {
           const err = error as { response?: { data?: { message?: string } } };
-          if (err?.response?.data?.message) {
-            notice = err.response.data.message;
+          const message = err?.response?.data?.message || 'Historical price data is not available yet. Real-time pricing will continue to refresh normally.';
+          if (!notice) {
+            notice = message;
           }
+          historyCacheRef.current.set(cacheKey, { data: [], message, fetchedAt: Date.now() });
         }
       }));
 
       if (!mounted) return;
-      setSeriesByChain(hasData ? results : {});
+
       if (hasData) {
+        setSeriesByChain(results);
         setHistoryNotice(null);
-        return;
+      } else {
+        setSeriesByChain({});
+        setHistoryNotice(
+          notice || 'Historical price data is not available yet. Real-time pricing will continue to refresh normally.'
+        );
       }
-      setHistoryNotice(
-        notice || 'Historical price data is not available yet. Real-time pricing will continue to refresh normally.'
-      );
     };
     fetchHistory();
     return () => { mounted = false; };

@@ -1,6 +1,6 @@
 import cron from 'node-cron';
 import { dataService, webSocketService } from '../services';
-import { Token } from '../models';
+import { Token, TokenHistory } from '../models';
 import { TOKEN_CONTRACTS } from '../config/tokens';
 
 interface PipelineStatus {
@@ -75,8 +75,10 @@ class DataPipeline {
       console.log('💰 Updating token prices...');
 
       const prices = await dataService.fetchTokenPrices();
-      const supportedChains = dataService.getSupportedChains();
-      let tokensUpdated = 0;
+    const supportedChains = dataService.getSupportedChains();
+    let tokensUpdated = 0;
+    const snapshotTime = new Date();
+    const historyBatch: Array<{ symbol: string; chain: string; price: number; collectedAt: Date; source: string }> = [];
 
       // Respect backoff / empty results
       if (!prices || prices.length === 0) {
@@ -109,7 +111,24 @@ class DataPipeline {
             );
 
             if (result) tokensUpdated++;
+
+            historyBatch.push({
+              symbol: priceInfo.symbol,
+              chain,
+              price: chainPrice,
+              collectedAt: snapshotTime,
+              source: 'dexscreener'
+            });
           }
+        }
+      }
+
+      if (historyBatch.length > 0) {
+        try {
+          await TokenHistory.insertMany(historyBatch, { ordered: false });
+          console.log(`🗃️  Recorded ${historyBatch.length} historical price points.`);
+        } catch (historyErr: any) {
+          console.error('Error recording token history:', historyErr?.message || historyErr);
         }
       }
 
@@ -248,9 +267,14 @@ class DataPipeline {
         createdAt: { $lt: cutoffDate }
       });
 
+      const historyCutoff = new Date();
+      historyCutoff.setDate(historyCutoff.getDate() - 90);
+      const removedHistory = await TokenHistory.deleteMany({ collectedAt: { $lt: historyCutoff } });
+
       console.log(`✅ Cleanup completed:`);
       console.log(`   - Removed ${expiredOpportunities.deletedCount} old expired opportunities`);
       console.log(`   - Removed ${oldAlerts.deletedCount} old read alerts`);
+      console.log(`   - Removed ${removedHistory.deletedCount} token history snapshots older than 90 days`);
 
     } catch (error) {
       const errorMsg = `Error during cleanup: ${error}`;
