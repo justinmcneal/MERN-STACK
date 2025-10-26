@@ -63,7 +63,7 @@ const SettingsContent: React.FC = () => {
         />
 
         {/* Save Button */}
-        <div className="bg-white/70 backdrop-blur border border-slate-200/60 rounded-2xl p-6">
+        <div className="bg-slate-900/70 backdrop-blur border border-slate-700/60 rounded-2xl p-6">
           <div className="flex flex-col items-center gap-4">
             <div className="flex gap-3">
               <button
@@ -71,8 +71,8 @@ const SettingsContent: React.FC = () => {
                 disabled={!hasChanges || isUpdating}
                 className={`inline-flex items-center justify-center gap-3 px-8 py-4 rounded-xl font-semibold shadow-lg transition-all duration-300 transform ${
                   !hasChanges || isUpdating
-                    ? 'bg-slate-600 text-slate-400 cursor-not-allowed'
-                    : 'bg-gradient-to-r from-blue-500 to-purple-600 text-white hover:scale-105 hover:from-blue-400 hover:to-purple-500'
+                    ? 'bg-slate-700 text-slate-400 cursor-not-allowed'
+                    : 'bg-gradient-to-r from-cyan-500 to-purple-600 text-white hover:scale-105 hover:from-cyan-400 hover:to-purple-500'
                 }`}
               >
                 {isUpdating ? (
@@ -91,14 +91,14 @@ const SettingsContent: React.FC = () => {
               {hasChanges && (
                 <button
                   onClick={resetSettings}
-                  className="px-6 py-4 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold transition-all duration-300"
+                  className="px-6 py-4 rounded-xl bg-slate-800/60 hover:bg-slate-700/60 text-slate-200 font-semibold transition-all duration-300"
                 >
                   Reset
                 </button>
               )}
             </div>
             
-            <p className="text-sm text-slate-500 text-center">
+            <p className="text-sm text-slate-400 text-center">
               {hasChanges 
                 ? "You have unsaved changes" 
                 : "All changes have been saved"
