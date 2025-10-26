@@ -107,7 +107,7 @@ const ProfilePage = () => {
       try {
         // Use the default supported tokens for now
         // In a real app, you'd fetch this from the API
-        const defaultTokens = ['ETH', 'USDT', 'USDC', 'BNB', 'MATIC'];
+  const defaultTokens = ['ETH', 'XRP', 'SOL', 'BNB', 'MATIC'];
         setAvailableTokens(defaultTokens);
         
         // Initialize localTokensTracked with all available tokens

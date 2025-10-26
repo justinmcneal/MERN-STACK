@@ -131,7 +131,7 @@ const AlertService = {
       } else if (item.alertType === 'price') {
         baseAlert.title = 'Price Target Hit';
         baseAlert.pair = item.metadata?.tokenSymbol 
-          ? `${item.metadata.tokenSymbol}/USDT`
+          ? `${item.metadata.tokenSymbol}/XRP`
           : 'Unknown Pair';
         // Extract target/current from message if available
         // This is a placeholder - you might want to store these in metadata

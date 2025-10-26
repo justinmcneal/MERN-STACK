@@ -4,8 +4,8 @@ roi
 token_BNB
 token_ETH
 token_MATIC
-token_USDC
-token_USDT
+token_SOL
+token_XRP
 chain_bsc
 chain_ethereum
 chain_polygon

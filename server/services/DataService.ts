@@ -11,7 +11,7 @@ import {
 } from '../config/tokens';
 
 const MIN_LIQUIDITY_USD = 2500; // Skip illiquid pools that produce noisy quotes
-const STABLE_TOKENS = new Set<SupportedToken>(['USDC', 'USDT']);
+const STABLE_TOKENS = new Set<SupportedToken>();
 const STABLE_PRICE_MIN = 0.8;
 const STABLE_PRICE_MAX = 1.2;
 

@@ -4,7 +4,7 @@ export const ABOUT_INSIDE_NOTIFICATIONS: NotificationItem[] = [
   {
     type: "price",
     title: "Price Target Hit",
-    pair: "ETH/USDT",
+  pair: "ETH/XRP",
     target: "$0.45",
     current: "$0.4523",
     time: "now",
@@ -21,7 +21,7 @@ export const ABOUT_INSIDE_NOTIFICATIONS: NotificationItem[] = [
   {
     type: "price",
     title: "Price Target Hit",
-    pair: "ETH/USDT",
+  pair: "ETH/XRP",
     target: "$0.45",
     current: "$0.4523",
     time: "36m ago",

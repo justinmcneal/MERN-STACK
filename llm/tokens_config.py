@@ -2,14 +2,14 @@
 # Shared configuration for tokens and chains (Python version)
 
 # Supported tokens and chains
-SUPPORTED_TOKENS = ["ETH", "USDT", "USDC", "BNB", "MATIC"]
+SUPPORTED_TOKENS = ["ETH", "XRP", "SOL", "BNB", "MATIC"]
 SUPPORTED_CHAINS = ["ethereum", "polygon", "bsc"]
 
 # Human-readable token names
 TOKEN_NAMES = {
     "ETH": "Ethereum",
-    "USDT": "Tether", 
-    "USDC": "USD Coin",
+    "XRP": "Ripple",
+    "SOL": "Solana",
     "BNB": "Binance Coin",
     "MATIC": "Polygon"
 }

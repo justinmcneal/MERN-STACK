@@ -45,7 +45,7 @@ export const FAQ_NOTIFICATIONS: FAQNotification[] = [
   {
     type: "price",
     title: "Price Target Hit",
-    pair: "ETH/USDT",
+    pair: "ETH/XRP",
     target: "$0.45",
     current: "$0.4523",
     time: "now",
@@ -62,7 +62,7 @@ export const FAQ_NOTIFICATIONS: FAQNotification[] = [
   {
     type: "price",
     title: "Price Target Hit",
-    pair: "ETH/USDT",
+    pair: "ETH/XRP",
     target: "$0.45",
     current: "$0.4523",
     time: "36m ago",
@@ -95,7 +95,7 @@ export const FAQ_ITEMS: FAQItemData[] = [
   {
     question: "Which chains/tokens are supported",
     answer:
-      "We currently support major blockchains including Ethereum, Binance Smart Chain (BSC), and Polygon. Popular tokens include BTC, ETH, USDT, BNB, and MATIC. We're constantly adding new chains and tokens based on user demand.",
+      "We currently support major blockchains including Ethereum, Binance Smart Chain (BSC), and Polygon. Popular tokens include BTC, ETH, XRP, SOL, BNB, and MATIC. We're constantly adding new chains and tokens based on user demand.",
     category: "getting-started",
   },
   {

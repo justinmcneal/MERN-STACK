@@ -7,7 +7,7 @@ type OpportunitiesChartProps = {
   onTokenChange: (token: string) => void;
 };
 
-const tokenOptions = ["All Tokens", "BTC", "ETH", "BNB", "MATIC", "USDT"];
+const tokenOptions = ["All Tokens", "BTC", "ETH", "BNB", "MATIC", "XRP", "SOL"];
 
 const OpportunitiesChart: React.FC<OpportunitiesChartProps> = ({
   selectedTimeframe,

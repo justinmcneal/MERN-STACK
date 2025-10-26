@@ -25,7 +25,7 @@ const DashboardSection = () => {
                 <div className="space-y-2">
                   <div className="flex justify-between items-center p-2 lg:p-3 bg-slate-900/50 rounded-lg">
                     <div>
-                      <div className="text-white font-medium text-sm">ETH/USDC</div>
+                      <div className="text-white font-medium text-sm">ETH/SOL</div>
                       <div className="text-xs text-slate-400">Uniswap → Sushiswap</div>
                     </div>
                     <div className="text-emerald-400 font-bold text-sm">+4.2%</div>
