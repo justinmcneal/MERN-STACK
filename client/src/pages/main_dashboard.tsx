@@ -65,45 +65,41 @@ const Dashboard = () => {
     refresh: refreshOpportunities
   } = useOpportunities({ pollIntervalMs: pollInterval, query: opportunityQuery });
 
-  // Calculate stats from opportunities
+  // Calculate stats from ALL opportunities (not filtered by user preferences)
+  // This gives accurate "best opportunity" regardless of user's tracking settings
   const stats = useMemo(() => {
     if (!opportunities || opportunities.length === 0) {
       return { bestOpportunity: null, topToken: null };
     }
 
-    // Filter opportunities based on user's tracked tokens if set
-    let filteredOpportunities = opportunities;
-    if (trackedTokens.length > 0) {
-      filteredOpportunities = opportunities.filter(opp =>
-        trackedTokens.includes(opp.tokenSymbol.toUpperCase())
-      );
-    }
+    // Use ALL opportunities for stats calculation (don't filter by trackedTokens)
+    // This ensures we show the actual best opportunity available, not just user's tracked tokens
+    const safeOpportunities = opportunities.filter(opp => !opp.flagged);
+    const opportunitiesForStats = safeOpportunities.length > 0 ? safeOpportunities : opportunities;
 
-    // If no opportunities after filtering, return empty stats
-    if (filteredOpportunities.length === 0) {
-      return { bestOpportunity: null, topToken: null };
-    }
-
-    const safeOpportunities = filteredOpportunities.filter(opp => !opp.flagged);
-    const opportunitiesForStats = safeOpportunities.length > 0 ? safeOpportunities : filteredOpportunities;
-
-    // Best opportunity (highest net profit)
-    const bestOpp = [...opportunitiesForStats].sort((a, b) => b.netProfitUsd - a.netProfitUsd)[0];
+    // Best opportunity (highest net profit that's actually profitable)
+    const profitableOpps = opportunitiesForStats.filter(opp => opp.netProfitUsd > 0);
+    const bestOpp = profitableOpps.length > 0 
+      ? [...profitableOpps].sort((a, b) => b.netProfitUsd - a.netProfitUsd)[0]
+      : null;
 
     // Calculate average spread per token
-    const tokenStats = new Map<string, { spreads: number[]; chains: Set<string> }>();
+    const tokenStats = new Map<string, { spreads: number[]; chains: Set<string>; totalProfit: number }>();
     opportunitiesForStats.forEach(opp => {
       const symbol = opp.tokenSymbol;
       if (!tokenStats.has(symbol)) {
-        tokenStats.set(symbol, { spreads: [], chains: new Set() });
+        tokenStats.set(symbol, { spreads: [], chains: new Set(), totalProfit: 0 });
       }
       const stats = tokenStats.get(symbol)!;
-      if (opp.priceDiffPercent) stats.spreads.push(opp.priceDiffPercent);
+      if (opp.priceDiffPercent && opp.priceDiffPercent > 0) {
+        stats.spreads.push(opp.priceDiffPercent);
+      }
+      stats.totalProfit += opp.netProfitUsd;
       stats.chains.add(opp.chainFrom);
       stats.chains.add(opp.chainTo);
     });
 
-    // Find token with highest average spread
+    // Find token with highest average spread (that has positive spreads)
     let topToken = null;
     let maxAvgSpread = 0;
     tokenStats.forEach((stats, symbol) => {
@@ -126,7 +122,7 @@ const Dashboard = () => {
       } : null,
       topToken
     };
-  }, [opportunities, trackedTokens]);
+  }, [opportunities]);
 
   return (
     <TokenProvider pollIntervalMs={pollInterval}>
@@ -163,23 +159,31 @@ const Dashboard = () => {
 
             {/* Main Dashboard Content */}
             <main className="flex-1 overflow-y-auto p-4 lg:p-6">
-              {/* User Preferences Info Banner */}
-              {trackedTokens.length > 0 && thresholds && (
-                <div className="mb-6 bg-cyan-500/10 border border-cyan-500/30 rounded-xl p-4">
-                  <div className="flex items-center gap-3">
-                    <svg className="w-5 h-5 text-cyan-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                    <p className="text-cyan-300 text-sm">
-                      Tracking {trackedTokens.length} token(s): {trackedTokens.join(', ')} | 
-                      Min Profit: ${thresholds.minProfit} | 
-                      Max Gas: ${thresholds.maxGasCost}
+            {/* User Preferences Info Banner */}
+            {trackedTokens.length > 0 && thresholds && (
+              <div className="mb-6 bg-cyan-500/10 border border-cyan-500/30 rounded-xl p-4">
+                <div className="flex items-start gap-3">
+                  <svg className="w-5 h-5 text-cyan-400 mt-0.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  <div className="flex-1">
+                    <p className="text-cyan-300 text-sm font-medium mb-1">
+                      Personal Alert Preferences Active
+                    </p>
+                    <p className="text-cyan-300/80 text-xs">
+                      You're tracking {trackedTokens.length} token{trackedTokens.length > 1 ? 's' : ''}: <span className="font-semibold">{trackedTokens.join(', ')}</span>
+                      {' • '}Min Profit: <span className="font-semibold">${thresholds.minProfit}</span>
+                      {' • '}Max Gas: <span className="font-semibold">${thresholds.maxGasCost}</span>
+                      {thresholds.minROI && ` • Min ROI: ${thresholds.minROI}%`}
+                      {thresholds.minScore && ` • Min Score: ${thresholds.minScore}`}
+                    </p>
+                    <p className="text-cyan-400/60 text-xs mt-1 italic">
+                      Note: System monitors all 5 tokens (ETH, XRP, SOL, BNB, MATIC) across 3 chains. Your preferences only filter alerts/notifications you receive.
                     </p>
                   </div>
                 </div>
-              )}
-
-              <StatCardsWrapper 
+              </div>
+            )}              <StatCardsWrapper 
                 bestOpportunity={stats.bestOpportunity}
                 topToken={stats.topToken}
               />
