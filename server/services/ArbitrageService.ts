@@ -34,6 +34,13 @@ export interface ArbitrageContext {
   nativePriceMap: Map<SupportedChain, number>;
 }
 
+const SEVERE_ANOMALIES = new Set<string>([
+  'spread-outlier',
+  'gas-vs-profit-outlier',
+  'from-dex-cex-divergence',
+  'to-dex-cex-divergence'
+]);
+
 export interface OpportunityDiagnostics {
   priceDiffPercent: number;
   grossProfitUsd: number;
@@ -213,6 +220,10 @@ export async function evaluateOpportunity(
         gasCostUsd
       }
     );
+  }
+
+  if (anomalyFlags.some((flag) => SEVERE_ANOMALIES.has(flag))) {
+    return null;
   }
 
   let score = 0;

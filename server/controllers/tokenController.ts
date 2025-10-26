@@ -114,10 +114,11 @@ export const refreshTokenPrices = asyncHandler(async (req: Request, res: Respons
     // Fetch latest prices from DexScreener
     const priceData = await dataService.fetchTokenPrices();
     
-  let updatedCount = 0;
-  let createdCount = 0;
-  const snapshotTime = new Date();
-  const historyBatch: Array<{ symbol: string; chain: string; price: number; collectedAt: Date; source: string }> = [];
+    let updatedCount = 0;
+    let createdCount = 0;
+    let dexUpdatedCount = 0;
+    const snapshotTime = new Date();
+    const historyBatch: Array<{ symbol: string; chain: string; price: number; collectedAt: Date; source: string }> = [];
 
     if (!priceData || priceData.length === 0) {
       res.json({
@@ -125,13 +126,14 @@ export const refreshTokenPrices = asyncHandler(async (req: Request, res: Respons
         message: 'No price data available from DexScreener.',
         updated: 0,
         created: 0,
+        dexUpdated: 0,
         timestamp: new Date()
       });
       return;
     }
 
-  // Update/create tokens only for chains where the token has a contract mapping
-  const supportedChains = dataService.getSupportedChains();
+    // Update/create tokens only for chains where the token has a contract mapping
+    const supportedChains = dataService.getSupportedChains();
 
     for (const priceInfo of priceData) {
       const tokenContracts = TOKEN_CONTRACTS[priceInfo.symbol as keyof typeof TOKEN_CONTRACTS] || {};
@@ -182,6 +184,27 @@ export const refreshTokenPrices = asyncHandler(async (req: Request, res: Respons
       }
     }
 
+    try {
+      const dexPrices = await dataService.fetchDexPrices();
+      for (const dexPrice of dexPrices) {
+        await Token.findOneAndUpdate(
+          { symbol: dexPrice.symbol, chain: dexPrice.chain },
+          {
+            $set: {
+              dexPrice: dexPrice.price,
+              dexName: dexPrice.dexName,
+              liquidity: dexPrice.liquidity,
+              lastUpdated: dexPrice.timestamp ?? new Date()
+            }
+          },
+          { upsert: true, new: true }
+        ).exec();
+        dexUpdatedCount++;
+      }
+    } catch (dexErr: any) {
+      console.error('Error refreshing DEX prices during manual refresh:', dexErr?.message || dexErr);
+    }
+
     if (historyBatch.length > 0) {
       try {
         await TokenHistory.insertMany(historyBatch, { ordered: false });
@@ -195,6 +218,7 @@ export const refreshTokenPrices = asyncHandler(async (req: Request, res: Respons
       message: 'Token prices refreshed successfully',
       updated: updatedCount,
       created: createdCount,
+      dexUpdated: dexUpdatedCount,
       timestamp: new Date()
     });
     return;

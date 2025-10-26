@@ -10,6 +10,11 @@ import {
   type SupportedToken
 } from '../config/tokens';
 
+const MIN_LIQUIDITY_USD = 2500; // Skip illiquid pools that produce noisy quotes
+const STABLE_TOKENS = new Set<SupportedToken>(['USDC', 'USDT']);
+const STABLE_PRICE_MIN = 0.8;
+const STABLE_PRICE_MAX = 1.2;
+
 interface TokenPrice {
   symbol: string;
   price: number;
@@ -104,7 +109,11 @@ export class DataService {
     }
   }
 
-  private async fetchDexScreenerPrice(chain: SupportedChain, address: string): Promise<number | null> {
+  private async fetchDexScreenerPrice(
+    chain: SupportedChain,
+    address: string,
+    token?: SupportedToken
+  ): Promise<number | null> {
     const normalizedAddress = address.toLowerCase();
 
     try {
@@ -141,6 +150,22 @@ export class DataService {
         .filter((entry) => Number.isFinite(entry.price) && entry.price > 0)
         .sort((a, b) => (b.liquidityUsd || 0) - (a.liquidityUsd || 0))[0];
 
+      if (!best) {
+        return null;
+      }
+
+      if (!Number.isFinite(best.liquidityUsd) || (best.liquidityUsd ?? 0) < MIN_LIQUIDITY_USD) {
+        console.warn(`DexScreener skipping ${normalizedAddress} on ${chain}: liquidity below ${MIN_LIQUIDITY_USD}`);
+        return null;
+      }
+
+  if (token && STABLE_TOKENS.has(token)) {
+        if (best.price < STABLE_PRICE_MIN || best.price > STABLE_PRICE_MAX) {
+          console.warn(`DexScreener stablecoin price out of range for ${token} on ${chain}: ${best.price}`);
+          return null;
+        }
+      }
+
       return best?.price ?? null;
     } catch (error: any) {
       if (error.response?.status === 429) {
@@ -164,7 +189,7 @@ export class DataService {
         const address = chainMap[chain];
         if (!address) continue;
 
-        const price = await this.fetchDexScreenerPrice(chain, address);
+  const price = await this.fetchDexScreenerPrice(chain, address, token);
         if (price === null) {
           failCount++;
           continue;
@@ -214,14 +239,44 @@ export class DataService {
         continue;
       }
 
-      const preferred = sanitizedEntries.find(([chain]) => chain === 'ethereum') ?? sanitizedEntries[0];
-      const [_, primaryPrice] = preferred;
+      const prices = sanitizedEntries.map(([, price]) => price).sort((a, b) => a - b);
+      const median = prices.length % 2 === 1
+        ? prices[(prices.length - 1) / 2]
+        : (prices[prices.length / 2 - 1] + prices[prices.length / 2]) / 2;
+
+      const filteredEntries = sanitizedEntries.filter(([chain, price]) => {
+        if (median > 0) {
+          const ratio = price / median;
+          if (ratio > 20 || ratio < 0.05) {
+            console.warn(`⚠️  Dropping ${token} price on ${chain}: ${price} diverges from median ${median}`);
+            return false;
+          }
+        }
+
+        if (STABLE_TOKENS.has(token)) {
+          if (price < STABLE_PRICE_MIN || price > STABLE_PRICE_MAX) {
+            console.warn(`⚠️  Dropping stablecoin quote for ${token} on ${chain}: ${price}`);
+            return false;
+          }
+        }
+
+        return true;
+      });
+
+      if (filteredEntries.length === 0) {
+        console.warn(`⚠️  All quotes discarded for ${token} after sanity checks.`);
+        continue;
+      }
+
+  const referenceEntries = filteredEntries;
+  const preferred = referenceEntries.find(([chain]) => chain === 'ethereum') ?? referenceEntries[0];
+  const [_, primaryPrice] = preferred;
 
       results.push({
         symbol: token,
         price: primaryPrice,
         timestamp,
-        chainPrices: Object.fromEntries(sanitizedEntries)
+        chainPrices: Object.fromEntries(filteredEntries)
       });
     }
 
@@ -328,10 +383,23 @@ export class DataService {
 
       const bestPair = sortedPairs[0];
       const priceUsd = parseFloat(bestPair.priceUsd);
+      const liquidityUsd = bestPair.liquidity?.usd ?? 0;
+
+      if (!Number.isFinite(liquidityUsd) || liquidityUsd < MIN_LIQUIDITY_USD) {
+        console.warn(`Dex price skipped for ${symbol} on ${chain}: liquidity ${liquidityUsd}`);
+        return null;
+      }
 
       if (isNaN(priceUsd) || priceUsd <= 0) {
         console.warn(`Invalid price for ${symbol} on ${chain}: ${bestPair.priceUsd}`);
         return null;
+      }
+
+      if (STABLE_TOKENS.has(symbol as SupportedToken)) {
+        if (priceUsd < STABLE_PRICE_MIN || priceUsd > STABLE_PRICE_MAX) {
+          console.warn(`Stablecoin price out of range for ${symbol} on ${chain}: ${priceUsd}`);
+          return null;
+        }
       }
 
       return {

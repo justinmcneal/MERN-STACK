@@ -10,6 +10,13 @@ import {
   upsertOpportunity
 } from '../services/ArbitrageService';
 
+const SEVERE_ANOMALIES = new Set<string>([
+  'spread-outlier',
+  'gas-vs-profit-outlier',
+  'from-dex-cex-divergence',
+  'to-dex-cex-divergence'
+]);
+
 // GET /api/opportunities - Get all opportunities with filtering
 export const getOpportunities = asyncHandler(async (req: Request, res: Response) => {
   const { 
@@ -24,7 +31,8 @@ export const getOpportunities = asyncHandler(async (req: Request, res: Response)
     limit = 50,
     skip = 0,
     sortBy = 'score',
-    sortOrder = 'desc'
+    sortOrder = 'desc',
+    includeFlagged
   } = req.query;
 
   let query: any = {};
@@ -73,6 +81,12 @@ export const getOpportunities = asyncHandler(async (req: Request, res: Response)
 
   const total = await Opportunity.countDocuments(query);
 
+  const allowFlagged = typeof includeFlagged === 'string'
+    ? includeFlagged.toLowerCase() === 'true'
+    : Array.isArray(includeFlagged)
+      ? includeFlagged.some((value) => String(value).toLowerCase() === 'true')
+      : false;
+
   const normalized = opportunities.map((opp) => {
     const plain = opp.toObject();
     const priceDiffPercent = plain.priceDiffPercent;
@@ -115,11 +129,21 @@ export const getOpportunities = asyncHandler(async (req: Request, res: Response)
     };
   });
 
+  const filtered = allowFlagged
+    ? normalized
+    : normalized.filter((item) => {
+        const reasons = Array.isArray((item as any).flagReasons) ? (item as any).flagReasons : [];
+        if (reasons.length === 0 && !(item as any).flagged) {
+          return true;
+        }
+        return !reasons.some((reason: string) => SEVERE_ANOMALIES.has(reason));
+      });
+
   res.json({
     success: true,
-    count: normalized.length,
+    count: filtered.length,
     total,
-    data: normalized
+    data: filtered
   });
 });
 

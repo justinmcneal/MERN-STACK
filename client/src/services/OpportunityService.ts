@@ -53,6 +53,7 @@ export interface OpportunityQuery {
   skip?: number;
   sortBy?: string;
   sortOrder?: 'asc' | 'desc';
+  includeFlagged?: boolean;
 }
 
 interface OpportunityApiResponse {
