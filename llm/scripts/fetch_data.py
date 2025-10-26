@@ -11,8 +11,8 @@ COINGECKO_URL = "https://api.coingecko.com/api/v3/simple/price"
 CRYPTOCOMPARE_URL = "https://min-api.cryptocompare.com/data/v2/histohour"
 TOKENS = {
     "ethereum": "ETH",
-    "tether": "USDT",
-    "usd-coin": "USDC",
+    "ripple": "XRP",
+    "solana": "SOL",
     "binancecoin": "BNB",
     "matic-network": "MATIC"
 }
@@ -48,8 +48,8 @@ def get_historical_prices():
     # Map token symbol to CryptoCompare symbol
     symbol_map = {
         "ETH": "ETH",
-        "USDT": "USDT",
-        "USDC": "USDC",
+        "XRP": "XRP",
+        "SOL": "SOL",
         "BNB": "BNB",
         "MATIC": "MATIC"
     }
@@ -98,8 +98,8 @@ def main():
             writer.writerow([
                 "timestamp",
                 "ETH_price",
-                "USDT_price",
-                "USDC_price",
+                "XRP_price",
+                "SOL_price",
                 "BNB_price",
                 "MATIC_price",
                 "eth_gas_gwei",
@@ -122,8 +122,8 @@ def main():
                 row = [
                     now,
                     prices["ETH"],
-                    prices["USDT"],
-                    prices["USDC"],
+                    prices["XRP"],
+                    prices["SOL"],
                     prices["BNB"],
                     prices["MATIC"],
                     gas["ethereum"],

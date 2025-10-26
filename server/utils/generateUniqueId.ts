@@ -1,8 +1,3 @@
-/**
- * Generate a unique ID with specified length
- * @param length - The length of the ID to generate
- * @returns A random string of the specified length
- */
 export const generateUniqueId = (length: number = 8): string => {
   const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
   let result = '';

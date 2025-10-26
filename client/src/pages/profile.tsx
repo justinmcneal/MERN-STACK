@@ -45,7 +45,10 @@ const ProfilePage = () => {
       tokensTracked: [] as string[],
       dashboardPopup: false,
       emailNotifications: false,
-      profitThreshold: 1
+      profitThreshold: 1,
+      minProfit: 10,
+      maxGasCost: 50,
+      minScore: 60
     }
   });
 
@@ -56,6 +59,9 @@ const ProfilePage = () => {
   const [localDashboardPopup, setLocalDashboardPopup] = useState(false);
   const [localEmailNotifications, setLocalEmailNotifications] = useState(false);
   const [localProfitThreshold, setLocalProfitThreshold] = useState(1);
+  const [localMinProfit, setLocalMinProfit] = useState(10);
+  const [localMaxGasCost, setLocalMaxGasCost] = useState(50);
+  const [localMinScore, setLocalMinScore] = useState(60);
   const [localTwoFactorAuth, setLocalTwoFactorAuth] = useState(false);
   const [selectedAvatar, setSelectedAvatar] = useState(0);
   const [localProfilePicture, setLocalProfilePicture] = useState<string | null>(null);
@@ -73,6 +79,10 @@ const ProfilePage = () => {
       setLocalDashboardPopup(preferences.notificationSettings.dashboard);
       setLocalEmailNotifications(preferences.notificationSettings.email);
       setLocalProfitThreshold(preferences.alertThresholds.minROI);
+      setLocalMinProfit(preferences.alertThresholds.minProfit);
+      setLocalMaxGasCost(preferences.alertThresholds.maxGasCost);
+      // Convert minScore from 0-1 (backend) to 0-100 (UI)
+      setLocalMinScore(preferences.alertThresholds.minScore * 100);
       setLocalName(profile?.user.name || '');
       setLocalProfilePicture(profile?.user.profilePicture || null);
       setSelectedAvatar(profile?.user.avatar || 0);
@@ -89,7 +99,11 @@ const ProfilePage = () => {
           tokensTracked: [...preferences.tokensTracked],
           dashboardPopup: preferences.notificationSettings.dashboard,
           emailNotifications: preferences.notificationSettings.email,
-          profitThreshold: preferences.alertThresholds.minROI
+          profitThreshold: preferences.alertThresholds.minROI,
+          minProfit: preferences.alertThresholds.minProfit,
+          maxGasCost: preferences.alertThresholds.maxGasCost,
+          // Store as 0-100 for UI comparison
+          minScore: preferences.alertThresholds.minScore * 100
         }
       });
     }
@@ -107,7 +121,7 @@ const ProfilePage = () => {
       try {
         // Use the default supported tokens for now
         // In a real app, you'd fetch this from the API
-        const defaultTokens = ['ETH', 'USDT', 'USDC', 'BNB', 'MATIC'];
+  const defaultTokens = ['ETH', 'XRP', 'SOL', 'BNB', 'MATIC'];
         setAvailableTokens(defaultTokens);
         
         // Initialize localTokensTracked with all available tokens
@@ -148,9 +162,12 @@ const ProfilePage = () => {
     const dashboardChanged = localDashboardPopup !== originalState.preferences.dashboardPopup;
     const emailChanged = localEmailNotifications !== originalState.preferences.emailNotifications;
     const profitChanged = localProfitThreshold !== originalState.preferences.profitThreshold;
+    const minProfitChanged = localMinProfit !== originalState.preferences.minProfit;
+    const maxGasCostChanged = localMaxGasCost !== originalState.preferences.maxGasCost;
+    const minScoreChanged = localMinScore !== originalState.preferences.minScore;
 
-    return profileChanged || profilePictureChanged || avatarChanged || tokensChanged || dashboardChanged || emailChanged || profitChanged;
-  }, [localName, localProfilePicture, selectedAvatar, localTokensTracked, localDashboardPopup, localEmailNotifications, localProfitThreshold, originalState]);
+    return profileChanged || profilePictureChanged || avatarChanged || tokensChanged || dashboardChanged || emailChanged || profitChanged || minProfitChanged || maxGasCostChanged || minScoreChanged;
+  }, [localName, localProfilePicture, selectedAvatar, localTokensTracked, localDashboardPopup, localEmailNotifications, localProfitThreshold, localMinProfit, localMaxGasCost, localMinScore, originalState]);
 
   // Handle profile updates (store locally, don't save immediately)
   const handleProfileUpdate = (data: { name?: string; email?: string; avatar?: number; profilePicture?: string }) => {
@@ -180,6 +197,9 @@ const ProfilePage = () => {
     dashboardPopup?: boolean;
     emailNotifications?: boolean;
     profitThreshold?: number;
+    minProfit?: number;
+    maxGasCost?: number;
+    minScore?: number;
     twoFactorAuth?: boolean;
   }) => {
     if (data.tokensTracked) {
@@ -196,6 +216,18 @@ const ProfilePage = () => {
 
     if (data.profitThreshold !== undefined) {
       setLocalProfitThreshold(data.profitThreshold);
+    }
+
+    if (data.minProfit !== undefined) {
+      setLocalMinProfit(data.minProfit);
+    }
+
+    if (data.maxGasCost !== undefined) {
+      setLocalMaxGasCost(data.maxGasCost);
+    }
+
+    if (data.minScore !== undefined) {
+      setLocalMinScore(data.minScore);
     }
 
     if (data.twoFactorAuth !== undefined) {
@@ -234,6 +266,9 @@ const ProfilePage = () => {
       const dashboardChanged = localDashboardPopup !== originalState.preferences.dashboardPopup;
       const emailChanged = localEmailNotifications !== originalState.preferences.emailNotifications;
       const profitChanged = localProfitThreshold !== originalState.preferences.profitThreshold;
+      const minProfitChanged = localMinProfit !== originalState.preferences.minProfit;
+      const maxGasCostChanged = localMaxGasCost !== originalState.preferences.maxGasCost;
+      const minScoreChanged = localMinScore !== originalState.preferences.minScore;
 
       // Save profile changes
       if (profileData.name || profileData.profilePicture !== undefined || profileData.avatar !== undefined) {
@@ -241,8 +276,8 @@ const ProfilePage = () => {
         await updateProfile(profileData);
       }
 
-      // Save preferences changes
-      if (tokensChanged || dashboardChanged || emailChanged || profitChanged) {
+      // Save preferences changes (check if any threshold changed)
+      if (tokensChanged || dashboardChanged || emailChanged || profitChanged || minProfitChanged || maxGasCostChanged || minScoreChanged) {
   const preferencesData: UpdatePreferencesData = {};
 
         if (tokensChanged) {
@@ -256,12 +291,13 @@ const ProfilePage = () => {
           };
         }
 
-        if (profitChanged) {
+        if (profitChanged || minProfitChanged || maxGasCostChanged || minScoreChanged) {
           preferencesData.alertThresholds = {
             minROI: localProfitThreshold,
-            minProfit: preferences?.alertThresholds.minProfit || 100,
-            maxGasCost: preferences?.alertThresholds.maxGasCost || 50,
-            minScore: preferences?.alertThresholds.minScore || 80
+            minProfit: localMinProfit,
+            maxGasCost: localMaxGasCost,
+            // Convert minScore from 0-100 (UI) to 0-1 (backend)
+            minScore: localMinScore / 100
           };
         }
 
@@ -280,7 +316,10 @@ const ProfilePage = () => {
           tokensTracked: tokensChanged ? [...localTokensSelected] : [...prev.preferences.tokensTracked],
           dashboardPopup: localDashboardPopup,
           emailNotifications: localEmailNotifications,
-          profitThreshold: localProfitThreshold
+          profitThreshold: localProfitThreshold,
+          minProfit: localMinProfit,
+          maxGasCost: localMaxGasCost,
+          minScore: localMinScore
         }
       }));
 
@@ -385,6 +424,9 @@ const ProfilePage = () => {
                 dashboardPopup={dashboardPopup}
                 emailNotifications={emailNotifications}
                 profitThreshold={profitThreshold}
+                minProfit={localMinProfit}
+                maxGasCost={localMaxGasCost}
+                minScore={localMinScore}
                 availableTokens={availableTokens}
                 onUpdate={handlePreferencesUpdate}
                 isUpdating={preferencesUpdating}

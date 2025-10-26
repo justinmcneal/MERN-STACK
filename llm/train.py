@@ -18,12 +18,22 @@ def load_market_data():
     records = []
     for _, row in df.iterrows():
         for token in SUPPORTED_TOKENS:
+            if token in ["ETH", "XRP"]:
+                chain = "ethereum"
+                gas_value = row["eth_gas_gwei"]
+            elif token == "BNB":
+                chain = "bsc"
+                gas_value = row["bsc_gas_gwei"]
+            else:
+                chain = "polygon"
+                gas_value = row["polygon_gas_gwei"]
+
             records.append({
                 "timestamp": row["timestamp"],
                 "token": token,
-                "chain": "ethereum" if token in ["ETH", "USDT", "USDC"] else ("bsc" if token == "BNB" else "polygon"),
+                "chain": chain,
                 "price": row[f"{token}_price"],
-                "gas": row["eth_gas_gwei"] if token in ["ETH", "USDT", "USDC"] else (row["bsc_gas_gwei"] if token == "BNB" else row["polygon_gas_gwei"])
+                "gas": gas_value
             })
     return pd.DataFrame(records)
 

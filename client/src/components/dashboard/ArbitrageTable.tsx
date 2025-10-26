@@ -1,5 +1,5 @@
 import React from 'react';
-import type { OpportunityDto } from '../../services/OpportunityService';
+import type { OpportunityDto, OpportunityFlagReason } from '../../services/OpportunityService';
 
 interface ArbitrageTableProps {
   opportunities: OpportunityDto[];
@@ -38,7 +38,25 @@ const capitalizeChain = (chain: string) => {
     .join(' ');
 };
 
+const FLAG_LABELS: Record<OpportunityFlagReason, string> = {
+  'spread-outlier': 'Spread anomaly',
+  'gas-vs-profit-outlier': 'Unrealistic gas ratio',
+  'from-dex-cex-divergence': 'Source price mismatch',
+  'to-dex-cex-divergence': 'Destination price mismatch'
+};
+
+const describeFlags = (reasons: OpportunityFlagReason[] | undefined): string | null => {
+  if (!reasons || reasons.length === 0) {
+    return null;
+  }
+
+  return reasons
+    .map((reason) => FLAG_LABELS[reason] ?? reason)
+    .join(', ');
+};
+
 const ArbitrageTable: React.FC<ArbitrageTableProps> = ({ opportunities, loading, error, onRefresh }) => {
+  // Filter out stablecoins - no meaningful arbitrage opportunities
   const hasData = opportunities.length > 0;
 
   return (
@@ -65,9 +83,13 @@ const ArbitrageTable: React.FC<ArbitrageTableProps> = ({ opportunities, loading,
           <table className="w-full">
             <thead>
               <tr className="border-b border-slate-700/50">
-                {['Token','From → To','Price Diff (%)','Trade Size','Gas Fee','Net Profit','Score'].map((h,i)=> (
-                  <th key={i} className="text-left text-xs text-slate-400 font-medium pb-3 px-4">{h}</th>
-                ))}
+                <th className="text-left text-xs text-slate-400 font-medium py-3 px-4">Token</th>
+                <th className="text-left text-xs text-slate-400 font-medium py-3 px-4">From → To</th>
+                <th className="text-right text-xs text-slate-400 font-medium py-3 px-4">Price Diff (%)</th>
+                <th className="text-right text-xs text-slate-400 font-medium py-3 px-4">Trade Size</th>
+                <th className="text-right text-xs text-slate-400 font-medium py-3 px-4">Gas Fee</th>
+                <th className="text-right text-xs text-slate-400 font-medium py-3 px-4">Net Profit</th>
+                <th className="text-right text-xs text-slate-400 font-medium py-3 px-4">Score</th>
               </tr>
             </thead>
             <tbody>
@@ -79,12 +101,27 @@ const ArbitrageTable: React.FC<ArbitrageTableProps> = ({ opportunities, loading,
                     ? 'text-yellow-400'
                     : 'text-slate-400';
 
+                const flagDescription = describeFlags(opportunity.flagReasons);
+                const rowClassName = `border-b border-slate-800/30 ${opportunity.flagged ? 'bg-amber-500/10 border-amber-400/30' : ''}`;
+
                 return (
-                  <tr key={opportunity.id} className="border-b border-slate-800/30">
+                  <tr
+                    key={opportunity.id}
+                    className={rowClassName}
+                    title={flagDescription ?? undefined}
+                  >
                     <td className="py-3 px-4">
                       <span className="font-medium text-slate-200">{opportunity.tokenSymbol}</span>
-                      {opportunity.tokenName && (
+                      {opportunity.tokenName && opportunity.tokenName.toLowerCase() !== opportunity.tokenSymbol.toLowerCase() && (
                         <span className="block text-xs text-slate-400">{opportunity.tokenName}</span>
+                      )}
+                      {opportunity.flagged && flagDescription && (
+                        <span className="mt-1 inline-flex items-center gap-1 text-xs text-amber-300">
+                          <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 9v3m0 3h.01M12 5l7 14H5l7-14z" />
+                          </svg>
+                          {flagDescription}
+                        </span>
                       )}
                     </td>
                     <td className="py-3 px-4">

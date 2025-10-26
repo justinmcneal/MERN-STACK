@@ -14,7 +14,7 @@ const NOTIFICATIONS: NotificationItem[] = [
   {
     type: "price",
     title: "Price Target Hit",
-    pair: "ETH/USDT",
+    pair: "ETH/XRP",
     target: "$0.45",
     current: "$0.4523",
     time: "now",
@@ -31,7 +31,7 @@ const NOTIFICATIONS: NotificationItem[] = [
   {
     type: "price",
     title: "Price Target Hit",
-    pair: "ETH/USDT",
+    pair: "ETH/XRP",
     target: "$0.45",
     current: "$0.4523",
     time: "36m ago",
@@ -49,14 +49,14 @@ const NOTIFICATIONS: NotificationItem[] = [
 
 const OPPORTUNITIES: OpportunityItem[] = [
   { token: "ETH", from: "Ethereum", to: "Polygon", priceDiff: "+2.5%", estProfit: "$50", roi: "95%", color: "emerald" },
-  { token: "USDT", from: "BSC", to: "Polygon", priceDiff: "+1.8%", estProfit: "$45", roi: "85%", color: "emerald" },
-  { token: "USDC", from: "Ethereum", to: "BSC", priceDiff: "+2.1%", estProfit: "$60", roi: "88%", color: "emerald" },
+  { token: "XRP", from: "BSC", to: "Polygon", priceDiff: "+1.8%", estProfit: "$45", roi: "85%", color: "emerald" },
+  { token: "SOL", from: "Ethereum", to: "BSC", priceDiff: "+2.1%", estProfit: "$60", roi: "88%", color: "emerald" },
   { token: "BNB", from: "BSC", to: "Ethereum", priceDiff: "+3.2%", estProfit: "$120", roi: "91%", color: "emerald" },
   { token: "MATIC", from: "Polygon", to: "Ethereum", priceDiff: "+2.8%", estProfit: "$20", roi: "87%", color: "emerald" },
   { token: "DOT", from: "Polkadot", to: "Solana", priceDiff: "+1.4%", estProfit: "$105", roi: "76%", color: "yellow" },
 ];
 
-const TOKEN_FILTER_OPTIONS = ["All Tokens", "BTC", "ETH", "BNB", "MATIC", "USDT"];
+const TOKEN_FILTER_OPTIONS = ["All Tokens", "BTC", "ETH", "BNB", "MATIC", "XRP", "SOL"];
 const CHAIN_FILTER_OPTIONS = ["All Chain Pairs", "Ethereum → Polygon", "BSC → Ethereum", "Polygon → BSC"];
 const TABLE_VIEW_OPTIONS = ["By Profit", "By Token", "ROI"];
 

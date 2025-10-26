@@ -10,7 +10,8 @@
     "build": "echo \"No build step required for Node.js server\"",
     "test": "jest",
     "test:watch": "jest --watch",
-    "test:coverage": "jest --coverage"
+    "test:coverage": "jest --coverage",
+    "db:reset": "ts-node scripts/resetDatabase.ts"
   },
   "keywords": [
     "node",

@@ -1,5 +1,21 @@
 import { apiClient } from './api';
 
+export type OpportunityFlagReason =
+  | 'spread-outlier'
+  | 'gas-vs-profit-outlier'
+  | 'from-dex-cex-divergence'
+  | 'to-dex-cex-divergence';
+
+export interface OpportunityDiagnostics {
+  priceDiffPercent?: number;
+  grossProfitUsd?: number;
+  gasCostUsd?: number;
+  chainFromPrice?: number;
+  chainToPrice?: number;
+  chainFromDexPrice?: number | null;
+  chainToDexPrice?: number | null;
+}
+
 export interface OpportunityDto {
   id: string;
   tokenSymbol: string;
@@ -19,6 +35,10 @@ export interface OpportunityDto {
   priceFrom?: number;
   priceTo?: number;
   updatedAt?: string;
+  flagged?: boolean;
+  flagReason?: OpportunityFlagReason;
+  flagReasons?: OpportunityFlagReason[];
+  diagnostics?: OpportunityDiagnostics;
 }
 
 export interface OpportunityQuery {
@@ -27,10 +47,13 @@ export interface OpportunityQuery {
   chainTo?: string;
   minProfit?: number;
   minScore?: number;
+  maxGasCost?: number;
+  minROI?: number;
   limit?: number;
   skip?: number;
   sortBy?: string;
   sortOrder?: 'asc' | 'desc';
+  includeFlagged?: boolean;
 }
 
 interface OpportunityApiResponse {
@@ -53,6 +76,11 @@ interface OpportunityApiResponse {
     priceFrom?: number;
     priceTo?: number;
     updatedAt?: string;
+    flagged?: boolean;
+    flagReason?: OpportunityFlagReason;
+    flagReasons?: OpportunityFlagReason[];
+    anomalyFlags?: OpportunityFlagReason[];
+    diagnostics?: OpportunityDiagnostics;
     tokenId?: {
       _id: string;
       symbol?: string;
@@ -85,6 +113,24 @@ const OpportunityService = {
         ? item.netProfit
         : item.estimatedProfit - item.gasCost;
 
+      const collectedFlags = new Set<OpportunityFlagReason>();
+      const rawFlagCollections = [item.flagReasons, item.anomalyFlags];
+      for (const collection of rawFlagCollections) {
+        if (Array.isArray(collection)) {
+          for (const flag of collection) {
+            if (typeof flag === 'string') {
+              collectedFlags.add(flag as OpportunityFlagReason);
+            }
+          }
+        }
+      }
+
+      if (item.flagReason) {
+        collectedFlags.add(item.flagReason);
+      }
+
+      const flagReasons = Array.from(collectedFlags);
+
       return {
         id: item._id,
         tokenSymbol: tokenSymbol ?? 'UNKNOWN',
@@ -107,7 +153,11 @@ const OpportunityService = {
           : undefined,
         priceFrom: item.priceFrom,
         priceTo: item.priceTo,
-        updatedAt: item.updatedAt
+        updatedAt: item.updatedAt,
+        flagged: item.flagged ?? flagReasons.length > 0,
+        flagReason: flagReasons[0],
+        flagReasons,
+        diagnostics: item.diagnostics
       } satisfies OpportunityDto;
     });
   },

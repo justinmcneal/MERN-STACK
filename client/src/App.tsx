@@ -1,9 +1,11 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 import { ThemeProvider } from './context/ThemeContext';
 import ProtectedRoute from './components/ProtectedRoute';
 import ErrorBoundary from './components/ErrorBoundary';
+import SessionExpiredModal from './components/common/SessionExpiredModal';
+import { onSessionExpired } from './services/api';
 
 // Update imports to match your actual directory structure
 import LandingPage from './pages/Landing';
@@ -27,6 +29,15 @@ import ChangePass from './pages/change_password';
 
 
 const App: React.FC = () => {
+  const [showSessionExpiredModal, setShowSessionExpiredModal] = useState(false);
+
+  useEffect(() => {
+    const unsubscribe = onSessionExpired(() => {
+      setShowSessionExpiredModal(true);
+    });
+    return unsubscribe;
+  }, []);
+
   return (
     <ErrorBoundary>
       <ThemeProvider>
@@ -94,6 +105,12 @@ const App: React.FC = () => {
             {/* Fallback: redirect unknown paths to root */}
             <Route path="*" element={<Navigate to="/landing_page" replace />} />
           </Routes>
+
+          {/* Session Expired Modal */}
+          <SessionExpiredModal 
+            isOpen={showSessionExpiredModal}
+            onClose={() => setShowSessionExpiredModal(false)}
+          />
         </Router>
       </AuthProvider>
       </ThemeProvider>

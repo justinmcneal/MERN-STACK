@@ -1,12 +1,13 @@
 import { Request, Response } from 'express';
 import asyncHandler from 'express-async-handler';
 import Token from '../models/Token';
+import TokenHistory from '../models/TokenHistory';
 import DataService from '../services/DataService';
 import { getTokenName, TOKEN_CONTRACTS } from '../config/tokens';
 
 // GET /api/tokens - Get all tokens
 export const getTokens = asyncHandler(async (req: Request, res: Response) => {
-  const { symbol, chain, limit = 50, skip = 0 } = req.query;
+  const { symbol, chain, limit = 50, skip = 0, fields } = req.query;
 
   let query: any = {};
   
@@ -18,7 +19,39 @@ export const getTokens = asyncHandler(async (req: Request, res: Response) => {
     query.chain = chain as string;
   }
 
-  const tokens = await Token.find(query)
+  const allowedFields = new Set([
+    '_id',
+    'symbol',
+    'chain',
+    'currentPrice',
+    'dexPrice',
+    'dexName',
+    'liquidity',
+    'lastUpdated',
+    'name',
+    'decimals',
+    'contractAddress',
+    'updatedAt',
+    'createdAt'
+  ]);
+
+  let projection: string | undefined;
+  if (typeof fields === 'string') {
+    const requested = fields
+      .split(',')
+      .map((field) => field.trim())
+      .filter((field) => allowedFields.has(field));
+    if (requested.length > 0) {
+      projection = requested.join(' ');
+    }
+  }
+
+  let tokenQuery = Token.find(query);
+  if (projection) {
+    tokenQuery = tokenQuery.select(projection);
+  }
+
+  const tokens = await tokenQuery
     .limit(Number(limit))
     .skip(Number(skip))
     .sort({ symbol: 1, chain: 1 });
@@ -73,30 +106,34 @@ export const getTokenBySymbolAndChain = asyncHandler(async (req: Request, res: R
   });
 });
 
-// POST /api/tokens/refresh - Refresh token prices from external API
+// POST /api/tokens/refresh - Refresh token prices from DexScreener API
 export const refreshTokenPrices = asyncHandler(async (req: Request, res: Response) => {
   const dataService = DataService.getInstance();
   
   try {
-    // Fetch latest prices from CoinGecko
+    // Fetch latest prices from DexScreener
     const priceData = await dataService.fetchTokenPrices();
     
     let updatedCount = 0;
     let createdCount = 0;
+    let dexUpdatedCount = 0;
+    const snapshotTime = new Date();
+    const historyBatch: Array<{ symbol: string; chain: string; price: number; collectedAt: Date; source: string }> = [];
 
     if (!priceData || priceData.length === 0) {
       res.json({
         success: true,
-        message: 'No price data available (possible CoinGecko cooldown).',
+        message: 'No price data available from DexScreener.',
         updated: 0,
         created: 0,
+        dexUpdated: 0,
         timestamp: new Date()
       });
       return;
     }
 
-  // Update/create tokens only for chains where the token has a contract mapping
-  const supportedChains = dataService.getSupportedChains();
+    // Update/create tokens only for chains where the token has a contract mapping
+    const supportedChains = dataService.getSupportedChains();
 
     for (const priceInfo of priceData) {
       const tokenContracts = TOKEN_CONTRACTS[priceInfo.symbol as keyof typeof TOKEN_CONTRACTS] || {};
@@ -106,7 +143,7 @@ export const refreshTokenPrices = asyncHandler(async (req: Request, res: Respons
           continue;
         }
         // Use atomic upsert to avoid race conditions and reduce DB calls
-        const chainPrice = priceInfo.chainPrices?.[chain] ?? priceInfo.price;
+        const chainPrice = priceInfo.chainPrices?.[chain];
         if (chainPrice === undefined || chainPrice === null) {
           continue;
         }
@@ -136,6 +173,43 @@ export const refreshTokenPrices = asyncHandler(async (req: Request, res: Respons
             updatedCount++;
           }
         }
+
+        historyBatch.push({
+          symbol: priceInfo.symbol,
+          chain,
+          price: chainPrice,
+          collectedAt: snapshotTime,
+          source: 'dexscreener'
+        });
+      }
+    }
+
+    try {
+      const dexPrices = await dataService.fetchDexPrices();
+      for (const dexPrice of dexPrices) {
+        await Token.findOneAndUpdate(
+          { symbol: dexPrice.symbol, chain: dexPrice.chain },
+          {
+            $set: {
+              dexPrice: dexPrice.price,
+              dexName: dexPrice.dexName,
+              liquidity: dexPrice.liquidity,
+              lastUpdated: dexPrice.timestamp ?? new Date()
+            }
+          },
+          { upsert: true, new: true }
+        ).exec();
+        dexUpdatedCount++;
+      }
+    } catch (dexErr: any) {
+      console.error('Error refreshing DEX prices during manual refresh:', dexErr?.message || dexErr);
+    }
+
+    if (historyBatch.length > 0) {
+      try {
+        await TokenHistory.insertMany(historyBatch, { ordered: false });
+      } catch (historyErr: any) {
+        console.error('Error recording token history during manual refresh:', historyErr?.message || historyErr);
       }
     }
 
@@ -144,6 +218,7 @@ export const refreshTokenPrices = asyncHandler(async (req: Request, res: Respons
       message: 'Token prices refreshed successfully',
       updated: updatedCount,
       created: createdCount,
+      dexUpdated: dexUpdatedCount,
       timestamp: new Date()
     });
     return;
@@ -180,34 +255,115 @@ export const getTokenHistory = async (req: Request, res: Response) => {
   const { symbol, chain } = req.params;
   const { tf = '7d' } = req.query;
 
-  const dataService = DataService.getInstance();
+  const timeframe = String(tf).toLowerCase();
+  const now = Date.now();
+
+  const timeframeWindows: Record<string, number> = {
+    '1h': 60 * 60 * 1000,
+    '24h': 24 * 60 * 60 * 1000,
+    '7d': 7 * 24 * 60 * 60 * 1000,
+    '30d': 30 * 24 * 60 * 60 * 1000,
+    '90d': 90 * 24 * 60 * 60 * 1000,
+    'all': 0
+  };
+
+  const targetPoints: Record<string, number> = {
+    '1h': 60,
+    '24h': 96,
+    '7d': 168,
+    '30d': 240,
+    '90d': 360,
+    'all': 480
+  };
+
+  const normalizedSymbol = symbol.toUpperCase();
+  const normalizedChain = chain.toLowerCase();
+  const lookbackMs = timeframeWindows[timeframe] ?? timeframeWindows['7d'];
+  const desiredPoints = targetPoints[timeframe] ?? targetPoints['7d'];
+
+  const query: Record<string, any> = {
+    symbol: normalizedSymbol,
+    chain: normalizedChain
+  };
+
+  if (lookbackMs > 0) {
+    query.collectedAt = { $gte: new Date(now - lookbackMs) };
+  }
 
   try {
-    const raw = await dataService.fetchTokenHistory(symbol.toUpperCase(), chain.toLowerCase(), String(tf));
+    type HistoryPoint = { price: number; source?: string; collectedAt: Date };
 
-    // Normalize to { ts, price }
-    const data = Array.isArray(raw) ? raw.map(([ts, price]) => ({ ts: Number(ts), price: Number(price) })) : [];
+    const rawHistory = await TokenHistory.find(query)
+      .sort({ collectedAt: -1 })
+      .limit(Math.max(desiredPoints * 4, 200))
+      .lean()
+      .exec();
 
-    // Always return 200 with data (possibly empty)
-    res.json({
+    const historyPoints = (rawHistory as HistoryPoint[]) ?? [];
+    const ordered = historyPoints.slice().reverse();
+
+    const downsampleSeries = <T>(series: T[], maxPoints: number): T[] => {
+      if (series.length <= maxPoints) {
+        return series;
+      }
+
+      const step = Math.ceil(series.length / maxPoints);
+      const sampled: T[] = [];
+      for (let i = 0; i < series.length; i += step) {
+        sampled.push(series[i]);
+      }
+
+      const last = series[series.length - 1];
+      if (sampled[sampled.length - 1] !== last) {
+        sampled.push(last);
+      }
+
+      return sampled;
+    };
+
+    const sampled: HistoryPoint[] = downsampleSeries<HistoryPoint>(ordered, desiredPoints);
+
+    if (sampled.length === 0) {
+      res.set('Cache-Control', 'public, max-age=60');
+      res.status(200).json({
+        success: false,
+        symbol: normalizedSymbol,
+        chain: normalizedChain,
+        timeframe: timeframe,
+        count: 0,
+        data: [],
+        message: 'No historical price data recorded yet for this token on the selected chain.'
+      });
+      return;
+    }
+
+    const payload = sampled.map((entry: HistoryPoint) => ({
+      price: entry.price,
+      source: entry.source ?? 'dexscreener',
+      collectedAt: entry.collectedAt
+    }));
+
+    res.set('Cache-Control', 'public, max-age=120');
+    res.status(200).json({
       success: true,
-      symbol: symbol.toUpperCase(),
-      chain: chain.toLowerCase(),
-      timeframe: String(tf),
-      count: data.length,
-      data,
-      message: data.length === 0 ? 'No history available (provider failure or no cache); fallback recommended' : undefined
+      symbol: normalizedSymbol,
+      chain: normalizedChain,
+      timeframe: timeframe,
+      count: payload.length,
+      data: payload,
+      latest: payload[payload.length - 1]?.price ?? null,
+      message: payload.length < desiredPoints ? 'Limited historical samples available for this range.' : undefined
     });
-  } catch (err: any) {
-    console.error('Error in getTokenHistory:', err);
-    res.json({
-      success: true,
-      symbol: symbol.toUpperCase(),
-      chain: chain.toLowerCase(),
-      timeframe: String(tf),
+  } catch (error: any) {
+    console.error('Error retrieving token history:', error);
+    res.status(500).json({
+      success: false,
+      symbol: normalizedSymbol,
+      chain: normalizedChain,
+      timeframe: timeframe,
       count: 0,
       data: [],
-      message: 'No history available (provider failure, rate limit, or server error); fallback recommended'
+      message: 'Failed to retrieve historical data.'
     });
   }
 };

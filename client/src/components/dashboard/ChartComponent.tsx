@@ -1,28 +1,15 @@
-import React, { useMemo, useState, useEffect } from 'react';
+import React, { useMemo, useState, useEffect, useRef } from 'react';
 import { useTokenContext } from '../../context/useTokenContext';
 import TokenService from '../../services/TokenService';
+
+const CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
 
 const ChartComponent: React.FC = () => {
   const { tokens, loading } = useTokenContext();
   const [timeframe, setTimeframe] = useState<'1h'|'24h'|'7d'>('24h');
   const [selectedSymbol, setSelectedSymbol] = useState<string>('');
-
-  // Helper: deterministic PRNG based on seed string
-  const seedFromString = (s: string) => {
-    let h = 2166136261 >>> 0;
-    for (let i = 0; i < s.length; i++) {
-      h ^= s.charCodeAt(i);
-      h = Math.imul(h, 16777619) >>> 0;
-    }
-    return h;
-  };
-  const mulberry32 = (a: number) => () => {
-    a |= 0;
-    a = a + 0x6D2B79F5 | 0;
-    let t = Math.imul(a ^ a >>> 15, 1 | a);
-    t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
-    return ((t ^ t >>> 14) >>> 0) / 4294967296;
-  };
+  const [historyNotice, setHistoryNotice] = useState<string | null>(null);
+  const historyCacheRef = useRef<Map<string, { data: number[]; message?: string; fetchedAt: number }>>(new Map());
 
   // Choose a token object to base the chart on: prefer selectedSymbol else first token symbol
   // When picking a token object for anchor price (for mocks), prefer the ethereum chain, then polygon, then bsc
@@ -48,28 +35,45 @@ const ChartComponent: React.FC = () => {
   // Number of points per timeframe
   const pointsCount = timeframe === '1h' ? 12 : timeframe === '24h' ? 24 : 7 * 12; // 7d -> 84 points
 
-  // Generate deterministic mock series around currentPrice
   const [seriesByChain, setSeriesByChain] = useState<Record<string, number[]>>({});
 
-  // Try to fetch real history from server; if it fails, fallback to deterministic mock
+  // Try to fetch real history from server; if unavailable show notice
   useEffect(() => {
     let mounted = true;
     const fetchHistory = async () => {
       if (!baseToken) {
         setSeriesByChain({});
+        setHistoryNotice('Select a token to view historical pricing.');
         return;
       }
 
       const chains = ['polygon', 'ethereum', 'bsc'];
       const tfParam = timeframe === '1h' ? '24h' : timeframe === '24h' ? '24h' : '7d';
       const results: Record<string, number[]> = {};
+      let hasData = false;
+      let notice: string | null = null;
 
       await Promise.all(chains.map(async (chain) => {
+        const cacheKey = `${baseToken.symbol.toUpperCase()}::${chain}::${tfParam}`;
+        const now = Date.now();
+        const cached = historyCacheRef.current.get(cacheKey);
+
+        if (cached && now - cached.fetchedAt < CACHE_TTL_MS) {
+          if (cached.data.length > 0) {
+            results[chain] = cached.data;
+            hasData = true;
+          } else if (cached.message && !notice) {
+            notice = cached.message;
+          }
+          return;
+        }
+
         try {
           const resp = await TokenService.history(baseToken.symbol, chain, tfParam);
           const data = resp?.data || [];
           if (Array.isArray(data) && data.length > 0) {
             const prices = data.map((p: { price: number | string }) => Number(p.price));
+            let processed = prices;
             if (prices.length > pointsCount) {
               const step = Math.floor(prices.length / pointsCount) || 1;
               const sampled: number[] = [];
@@ -77,32 +81,40 @@ const ChartComponent: React.FC = () => {
                 sampled.push(prices[i]);
                 if (sampled.length >= pointsCount) break;
               }
-              results[chain] = sampled;
-              return;
+              processed = sampled;
             }
-            results[chain] = prices;
+            results[chain] = processed;
+            hasData = true;
+            historyCacheRef.current.set(cacheKey, { data: processed, fetchedAt: Date.now() });
             return;
           }
-        } catch {
-          // ignore and fallback to mock for this chain
-        }
 
-        // Fallback seeded mock per chain using token currentPrice as anchor
-        const startPrice = Number(baseToken.currentPrice) || 1;
-        const seed = seedFromString(`${baseToken.symbol}-${chain}-${timeframe}`);
-        const rand = mulberry32(seed);
-        const volatility = timeframe === '1h' ? 0.004 : timeframe === '24h' ? 0.01 : 0.03;
-        const vals: number[] = [startPrice];
-        for (let i = 1; i < pointsCount; i++) {
-          const pct = (rand() - 0.5) * 2 * volatility;
-          const next = Math.max(0.0000001, vals[i-1] * (1 + pct));
-          vals.push(next);
+          const message = resp?.message as string | undefined;
+          if (message && !notice) {
+            notice = message;
+          }
+          historyCacheRef.current.set(cacheKey, { data: [], message, fetchedAt: Date.now() });
+        } catch (error: unknown) {
+          const err = error as { response?: { data?: { message?: string } } };
+          const message = err?.response?.data?.message || 'Historical price data is not available yet. Real-time pricing will continue to refresh normally.';
+          if (!notice) {
+            notice = message;
+          }
+          historyCacheRef.current.set(cacheKey, { data: [], message, fetchedAt: Date.now() });
         }
-        results[chain] = vals;
       }));
 
       if (!mounted) return;
-      setSeriesByChain(results);
+
+      if (hasData) {
+        setSeriesByChain(results);
+        setHistoryNotice(null);
+      } else {
+        setSeriesByChain({});
+        setHistoryNotice(
+          notice || 'Historical price data is not available yet. Real-time pricing will continue to refresh normally.'
+        );
+      }
     };
     fetchHistory();
     return () => { mounted = false; };
@@ -116,16 +128,20 @@ const ChartComponent: React.FC = () => {
   const innerH = height - padding * 2;
 
   // Helper to build path/area and min/max for a numeric series
-  const buildPathForSeries = (s: number[]) => {
+  const buildPathForSeries = (s: number[], globalMin?: number, globalMax?: number) => {
     if (!s || s.length === 0) return { pathD: '', areaD: '', minP: 0, maxP: 0 };
-    const min = Math.min(...s);
-    const max = Math.max(...s);
+    
+    // Use global min/max if provided for consistent scaling across all chains
+    const min = globalMin !== undefined ? globalMin : Math.min(...s);
+    const max = globalMax !== undefined ? globalMax : Math.max(...s);
     const range = Math.max(1e-8, max - min);
+    
     const points = s.map((v, i) => {
-      const x = padding + (i / (s.length - 1)) * innerW;
+      const x = padding + (i / Math.max(1, s.length - 1)) * innerW;
       const y = padding + innerH - ((v - min) / range) * innerH;
       return { x, y };
     });
+    
     const path = points.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x.toFixed(2)} ${p.y.toFixed(2)}`).join(' ');
     const last = points[points.length - 1];
     const first = points[0];
@@ -154,30 +170,51 @@ const ChartComponent: React.FC = () => {
     return { minP: Math.min(...combinedSeries), maxP: Math.max(...combinedSeries) };
   }, [combinedSeries]);
 
+  const hasSeries = combinedSeries.length > 0;
+
   return (
     <div className="bg-slate-800/50 backdrop-blur border border-slate-700/50 rounded-2xl p-6">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
+      <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center mb-6 gap-4">
         <h3 className="text-lg font-semibold text-slate-200 flex items-center gap-2">
-          <svg className="w-5 h-5 text-cyan-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>Token Trends
+          <svg className="w-5 h-5 text-cyan-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+          </svg>
+          Token Trends
         </h3>
-        <div className="flex gap-2 items-center">
+        <div className="flex flex-wrap gap-2 items-center">
           {(['1h','24h','7d'] as const).map(tf=> (
-            <button key={tf} onClick={() => setTimeframe(tf)} className={`px-3 py-1 text-xs rounded-lg transition-all ${timeframe===tf? 'bg-cyan-600 text-white' : 'bg-slate-700/50 text-slate-400'} hover:text-slate-300 border border-slate-600/50`}>{tf}</button>
+            <button 
+              key={tf} 
+              onClick={() => setTimeframe(tf)} 
+              className={`px-3 py-1.5 text-xs rounded-lg transition-all ${
+                timeframe===tf
+                  ? 'bg-cyan-600 text-white' 
+                  : 'bg-slate-700/50 text-slate-400 hover:text-slate-300'
+              } border border-slate-600/50`}
+            >
+              {tf}
+            </button>
           ))}
-          <div className="relative">
-            <select value={selectedSymbol || (baseToken?.symbol ?? '')} onChange={(e) => setSelectedSymbol(e.target.value)} className="appearance-none w-full px-3 py-2 text-xs rounded-lg bg-slate-800/50 border border-slate-700/50 text-slate-300 pr-8 focus:outline-none focus:ring-2 focus:ring-cyan-400/50 transition-all duration-300">
+          <div className="relative min-w-[140px]">
+            <select 
+              value={selectedSymbol || (baseToken?.symbol ?? '')} 
+              onChange={(e) => setSelectedSymbol(e.target.value)} 
+              className="appearance-none w-full px-3 py-1.5 text-xs rounded-lg bg-slate-800/50 border border-slate-700/50 text-slate-300 pr-8 focus:outline-none focus:ring-2 focus:ring-cyan-400/50 transition-all duration-300"
+            >
               <option value="">Select token</option>
               {(!loading ? Array.from(new Set(tokens.map(t => t.symbol))).map(sym => (
                 <option key={sym} value={sym} className="bg-slate-900 text-slate-300">{sym}</option>
               )) : [])}
             </select>
-            <svg className="w-4 h-4 text-slate-400 absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7"/></svg>
+            <svg className="w-4 h-4 text-slate-400 absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7"/>
+            </svg>
           </div>
         </div>
       </div>
 
-      {/* Use a responsive container that preserves the chart aspect ratio */}
-      <div className="relative w-full" style={{ aspectRatio: `${width} / ${height}`, width: '100%' }}>
+      {/* Chart container with responsive aspect ratio */}
+      <div className="relative w-full mb-4" style={{ aspectRatio: `${width} / ${height}`, minHeight: '200px' }}>
         <svg className="w-full h-full" viewBox={`0 0 ${width} ${height}`} preserveAspectRatio="xMidYMid meet">
           <defs>
             <linearGradient id={`areaGrad-${baseToken?.symbol || 'g'}`} x1="0%" y1="0%" x2="0%" y2="100%">
@@ -186,19 +223,34 @@ const ChartComponent: React.FC = () => {
             </linearGradient>
           </defs>
 
-          {/* per-chain areas and lines */}
+          {/* per-chain areas and lines - use global min/max for consistent scaling */}
           {['polygon','ethereum','bsc'].map(chain => {
             const s = seriesByChain[chain] || [];
-            const { pathD, areaD } = buildPathForSeries(s);
+            if (s.length === 0) return null;
+            
+            const { pathD, areaD } = buildPathForSeries(s, combinedMin, combinedMax);
             const gradId = `areaGrad-${baseToken?.symbol || 'g'}-${chain}`;
+            const chainColor = colorByChain(chain);
+            const isSelectedChain = chain === selectedChain;
+            
             return (
               <g key={chain}>
                 <linearGradient id={gradId} x1="0%" y1="0%" x2="0%" y2="100%">
-                  <stop offset="0%" stopColor={colorByChain(chain)} stopOpacity="0.18" />
-                  <stop offset="100%" stopColor={colorByChain(chain)} stopOpacity="0" />
+                  <stop offset="0%" stopColor={chainColor} stopOpacity="0.2" />
+                  <stop offset="100%" stopColor={chainColor} stopOpacity="0" />
                 </linearGradient>
                 {areaD && <path d={areaD} fill={`url(#${gradId})`} stroke="none" />}
-                {pathD && <path d={pathD} stroke={colorByChain(chain)} strokeWidth={2} fill="none" strokeLinejoin="round" strokeLinecap="round" opacity={chain===selectedChain ? 1 : 0.65} />}
+                {pathD && (
+                  <path 
+                    d={pathD} 
+                    stroke={chainColor} 
+                    strokeWidth={isSelectedChain ? 2.5 : 2} 
+                    fill="none" 
+                    strokeLinejoin="round" 
+                    strokeLinecap="round" 
+                    opacity={isSelectedChain ? 1 : 0.7} 
+                  />
+                )}
               </g>
             );
           })}
@@ -219,26 +271,31 @@ const ChartComponent: React.FC = () => {
           })()}
 
           {/* y labels based on combined min/max */}
-          {combinedSeries.length > 0 && [0,0.25,0.5,0.75,1].map((f, idx) => {
+          {hasSeries && [0,0.25,0.5,0.75,1].map((f, idx) => {
             const val = combinedMin + (1 - f) * (combinedMax - combinedMin || 1);
             const y = padding + innerH * f;
             return <text key={idx} x={6} y={y+3} fill="#64748b" fontSize="10">{`$${Number(val).toLocaleString(undefined, {maximumFractionDigits:2})}`}</text>;
           })}
         </svg>
+        {!hasSeries && historyNotice && (
+          <div className="absolute inset-0 flex items-center justify-center px-8 text-center">
+            <p className="text-sm text-slate-400">{historyNotice}</p>
+          </div>
+        )}
       </div>
 
-      {/* Legend moved outside the SVG to avoid overlap and ensure responsive layout */}
-      <div className="mt-4 flex flex-wrap gap-6 text-xs items-center">
+      {/* Legend - improved layout and spacing */}
+      <div className="flex flex-wrap gap-4 lg:gap-6 text-xs items-center justify-center lg:justify-start pt-4 border-t border-slate-700/30">
         <div className="flex items-center gap-2">
-          <div style={{width:12,height:12,borderRadius:6,background:colorByChain('polygon')}}></div>
+          <div className="w-3 h-3 rounded-full" style={{ backgroundColor: colorByChain('polygon') }}></div>
           <span className="text-slate-400">Polygon</span>
         </div>
         <div className="flex items-center gap-2">
-          <div style={{width:12,height:12,borderRadius:6,background:colorByChain('ethereum')}}></div>
+          <div className="w-3 h-3 rounded-full" style={{ backgroundColor: colorByChain('ethereum') }}></div>
           <span className="text-slate-400">Ethereum</span>
         </div>
         <div className="flex items-center gap-2">
-          <div style={{width:12,height:12,borderRadius:6,background:colorByChain('bsc')}}></div>
+          <div className="w-3 h-3 rounded-full" style={{ backgroundColor: colorByChain('bsc') }}></div>
           <span className="text-slate-400">Binance Smart Chain</span>
         </div>
       </div>

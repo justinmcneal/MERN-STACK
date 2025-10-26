@@ -25,7 +25,7 @@ const TradingChart = ({ compact = false }: TradingChartProps) => {
       <div className="relative z-10">
         <div className={`flex flex-col sm:flex-row justify-between items-start sm:items-center ${compact ? 'mb-6 sm:mb-8' : 'mb-4 sm:mb-6'} gap-2 sm:gap-0`}>
           <div>
-            <h3 className={`text-cyan-200 font-semibold ${compact ? 'text-sm sm:text-base' : 'text-sm sm:text-base'}`}>ETH/USDC Arbitrage</h3>
+            <h3 className={`text-cyan-200 font-semibold ${compact ? 'text-sm sm:text-base' : 'text-sm sm:text-base'}`}>ETH/SOL Arbitrage</h3>
             <p className={`text-emerald-400 ${compact ? 'text-xs sm:text-sm' : 'text-xs sm:text-sm'}`}>+12.4% ROI detected</p>
           </div>
           <div className="text-left sm:text-right">

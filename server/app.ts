@@ -19,13 +19,11 @@ import googleAuthRoutes from './routes/googleAuthRoutes';
 
 const app: Application = express();
 
-// Allow client origin and credentials (adjust CLIENT_URL in .env)
 app.use(cors({
-  origin: true, // Allow all origins for testing
+  origin: true,
   credentials: true,
 }));
 
-// Middleware
 app.use(express.json());
 app.use(morgan('dev') as express.RequestHandler);
 app.use(cookieParser() as express.RequestHandler);
@@ -42,7 +40,6 @@ app.use('/api/alerts', alertRoutes);
 app.use('/api/system', systemRoutes);
 app.use('/api/websocket', websocketRoutes);
 app.use('/api/support', contactSupportRoutes);
-// Error handlers (must be last)
 app.use(notFound);
 app.use(errorHandler);
 

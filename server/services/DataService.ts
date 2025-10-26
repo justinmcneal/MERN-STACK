@@ -5,13 +5,18 @@ import path from 'path';
 import {
   SUPPORTED_TOKENS,
   SUPPORTED_CHAINS,
-  COINGECKO_TOKEN_IDS,
-  COINGECKO_CHAIN_IDS,
   TOKEN_CONTRACTS,
-  getCoinGeckoTokenId,
   type SupportedChain,
   type SupportedToken
 } from '../config/tokens';
+
+// Liquidity threshold: lowered to capture more DEX pairs while filtering out very illiquid pools
+// Original: 2500 was too restrictive and filtered out many valid trading pairs
+// New: 1000 provides better coverage while still avoiding extremely noisy data
+const MIN_LIQUIDITY_USD = 1000; // Skip illiquid pools that produce noisy quotes
+const STABLE_TOKENS = new Set<SupportedToken>();
+const STABLE_PRICE_MIN = 0.8;
+const STABLE_PRICE_MAX = 1.2;
 
 interface TokenPrice {
   symbol: string;
@@ -24,12 +29,6 @@ interface GasPrice {
   chain: string;
   gasPrice: number; // in gwei
   timestamp: Date;
-}
-
-interface CoinGeckoResponse {
-  [tokenId: string]: {
-    usd: number;
-  };
 }
 
 interface PolygonGasResponse {
@@ -84,120 +83,17 @@ interface DexScreenerResponse {
 
 export class DataService {
   private static instance: DataService;
-  private readonly coinGeckoBaseUrl = 'https://api.coingecko.com/api/v3';
   private readonly dexScreenerBaseUrl = 'https://api.dexscreener.com/latest/dex';
   private readonly polygonGasUrl = 'https://gasstation.polygon.technology/v2';
   private readonly bscGasUrl = 'https://bscgas.info/gas';
   private readonly blocknativeUrl = 'https://api.blocknative.com/gasprices/blockprices';
 
-  private readonly tokenIdMap = COINGECKO_TOKEN_IDS;
-  // In-memory cooldown timestamp for CoinGecko rate limit (ms since epoch)
-  private coinGeckoRateLimitUntil: number | null = null;
   // Backoff state persisted to disk so it survives restarts
   private readonly cacheDir = path.resolve(__dirname, '..', '.cache');
-  private readonly coinGeckoBackoffFile = path.join(this.cacheDir, 'coingecko_backoff.json');
-  private coinGeckoBackoff: { until: number; attempts: number } | null = null;
   // Etherscan API fallback for gas (requires ETHERSCAN_API_KEY)
   private readonly etherscanGasUrl = 'https://api.etherscan.io/api';
 
   private constructor() {}
-
-  // Simple file-based cache for historical series
-  private getHistoryCachePath(symbol: string, chain: string, timeframe: string) {
-    this.ensureCacheDir();
-    const safeSymbol = symbol.toLowerCase().replace(/[^a-z0-9]/g, '_');
-    const safeChain = chain.toLowerCase().replace(/[^a-z0-9]/g, '_');
-    const safeTf = timeframe.replace(/[^a-z0-9]/gi, '_');
-    return path.join(this.cacheDir, `history_${safeSymbol}_${safeChain}_${safeTf}.json`);
-  }
-
-  // timeframe: '24h' | '7d' | '30d' | '90d' etc. We'll map to CoinGecko 'days' param
-  private timeframeToDays(tf: string) {
-    if (tf === '24h') return '1';
-    if (tf === '7d') return '7';
-    if (tf === '30d') return '30';
-    if (tf === '90d') return '90';
-    // default to 7 days
-    return '7';
-  }
-
-  // TTL for history cache in milliseconds
-  private readonly historyCacheTtl = 10 * 60 * 1000; // 10 minutes
-
-  /**
-   * Fetch historical price series for a token from CoinGecko and cache it.
-   * Returns array of [timestamp(ms), price]
-   */
-  async fetchTokenHistory(symbol: string, chain: string, timeframe = '7d') : Promise<Array<[number, number]>> {
-    // Resolve CoinGecko token id
-    const tokenId = this.getTokenId(symbol);
-    if (!tokenId) {
-      console.warn(`No CoinGecko token id mapping for symbol ${symbol}; returning empty history`);
-      return [];
-    }
-
-    const cachePath = this.getHistoryCachePath(symbol, chain, timeframe);
-    try {
-      if (fs.existsSync(cachePath)) {
-        const raw = fs.readFileSync(cachePath, 'utf8');
-        const parsed = JSON.parse(raw);
-        if (parsed && parsed._meta && parsed._meta.fetchedAt && (Date.now() - parsed._meta.fetchedAt) < this.historyCacheTtl) {
-          return parsed.data as Array<[number, number]>;
-        }
-      }
-    } catch (err) {
-      console.warn('Failed to read history cache:', err);
-    }
-
-    // Query CoinGecko market_chart endpoint
-    const days = this.timeframeToDays(timeframe);
-    try {
-      const resp = await (axios as any).get(`${this.coinGeckoBaseUrl}/coins/${encodeURIComponent(tokenId)}/market_chart`, {
-        params: {
-          vs_currency: 'usd',
-          days,
-          interval: 'hourly'
-        },
-        timeout: 15000
-      });
-
-      // CoinGecko returns { prices: [[ts, price], ...], market_caps: [...], total_volumes: [...] }
-      const prices: Array<[number, number]> = resp.data?.prices || [];
-
-      // Persist cache file with metadata
-      try {
-        const out = { _meta: { fetchedAt: Date.now(), tokenId, symbol, chain, timeframe }, data: prices };
-        fs.writeFileSync(cachePath, JSON.stringify(out));
-      } catch (writeErr) {
-        console.warn('Failed to write history cache:', writeErr);
-      }
-
-      return prices;
-    } catch (err: any) {
-      // Don't log 401 errors (rate limit/auth) as errors, they're expected with free tier
-      if (err?.response?.status === 401) {
-        console.warn(`CoinGecko API requires authentication for ${symbol} history`);
-      } else {
-        console.warn(`CoinGecko history unavailable for ${symbol}:`, err?.message);
-      }
-      
-      // As a fallback, if we have a cache file (stale allowed), return it
-      try {
-        if (fs.existsSync(cachePath)) {
-          const raw = fs.readFileSync(cachePath, 'utf8');
-          const parsed = JSON.parse(raw);
-          if (parsed && parsed.data) {
-            return parsed.data as Array<[number, number]>;
-          }
-        }
-      } catch (cacheErr) {
-        // Silent fallback
-      }
-
-      // No cache available — return empty array so callers can fallback gracefully
-      return [];
-    }
-  }
 
   public static getInstance(): DataService {
     if (!DataService.instance) {
@@ -216,77 +112,25 @@ export class DataService {
     }
   }
 
-  private loadBackoffState() {
-    try {
-      this.ensureCacheDir();
-      if (fs.existsSync(this.coinGeckoBackoffFile)) {
-        const raw = fs.readFileSync(this.coinGeckoBackoffFile, 'utf8');
-        this.coinGeckoBackoff = JSON.parse(raw);
-        this.coinGeckoRateLimitUntil = this.coinGeckoBackoff?.until ?? null;
-      }
-    } catch (err) {
-      console.warn('Failed to load CoinGecko backoff state:', err);
-    }
-  }
-
-  private saveBackoffState() {
-    try {
-      this.ensureCacheDir();
-      fs.writeFileSync(this.coinGeckoBackoffFile, JSON.stringify(this.coinGeckoBackoff || {}));
-    } catch (err) {
-      console.warn('Failed to save CoinGecko backoff state:', err);
-    }
-  }
-
-  private ensureCoinGeckoBackoffLoaded(): void {
-    if (this.coinGeckoBackoff === null) {
-      this.loadBackoffState();
-    }
-  }
-
-  private isCoinGeckoBackoffActive(): boolean {
-    this.ensureCoinGeckoBackoffLoaded();
-
-    if (this.coinGeckoRateLimitUntil && Date.now() < this.coinGeckoRateLimitUntil) {
-      const waitSec = Math.ceil((this.coinGeckoRateLimitUntil - Date.now()) / 1000);
-      console.warn(`CoinGecko cooldown active for another ${waitSec}s; skipping CoinGecko fetch`);
-      return true;
-    }
-
-    return false;
-  }
-
-  private clearCoinGeckoBackoff(): void {
-    this.coinGeckoBackoff = { until: 0, attempts: 0 };
-    this.coinGeckoRateLimitUntil = null;
-    this.saveBackoffState();
-  }
-
-  private processCoinGeckoError(error: any, context: string): void {
-    const status = error?.response?.status;
-    const message = error instanceof Error ? error.message : String(error);
-
-    if (status === 429) {
-      const previous = this.coinGeckoBackoff || { until: 0, attempts: 0 };
-      const attempts = Math.min((previous.attempts || 0) + 1, 6);
-      const backoffMs = Math.pow(2, attempts) * 60 * 1000;
-      const until = Date.now() + backoffMs;
-      this.coinGeckoBackoff = { until, attempts };
-      this.coinGeckoRateLimitUntil = until;
-      this.saveBackoffState();
-      console.warn(`CoinGecko rate limit encountered during ${context}; backing off for ${Math.round(backoffMs / 1000)}s until ${new Date(until).toISOString()}`);
-    } else {
-      console.error(`Error fetching CoinGecko data during ${context}:`, message);
-    }
-  }
-
-  private async fetchDexScreenerPrice(chain: SupportedChain, address: string): Promise<number | null> {
+  private async fetchDexScreenerPrice(
+    chain: SupportedChain,
+    address: string,
+    token?: SupportedToken
+  ): Promise<number | null> {
     const normalizedAddress = address.toLowerCase();
 
     try {
+      // Rate limiting: 300ms delay between requests
+      await new Promise(resolve => setTimeout(resolve, 300));
+
       const response = await (axios as any).get(
-        `${this.dexScreenerBaseUrl}/${normalizedAddress}`,
-        { timeout: 10000 }
+        `${this.dexScreenerBaseUrl}/tokens/${normalizedAddress}`,
+        { 
+          timeout: 10000,
+          headers: {
+            'User-Agent': 'ArbiTrader-Pro/1.0'
+          }
+        }
       );
 
       const pairs = (response?.data as DexScreenerResponse | undefined)?.pairs;
@@ -309,8 +153,28 @@ export class DataService {
         .filter((entry) => Number.isFinite(entry.price) && entry.price > 0)
         .sort((a, b) => (b.liquidityUsd || 0) - (a.liquidityUsd || 0))[0];
 
+      if (!best) {
+        return null;
+      }
+
+      if (!Number.isFinite(best.liquidityUsd) || (best.liquidityUsd ?? 0) < MIN_LIQUIDITY_USD) {
+        console.warn(`DexScreener skipping ${normalizedAddress} on ${chain}: liquidity below ${MIN_LIQUIDITY_USD}`);
+        return null;
+      }
+
+  if (token && STABLE_TOKENS.has(token)) {
+        if (best.price < STABLE_PRICE_MIN || best.price > STABLE_PRICE_MAX) {
+          console.warn(`DexScreener stablecoin price out of range for ${token} on ${chain}: ${best.price}`);
+          return null;
+        }
+      }
+
       return best?.price ?? null;
-    } catch (error) {
+    } catch (error: any) {
+      if (error.response?.status === 429) {
+        console.warn(`⚠️  DexScreener rate limit hit for ${normalizedAddress}, waiting 1s...`);
+        await new Promise(resolve => setTimeout(resolve, 1000));
+      }
       const message = error instanceof Error ? error.message : String(error);
       console.warn(`DexScreener price fetch failed for ${normalizedAddress} on ${chain}: ${message}`);
       return null;
@@ -319,6 +183,8 @@ export class DataService {
 
   private async fetchDexScreenerPrices(): Promise<Map<SupportedToken, Record<string, number>>> {
     const priceMap = new Map<SupportedToken, Record<string, number>>();
+    let successCount = 0;
+    let failCount = 0;
 
     for (const token of SUPPORTED_TOKENS as readonly SupportedToken[]) {
       const chainMap = TOKEN_CONTRACTS[token] || {};
@@ -326,9 +192,13 @@ export class DataService {
         const address = chainMap[chain];
         if (!address) continue;
 
-        const price = await this.fetchDexScreenerPrice(chain, address);
-        if (price === null) continue;
+  const price = await this.fetchDexScreenerPrice(chain, address, token);
+        if (price === null) {
+          failCount++;
+          continue;
+        }
 
+        successCount++;
         if (!priceMap.has(token)) {
           priceMap.set(token, {});
         }
@@ -336,102 +206,8 @@ export class DataService {
       }
     }
 
+    console.log(`📊 DexScreener Results: ${successCount} prices fetched, ${failCount} failed`);
     return priceMap;
-  }
-
-  private async fetchCoinGeckoChainTokenPrices(chain: SupportedChain, addresses: string[]): Promise<Record<string, number>> {
-    if (addresses.length === 0) {
-      return {};
-    }
-
-    if (this.isCoinGeckoBackoffActive()) {
-      return {};
-    }
-
-    const chainId = COINGECKO_CHAIN_IDS[chain];
-    if (!chainId) {
-      return {};
-    }
-
-    try {
-      const response = await (axios as any).get(
-        `${this.coinGeckoBaseUrl}/simple/token_price/${chainId}`,
-        {
-          params: {
-            contract_addresses: addresses.join(','),
-            vs_currencies: 'usd'
-          },
-          timeout: 10000,
-          headers: {
-            'User-Agent': 'ArbiTrader-Pro/1.0'
-          }
-        }
-      );
-
-      this.clearCoinGeckoBackoff();
-
-      const result: Record<string, number> = {};
-      const data = (response?.data || {}) as Record<string, { usd?: number }>;
-      for (const [address, priceInfo] of Object.entries(data)) {
-        if (priceInfo?.usd !== undefined) {
-          result[address.toLowerCase()] = Number(priceInfo.usd);
-        }
-      }
-      return result;
-    } catch (error) {
-      this.processCoinGeckoError(error, `token price lookup for ${chain}`);
-      return {};
-    }
-  }
-
-  private async fetchCoinGeckoSimplePrices(symbols: SupportedToken[]): Promise<Record<string, number>> {
-    if (symbols.length === 0) {
-      return {};
-    }
-
-    if (this.isCoinGeckoBackoffActive()) {
-      return {};
-    }
-
-    const tokenIds = symbols
-      .map((symbol) => this.tokenIdMap[symbol])
-      .filter((id): id is string => Boolean(id));
-
-    if (tokenIds.length === 0) {
-      return {};
-    }
-
-    try {
-      const response = await axios.get<CoinGeckoResponse>(
-        `${this.coinGeckoBaseUrl}/simple/price`,
-        {
-          params: {
-            ids: tokenIds.join(','),
-            vs_currencies: 'usd'
-          },
-          timeout: 10000,
-          headers: {
-            'User-Agent': 'ArbiTrader-Pro/1.0'
-          }
-        }
-      );
-
-      this.clearCoinGeckoBackoff();
-
-      const result: Record<string, number> = {};
-      for (const symbol of symbols) {
-        const tokenId = this.tokenIdMap[symbol];
-        const price = tokenId ? response.data?.[tokenId]?.usd : undefined;
-        if (price !== undefined) {
-          result[symbol] = Number(price);
-        }
-      }
-
-      return result;
-    } catch (error) {
-      this.processCoinGeckoError(error, 'simple price lookup');
-      return {};
-    }
   }
 
   estimateGasCostUsd(chain: SupportedChain, gasPriceGwei: number, nativeTokenPriceUsd: number, gasUnits = 21000): number {
@@ -444,90 +220,70 @@ export class DataService {
   }
 
   async fetchTokenPrices(): Promise<TokenPrice[]> {
-    this.ensureCoinGeckoBackoffLoaded();
-
+    console.log('💰 Fetching token prices from DexScreener...');
+    
     const timestamp = new Date();
     const priceMap = await this.fetchDexScreenerPrices();
 
-    const missingByChain: Record<SupportedChain, Array<{ token: SupportedToken; address: string }>> = {
-      ethereum: [],
-      polygon: [],
-      bsc: []
-    };
+    // Log summary
+    const tokensWithPrices = Array.from(priceMap.keys()).length;
+    console.log(`✅ Retrieved prices for ${tokensWithPrices} tokens from DexScreener`);
+
+    const results: TokenPrice[] = [];
 
     for (const token of SUPPORTED_TOKENS as readonly SupportedToken[]) {
-      const chainMap = TOKEN_CONTRACTS[token] || {};
-      for (const chain of SUPPORTED_CHAINS as readonly SupportedChain[]) {
-        const address = chainMap[chain];
-        if (!address) continue;
+      const rawChainPrices = priceMap.get(token) || {};
+      const sanitizedEntries = Object.entries(rawChainPrices)
+        .filter(([, value]) => typeof value === 'number' && Number.isFinite(value) && value > 0)
+        .map(([chain, value]) => [chain, Number(value)] as const);
 
-        const chainPrices = priceMap.get(token);
-        if (!chainPrices || chainPrices[chain] === undefined) {
-          missingByChain[chain].push({ token, address });
-        }
+      if (sanitizedEntries.length === 0) {
+        console.warn(`⚠️  Skipping ${token}: no live price data returned by DexScreener.`);
+        continue;
       }
-    }
 
-    const canQueryCoinGecko = !this.isCoinGeckoBackoffActive();
+      const prices = sanitizedEntries.map(([, price]) => price).sort((a, b) => a - b);
+      const median = prices.length % 2 === 1
+        ? prices[(prices.length - 1) / 2]
+        : (prices[prices.length / 2 - 1] + prices[prices.length / 2]) / 2;
 
-    if (canQueryCoinGecko) {
-      for (const chain of SUPPORTED_CHAINS as readonly SupportedChain[]) {
-        const items = missingByChain[chain];
-        if (!items || items.length === 0) continue;
-
-        const addresses = Array.from(new Set(items.map((item) => item.address.toLowerCase())));
-        const chainPrices = await this.fetchCoinGeckoChainTokenPrices(chain, addresses);
-
-        if (Object.keys(chainPrices).length === 0) continue;
-
-        for (const item of items) {
-          const price = chainPrices[item.address.toLowerCase()];
-          if (price === undefined) continue;
-          if (!priceMap.has(item.token)) {
-            priceMap.set(item.token, {});
+      const filteredEntries = sanitizedEntries.filter(([chain, price]) => {
+        if (median > 0) {
+          const ratio = price / median;
+          if (ratio > 20 || ratio < 0.05) {
+            console.warn(`⚠️  Dropping ${token} price on ${chain}: ${price} diverges from median ${median}`);
+            return false;
           }
-          priceMap.get(item.token)![chain] = price;
         }
-      }
-    }
 
-    const tokensMissingGlobal: SupportedToken[] = [];
-    for (const token of SUPPORTED_TOKENS as readonly SupportedToken[]) {
-      const chainPrices = priceMap.get(token);
-      if (!chainPrices || Object.keys(chainPrices).length === 0) {
-        tokensMissingGlobal.push(token);
-      }
-    }
-
-    if (tokensMissingGlobal.length > 0 && canQueryCoinGecko) {
-      const fallbackPrices = await this.fetchCoinGeckoSimplePrices(tokensMissingGlobal);
-
-      for (const token of tokensMissingGlobal) {
-        const fallbackPrice = fallbackPrices[token];
-        if (fallbackPrice === undefined) continue;
-
-        const chainMap = TOKEN_CONTRACTS[token] || {};
-        if (!priceMap.has(token)) {
-          priceMap.set(token, {});
+        if (STABLE_TOKENS.has(token)) {
+          if (price < STABLE_PRICE_MIN || price > STABLE_PRICE_MAX) {
+            console.warn(`⚠️  Dropping stablecoin quote for ${token} on ${chain}: ${price}`);
+            return false;
+          }
         }
-        for (const chain of SUPPORTED_CHAINS as readonly SupportedChain[]) {
-          if (!chainMap[chain]) continue;
-          priceMap.get(token)![chain] = fallbackPrice;
-        }
+
+        return true;
+      });
+
+      if (filteredEntries.length === 0) {
+        console.warn(`⚠️  All quotes discarded for ${token} after sanity checks.`);
+        continue;
       }
-    }
 
-    return (SUPPORTED_TOKENS as readonly SupportedToken[]).map((token) => {
-      const chainPrices = priceMap.get(token) || {};
-      const primaryPrice = chainPrices['ethereum'] ?? Object.values(chainPrices)[0] ?? 0;
+  const referenceEntries = filteredEntries;
+  const preferred = referenceEntries.find(([chain]) => chain === 'ethereum') ?? referenceEntries[0];
+  const [_, primaryPrice] = preferred;
 
-      return {
+      results.push({
         symbol: token,
         price: primaryPrice,
         timestamp,
-        chainPrices
-      };
-    });
+        chainPrices: Object.fromEntries(filteredEntries)
+      });
+    }
+
+    return results;
   }
 
   /**
@@ -630,10 +386,23 @@ export class DataService {
 
       const bestPair = sortedPairs[0];
       const priceUsd = parseFloat(bestPair.priceUsd);
+      const liquidityUsd = bestPair.liquidity?.usd ?? 0;
+
+      if (!Number.isFinite(liquidityUsd) || liquidityUsd < MIN_LIQUIDITY_USD) {
+        console.warn(`Dex price skipped for ${symbol} on ${chain}: liquidity ${liquidityUsd}`);
+        return null;
+      }
 
       if (isNaN(priceUsd) || priceUsd <= 0) {
         console.warn(`Invalid price for ${symbol} on ${chain}: ${bestPair.priceUsd}`);
         return null;
+      }
+
+      if (STABLE_TOKENS.has(symbol as SupportedToken)) {
+        if (priceUsd < STABLE_PRICE_MIN || priceUsd > STABLE_PRICE_MAX) {
+          console.warn(`Stablecoin price out of range for ${symbol} on ${chain}: ${priceUsd}`);
+          return null;
+        }
       }
 
       return {
@@ -762,10 +531,6 @@ export class DataService {
       console.error('Error fetching gas prices:', error);
       throw new Error('Failed to fetch gas prices');
     }
-  }
-
-  getTokenId(symbol: string): string | null {
-    return getCoinGeckoTokenId(symbol);
   }
 
   getSupportedTokens(): string[] {

@@ -4,6 +4,18 @@ interface CustomAxiosRequestConfig extends InternalAxiosRequestConfig {
   _retry?: boolean;
 }
 
+// Session expiry event for modal display
+const SESSION_EXPIRED_EVENT = 'session-expired';
+
+export const triggerSessionExpired = () => {
+  window.dispatchEvent(new Event(SESSION_EXPIRED_EVENT));
+};
+
+export const onSessionExpired = (callback: () => void) => {
+  window.addEventListener(SESSION_EXPIRED_EVENT, callback);
+  return () => window.removeEventListener(SESSION_EXPIRED_EVENT, callback);
+};
+
 class ApiClient {
   private static instance: ApiClient;
   private axiosInstance: AxiosInstance;
@@ -79,7 +91,9 @@ class ApiClient {
               return this.axiosInstance(originalRequest);
             } catch (refreshError) {
               this.isRefreshing = false;
-              this.onRefreshed(null); // Clear queue and log out
+              this.onRefreshed(null); // Clear queue
+              // Trigger session expired event for modal display
+              triggerSessionExpired();
               return Promise.reject(refreshError);
             }
           }
