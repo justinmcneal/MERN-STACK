@@ -1,7 +1,6 @@
 import React from "react";
 import { Save, AlertCircle } from "lucide-react";
 import GeneralSettings from "./GeneralSettings";
-import MonitoringSettings from "./MonitoringSettings";
 import { useSettings } from "../../hooks/useSettings";
 import { useThemeClasses } from "../ThemeAware";
 
@@ -66,18 +65,6 @@ const SettingsContent: React.FC = () => {
           errors={{
             themeMode: errors.themeMode,
             defaultCurrency: errors.defaultCurrency
-          }}
-        />
-
-        {/* Monitoring Settings */}
-        <MonitoringSettings
-          minProfitThreshold={settings.minProfitThreshold}
-          maxGasFee={settings.maxGasFee}
-          onMinProfitThresholdChange={(value) => updateSetting('minProfitThreshold', value)}
-          onMaxGasFeeChange={(value) => updateSetting('maxGasFee', value)}
-          errors={{
-            minProfitThreshold: errors.minProfitThreshold,
-            maxGasFee: errors.maxGasFee
           }}
         />
 

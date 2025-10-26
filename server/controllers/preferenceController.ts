@@ -221,18 +221,19 @@ export const updateNotificationSettings = asyncHandler(async (req: Request, res:
 // PUT /api/preferences/appearance - Update appearance settings
 export const updateAppearanceSettings = asyncHandler(async (req: Request, res: Response) => {
   const userId = req.user!._id;
-  const { theme, refreshInterval } = req.body;
+  const { theme, currency } = req.body as {
+    theme?: 'light' | 'dark' | 'auto';
+    currency?: 'USD' | 'EUR' | 'GBP' | 'JPY' | 'PHP';
+  };
 
-  const updates: any = {};
+  const updates: Partial<{ theme: string; currency: string }> = {};
 
   if (theme && ['light', 'dark', 'auto'].includes(theme)) {
     updates.theme = theme;
   }
 
-  if (refreshInterval && typeof refreshInterval === 'number') {
-    if (refreshInterval < 5) updates.refreshInterval = 5;
-    else if (refreshInterval > 300) updates.refreshInterval = 300;
-    else updates.refreshInterval = refreshInterval;
+  if (currency && ['USD', 'EUR', 'GBP', 'JPY', 'PHP'].includes(currency)) {
+    updates.currency = currency;
   }
 
   if (Object.keys(updates).length === 0) {
@@ -273,7 +274,8 @@ export const resetPreferences = asyncHandler(async (req: Request, res: Response)
       discord: false
     },
     refreshInterval: 30,
-    theme: 'auto'
+    theme: 'auto',
+    currency: 'USD'
   };
 
   const preferences = await UserPreference.findOneAndUpdate(

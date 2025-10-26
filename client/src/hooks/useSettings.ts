@@ -5,18 +5,12 @@ import { useTheme } from '../context/ThemeContext';
 export interface SettingsData {
   // General Settings
   themeMode: boolean; // true = dark, false = light (mapped from theme)
-  defaultCurrency: 'USD' | 'EUR' | 'GBP' | 'JPY' | 'PHP'; // Stored in backend
-  
-  // Monitoring Settings
-  minProfitThreshold: number; // Mapped from alertThresholds.minProfit
-  maxGasFee: number; // Mapped from alertThresholds.maxGasCost
+  defaultCurrency: 'USD' | 'EUR' | 'GBP' | 'JPY' | 'PHP';
 }
 
 export interface SettingsErrors {
   themeMode?: string;
   defaultCurrency?: string;
-  minProfitThreshold?: string;
-  maxGasFee?: string;
   general?: string;
 }
 
@@ -25,18 +19,14 @@ export const useSettings = () => {
     preferences,
     isLoading,
     isUpdating,
-    
-    updateAppearanceSettings,
-    updateAlertThresholds
+    updateAppearanceSettings
   } = usePreferences();
 
   const { theme, setTheme } = useTheme();
 
   const [settings, setSettings] = useState<SettingsData>({
     themeMode: true, // Default to dark mode
-    defaultCurrency: 'USD',
-    minProfitThreshold: 1.5,
-    maxGasFee: 75
+    defaultCurrency: 'USD'
   });
 
   const [errors, setErrors] = useState<SettingsErrors>({});
@@ -48,13 +38,7 @@ export const useSettings = () => {
       const newSettings: SettingsData = {
         // Theme mapping: 'dark' -> true, 'light' -> false, 'auto' -> true (default to dark)
         themeMode: preferences.theme === 'dark' || preferences.theme === 'auto',
-        
-        // Currency from backend
-        defaultCurrency: preferences.currency || 'USD',
-        
-        // Alert thresholds mapping
-        minProfitThreshold: preferences.alertThresholds.minProfit,
-        maxGasFee: preferences.alertThresholds.maxGasCost
+        defaultCurrency: preferences.currency || 'USD'
       };
       
       setSettings(newSettings);
@@ -108,15 +92,6 @@ export const useSettings = () => {
         currency: settings.defaultCurrency
       };
 
-      // Prepare alert thresholds update
-      const alertThresholdsUpdate = {
-        minProfit: settings.minProfitThreshold,
-        maxGasCost: settings.maxGasFee,
-        // Provide defaults for the missing fields expected by the API
-        minROI: 0,
-        minScore: 0
-      };
-
       // Update appearance settings
       const appearanceResult = await updateAppearanceSettings(
         appearanceUpdate.theme,
@@ -126,13 +101,6 @@ export const useSettings = () => {
 
       if (!appearanceResult.success) {
         throw new Error(appearanceResult.error || 'Failed to update appearance settings');
-      }
-
-      // Update alert thresholds
-      const alertResult = await updateAlertThresholds(alertThresholdsUpdate);
-
-      if (!alertResult.success) {
-        throw new Error(alertResult.error || 'Failed to update alert thresholds');
       }
 
       setHasChanges(false);
@@ -146,20 +114,8 @@ export const useSettings = () => {
 
   // Validate settings
   const validateSettings = (): boolean => {
-    const newErrors: SettingsErrors = {};
-
-    // Validate profit threshold
-    if (settings.minProfitThreshold < 0 || settings.minProfitThreshold > 10) {
-      newErrors.minProfitThreshold = 'Profit threshold must be between 0 and 10%';
-    }
-
-    // Validate gas fee
-    if (settings.maxGasFee < 0 || settings.maxGasFee > 1000) {
-      newErrors.maxGasFee = 'Gas fee must be between 0 and 1000';
-    }
-
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
+    setErrors({});
+    return true;
   };
 
   // Reset to original values
@@ -167,9 +123,7 @@ export const useSettings = () => {
     if (preferences) {
       const originalSettings: SettingsData = {
         themeMode: preferences.theme === 'dark' || preferences.theme === 'auto',
-        defaultCurrency: preferences.currency || 'USD',
-        minProfitThreshold: preferences.alertThresholds.minProfit,
-        maxGasFee: preferences.alertThresholds.maxGasCost
+        defaultCurrency: preferences.currency || 'USD'
       };
       
       setSettings(originalSettings);

@@ -58,7 +58,7 @@ const GeneralSettings: React.FC<GeneralSettingsProps> = ({
             <p className={`text-sm ${textSecondary}`}>Primary currency for displaying profit/loss values and conversions</p>
             {errors.defaultCurrency && <p className="text-xs text-red-400 mt-1">{errors.defaultCurrency}</p>}
           </div>
-          <div className="relative w-full sm:w-48">
+          <div className="relative w-full sm:w-64">
             <select 
               value={defaultCurrency}
               onChange={(e) => onDefaultCurrencyChange(e.target.value as 'USD' | 'EUR' | 'GBP' | 'JPY' | 'PHP')}
