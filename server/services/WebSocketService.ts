@@ -1,4 +1,3 @@
-// services/WebSocketService.ts
 import { Server as SocketIOServer, Socket } from 'socket.io';
 import { Server as HTTPServer } from 'http';
 import { Opportunity, Token, Alert } from '../models';
@@ -15,7 +14,7 @@ interface AuthenticatedSocket extends Socket {
 export class WebSocketService {
   private static instance: WebSocketService;
   private io: SocketIOServer | null = null;
-  private connectedUsers: Map<string, Set<string>> = new Map(); // userId -> Set of socketIds
+  private connectedUsers: Map<string, Set<string>> = new Map();
 
   private constructor() {}
 
@@ -26,9 +25,6 @@ export class WebSocketService {
     return WebSocketService.instance;
   }
 
-  /**
-   * Initialize WebSocket server
-   */
   public initialize(server: HTTPServer): void {
     this.io = new SocketIOServer(server, {
       cors: {
@@ -45,9 +41,6 @@ export class WebSocketService {
     console.log('🔌 WebSocket service initialized');
   }
 
-  /**
-   * Setup authentication middleware
-   */
   private setupMiddleware(): void {
     if (!this.io) return;
 
@@ -59,8 +52,6 @@ export class WebSocketService {
       }
 
       try {
-        // In a real implementation, you'd verify the JWT token here
-        // For now, we'll extract user info from the token
         const jwt = require('jsonwebtoken');
         const decoded = jwt.verify(token, process.env.JWT_SECRET!);
         
@@ -73,9 +64,6 @@ export class WebSocketService {
     });
   }
 
-  /**
-   * Setup event handlers
-   */
   private setupEventHandlers(): void {
     if (!this.io) return;
 
@@ -83,7 +71,6 @@ export class WebSocketService {
       const authSocket = socket as AuthenticatedSocket;
       console.log(`🔌 User ${authSocket.userEmail} connected (${socket.id})`);
 
-      // Add user to connected users map
       if (authSocket.userId) {
         if (!this.connectedUsers.has(authSocket.userId)) {
           this.connectedUsers.set(authSocket.userId, new Set());
@@ -91,27 +78,22 @@ export class WebSocketService {
         this.connectedUsers.get(authSocket.userId)!.add(socket.id);
       }
 
-      // Join user-specific room
       if (authSocket.userId) {
         socket.join(`user:${authSocket.userId}`);
       }
 
-      // Handle subscription to specific data types
       socket.on('subscribe', (data: { type: string; filters?: any }) => {
         this.handleSubscription(authSocket, data);
       });
 
-      // Handle unsubscription
       socket.on('unsubscribe', (data: { type: string }) => {
         this.handleUnsubscription(authSocket, data);
       });
 
-      // Handle custom alerts
       socket.on('create_alert', (data: { message: string; priority: string }) => {
         this.handleCreateAlert(authSocket, data);
       });
 
-      // Handle disconnect
       socket.on('disconnect', () => {
         console.log(`🔌 User ${authSocket.userEmail} disconnected (${socket.id})`);
         
@@ -181,9 +163,6 @@ export class WebSocketService {
     }
   }
 
-  /**
-   * Handle custom alert creation
-   */
   private async handleCreateAlert(socket: AuthenticatedSocket, data: { message: string; priority: string }): Promise<void> {
     if (!socket.userId) {
       socket.emit('error', { message: 'User not authenticated' });
@@ -199,7 +178,6 @@ export class WebSocketService {
         isRead: false,
       });
 
-      // Emit to user's alert room
       this.io?.to(`alerts:${socket.userId}`).emit('new_alert', alert);
       
       socket.emit('alert_created', { success: true, alert });
@@ -208,9 +186,6 @@ export class WebSocketService {
     }
   }
 
-  /**
-   * Broadcast new opportunity to all subscribers
-   */
   public broadcastNewOpportunity(opportunity: IOpportunity): void {
     if (!this.io) return;
 
@@ -221,9 +196,6 @@ export class WebSocketService {
     });
   }
 
-  /**
-   * Broadcast updated opportunity
-   */
   public broadcastUpdatedOpportunity(opportunity: IOpportunity): void {
     if (!this.io) return;
 
@@ -234,9 +206,6 @@ export class WebSocketService {
     });
   }
 
-  /**
-   * Broadcast expired opportunity
-   */
   public broadcastExpiredOpportunity(opportunity: IOpportunity): void {
     if (!this.io) return;
 
@@ -247,9 +216,6 @@ export class WebSocketService {
     });
   }
 
-  /**
-   * Broadcast token price updates
-   */
   public broadcastTokenPriceUpdate(token: IToken): void {
     if (!this.io) return;
 
@@ -260,9 +226,6 @@ export class WebSocketService {
     });
   }
 
-  /**
-   * Broadcast new alert to specific user
-   */
   public broadcastNewAlert(userId: string, alert: IAlert): void {
     if (!this.io) return;
 
@@ -273,9 +236,6 @@ export class WebSocketService {
     });
   }
 
-  /**
-   * Broadcast system status update
-   */
   public broadcastSystemStatus(status: any): void {
     if (!this.io) return;
 
@@ -286,9 +246,6 @@ export class WebSocketService {
     });
   }
 
-  /**
-   * Broadcast scan results
-   */
   public broadcastScanResults(results: {
     opportunitiesFound: number;
     opportunitiesUpdated: number;
@@ -304,16 +261,11 @@ export class WebSocketService {
     });
   }
 
-  /**
-   * Get connected users count
-   */
+
   public getConnectedUsersCount(): number {
     return this.connectedUsers.size;
   }
 
-  /**
-   * Get total connections count
-   */
   public getTotalConnectionsCount(): number {
     let total = 0;
     for (const sockets of Array.from(this.connectedUsers.values())) {
@@ -321,10 +273,6 @@ export class WebSocketService {
     }
     return total;
   }
-
-  /**
-   * Get connection statistics
-   */
   public getConnectionStats(): {
     connectedUsers: number;
     totalConnections: number;

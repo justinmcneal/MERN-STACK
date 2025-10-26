@@ -26,6 +26,11 @@ class DataPipeline {
     const autoStart = options?.autoStart !== false;
     if (autoStart) {
       this.startDataPipeline();
+      // Kick off an initial update so prices are available before the first cron tick.
+      this.updateTokenPrices().catch((err) => {
+        console.error('Initial token price update failed:', err);
+        this.status.errors.push(`Initial token update failed: ${err instanceof Error ? err.message : err}`);
+      });
     }
   }
 

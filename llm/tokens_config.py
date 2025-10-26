@@ -14,15 +14,6 @@ TOKEN_NAMES = {
     "MATIC": "Polygon"
 }
 
-# CoinGecko API token IDs
-COINGECKO_TOKEN_IDS = {
-    "ETH": "ethereum",
-    "USDT": "tether",
-    "USDC": "usd-coin", 
-    "BNB": "binancecoin",
-    "MATIC": "matic-network"
-}
-
 # Chain display names
 CHAIN_NAMES = {
     "ethereum": "Ethereum",
@@ -45,7 +36,3 @@ def get_token_name(symbol: str) -> str:
 def get_chain_name(chain: str) -> str:
     """Get human-readable chain name with fallback"""
     return CHAIN_NAMES.get(chain, chain)
-
-def get_coingecko_token_id(symbol: str) -> str:
-    """Get CoinGecko token ID"""
-    return COINGECKO_TOKEN_IDS.get(symbol, symbol)
