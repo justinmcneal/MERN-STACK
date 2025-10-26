@@ -27,9 +27,8 @@ export const getUserPreferences = asyncHandler(async (req: Request, res: Respons
         telegram: false,
         discord: false
       },
-      refreshInterval: 30,
-      theme: 'auto',
-      currency: 'USD'
+  refreshInterval: 30,
+  currency: 'USD'
     });
   }
 
@@ -84,11 +83,6 @@ export const updateUserPreferences = asyncHandler(async (req: Request, res: Resp
   if (updates.refreshInterval) {
     if (updates.refreshInterval < 5) updates.refreshInterval = 5;
     if (updates.refreshInterval > 300) updates.refreshInterval = 300;
-  }
-
-  // Validate theme
-  if (updates.theme && !['light', 'dark', 'auto'].includes(updates.theme)) {
-    updates.theme = 'auto';
   }
 
   // Validate currency
@@ -221,31 +215,45 @@ export const updateNotificationSettings = asyncHandler(async (req: Request, res:
 // PUT /api/preferences/appearance - Update appearance settings
 export const updateAppearanceSettings = asyncHandler(async (req: Request, res: Response) => {
   const userId = req.user!._id;
-  const { theme, currency } = req.body as {
-    theme?: 'light' | 'dark' | 'auto';
+  const { currency } = req.body as {
     currency?: 'USD' | 'EUR' | 'GBP' | 'JPY' | 'PHP';
   };
 
-  const updates: Partial<{ theme: string; currency: string }> = {};
+  const isValidCurrency = currency && ['USD', 'EUR', 'GBP', 'JPY', 'PHP'].includes(currency);
 
-  if (theme && ['light', 'dark', 'auto'].includes(theme)) {
-    updates.theme = theme;
-  }
-
-  if (currency && ['USD', 'EUR', 'GBP', 'JPY', 'PHP'].includes(currency)) {
-    updates.currency = currency;
-  }
-
-  if (Object.keys(updates).length === 0) {
+  if (!isValidCurrency) {
     res.status(400);
     throw new Error('No valid updates provided');
   }
 
-  const preferences = await UserPreference.findOneAndUpdate(
-    { userId },
-    { $set: updates },
-    { new: true, upsert: true }
-  );
+  let preferences = await UserPreference.findOne({ userId });
+
+  if (!preferences) {
+    preferences = new UserPreference({
+      userId,
+      tokensTracked: [...SUPPORTED_TOKENS],
+      alertThresholds: {
+        minProfit: 10,
+        maxGasCost: 50,
+        minROI: 1,
+        minScore: 0.7
+      },
+      notificationSettings: {
+        email: true,
+        dashboard: true,
+        telegram: false,
+        discord: false
+      },
+      refreshInterval: 30,
+      currency: isValidCurrency ? currency : 'USD'
+    });
+  } else {
+    if (isValidCurrency) {
+      preferences.currency = currency!;
+    }
+  }
+
+  await preferences.save();
 
   res.json({
     success: true,
@@ -274,7 +282,6 @@ export const resetPreferences = asyncHandler(async (req: Request, res: Response)
       discord: false
     },
     refreshInterval: 30,
-    theme: 'auto',
     currency: 'USD'
   };
 
@@ -304,20 +311,6 @@ export const getSupportedTokensForPreferences = asyncHandler(async (req: Request
   res.json({
     success: true,
     data: tokensWithNames
-  });
-});
-
-// GET /api/preferences/available-themes - Get available themes
-export const getAvailableThemes = asyncHandler(async (req: Request, res: Response) => {
-  const themes = [
-    { value: 'auto', label: 'Auto (System)' },
-    { value: 'light', label: 'Light' },
-    { value: 'dark', label: 'Dark' }
-  ];
-
-  res.json({
-    success: true,
-    data: themes
   });
 });
 

@@ -19,7 +19,6 @@ export interface IUserPreference extends Document {
     discord?: boolean;
   };
   refreshInterval: number; // in seconds
-  theme: 'light' | 'dark' | 'auto';
   currency: 'USD' | 'EUR' | 'GBP' | 'JPY' | 'PHP';
 }
 
@@ -82,11 +81,6 @@ const userPreferenceSchema: Schema<IUserPreference> = new mongoose.Schema(
       default: 30, // 30 seconds
       min: 5,
       max: 300 
-    },
-    theme: { 
-      type: String, 
-      enum: ['light', 'dark', 'auto'],
-      default: 'auto' 
     },
     currency: {
       type: String,

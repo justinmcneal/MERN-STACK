@@ -1,5 +1,10 @@
 import React, { useMemo, useState } from 'react';
 import { useTokenContext } from '../../context/useTokenContext';
+import type {
+  CurrencyFormatterFn,
+  SupportedCurrency,
+  UsdConverterFn
+} from '../../hooks/useCurrencyFormatter';
 
 type Props = {
   filterMode: 'all' | 'byChain' | 'byToken';
@@ -7,9 +12,21 @@ type Props = {
   onSelectChain: (c: string | null) => void;
   selectedToken: string;
   onSelectToken: (t: string) => void;
+  currency: SupportedCurrency;
+  formatCurrency: CurrencyFormatterFn;
+  convertFromUsd: UsdConverterFn;
 };
 
-const PriceTable: React.FC<Props> = ({ filterMode, selectedChain, onSelectChain, selectedToken, onSelectToken }) => {
+const PriceTable: React.FC<Props> = ({
+  filterMode,
+  selectedChain,
+  onSelectChain,
+  selectedToken,
+  onSelectToken,
+  currency,
+  formatCurrency,
+  convertFromUsd
+}) => {
   const { tokens, loading, error, refresh, isRefreshing } = useTokenContext();
 
   type SortKey = 'symbol' | 'chain' | 'currentPrice' | 'dexPrice' | 'spread' | 'liquidity' | 'lastUpdated';
@@ -18,12 +35,19 @@ const PriceTable: React.FC<Props> = ({ filterMode, selectedChain, onSelectChain,
 
   const STALE_THRESHOLD_MS = 90 * 60 * 1000; // 90 minutes
 
-  const formatCurrency = (value?: number) => {
+  const formatPriceValue = (value?: number) => {
     if (value === undefined || value === null || Number.isNaN(value)) return '—';
-    const absVal = Math.abs(value);
-    if (absVal >= 1000) return `$${value.toLocaleString(undefined, { maximumFractionDigits: 0 })}`;
-    if (absVal >= 1) return `$${value.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-    return `$${value.toLocaleString(undefined, { minimumFractionDigits: 4, maximumFractionDigits: 6 })}`;
+    const converted = convertFromUsd(value);
+    if (converted === null) return '—';
+    const absVal = Math.abs(converted);
+
+    if (absVal >= 1000) {
+      return formatCurrency(value, { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+    }
+    if (absVal >= 1) {
+      return formatCurrency(value, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    }
+    return formatCurrency(value, { minimumFractionDigits: 4, maximumFractionDigits: 6 });
   };
 
   const formatPercent = (value?: number) => {
@@ -33,9 +57,15 @@ const PriceTable: React.FC<Props> = ({ filterMode, selectedChain, onSelectChain,
 
   const formatLiquidity = (value?: number) => {
     if (value === undefined || value === null || Number.isNaN(value)) return '—';
-    if (value >= 1_000_000) return `$${(value / 1_000_000).toLocaleString(undefined, { maximumFractionDigits: 1 })}M`;
-    if (value >= 1_000) return `$${(value / 1_000).toLocaleString(undefined, { maximumFractionDigits: 1 })}K`;
-    return `$${value.toLocaleString(undefined, { maximumFractionDigits: 0 })}`;
+    const converted = convertFromUsd(value);
+    if (converted === null) return '—';
+    const absVal = Math.abs(converted);
+
+    if (absVal >= 1_000) {
+      return formatCurrency(value, { notation: 'compact', maximumFractionDigits: 1 });
+    }
+
+    return formatCurrency(value, { minimumFractionDigits: 0, maximumFractionDigits: 0 });
   };
 
   type TimestampMeta = { display: string; isStale: boolean; absolute?: string };
@@ -222,10 +252,10 @@ const PriceTable: React.FC<Props> = ({ filterMode, selectedChain, onSelectChain,
                 {[
                   { label: 'Token', key: 'symbol' as SortKey },
                   { label: 'Chain', key: 'chain' as SortKey },
-                  { label: 'Price (Feed)', key: 'currentPrice' as SortKey },
-                  { label: 'Price (DEX)', key: 'dexPrice' as SortKey },
+                  { label: `Price (Feed) (${currency})`, key: 'currentPrice' as SortKey },
+                  { label: `Price (DEX) (${currency})`, key: 'dexPrice' as SortKey },
                   { label: 'Spread', key: 'spread' as SortKey },
-                  { label: 'Liquidity', key: 'liquidity' as SortKey },
+                  { label: `Liquidity (${currency})`, key: 'liquidity' as SortKey },
                   { label: 'Last Updated', key: 'lastUpdated' as SortKey }
                 ].map(({ label, key }) => {
                   const isActive = sortKey === key;
@@ -294,10 +324,10 @@ const PriceTable: React.FC<Props> = ({ filterMode, selectedChain, onSelectChain,
                           : 'bg-purple-500/20 text-purple-300'
                       }`}>{token.chain}</span>
                     </td>
-                    <td className="py-3 px-4 text-right text-slate-200">{formatCurrency(token.currentPrice)}</td>
+                    <td className="py-3 px-4 text-right text-slate-200">{formatPriceValue(token.currentPrice)}</td>
                     <td className="py-3 px-4 text-right text-slate-200">
                       <div className="flex flex-col items-end gap-1">
-                        <span>{formatCurrency(token.dexPrice)}</span>
+                        <span>{formatPriceValue(token.dexPrice)}</span>
                         {token.dexName && <span className="text-[10px] uppercase tracking-wide text-slate-500">{token.dexName}</span>}
                       </div>
                     </td>

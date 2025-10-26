@@ -1,10 +1,16 @@
 import React, { useMemo, useState, useEffect, useRef } from 'react';
 import { useTokenContext } from '../../context/useTokenContext';
 import TokenService from '../../services/TokenService';
+import type { CurrencyFormatterFn, SupportedCurrency } from '../../hooks/useCurrencyFormatter';
 
 const CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
 
-const ChartComponent: React.FC = () => {
+interface ChartComponentProps {
+  formatCurrency: CurrencyFormatterFn;
+  currency: SupportedCurrency;
+}
+
+const ChartComponent: React.FC<ChartComponentProps> = ({ formatCurrency, currency }) => {
   const { tokens, loading } = useTokenContext();
   const [timeframe, setTimeframe] = useState<'1h'|'24h'|'7d'>('24h');
   const [selectedSymbol, setSelectedSymbol] = useState<string>('');
@@ -179,7 +185,7 @@ const ChartComponent: React.FC = () => {
           <svg className="w-5 h-5 text-cyan-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
           </svg>
-          Token Trends
+          Token Trends ({currency})
         </h3>
         <div className="flex flex-wrap gap-2 items-center">
           {(['1h','24h','7d'] as const).map(tf=> (
@@ -274,7 +280,11 @@ const ChartComponent: React.FC = () => {
           {hasSeries && [0,0.25,0.5,0.75,1].map((f, idx) => {
             const val = combinedMin + (1 - f) * (combinedMax - combinedMin || 1);
             const y = padding + innerH * f;
-            return <text key={idx} x={6} y={y+3} fill="#64748b" fontSize="10">{`$${Number(val).toLocaleString(undefined, {maximumFractionDigits:2})}`}</text>;
+            return (
+              <text key={idx} x={6} y={y+3} fill="#64748b" fontSize="10">
+                {formatCurrency(val, { maximumFractionDigits: 2 })}
+              </text>
+            );
           })}
         </svg>
         {!hasSeries && historyNotice && (

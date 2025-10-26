@@ -8,8 +8,7 @@ import {
   updateNotificationSettings,
   updateAppearanceSettings,
   resetPreferences,
-  getSupportedTokensForPreferences,
-  getAvailableThemes
+  getSupportedTokensForPreferences
 } from '../controllers/preferenceController';
 
 const router = Router();
@@ -25,9 +24,6 @@ router.put('/', updateUserPreferences);
 
 // GET /api/preferences/supported-tokens - Get supported tokens list
 router.get('/supported-tokens', getSupportedTokensForPreferences);
-
-// GET /api/preferences/available-themes - Get available themes
-router.get('/available-themes', getAvailableThemes);
 
 // PUT /api/preferences/tokens - Update tracked tokens
 router.put('/tokens', updateTrackedTokens);

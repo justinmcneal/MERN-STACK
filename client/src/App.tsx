@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
-import { ThemeProvider } from './context/ThemeContext';
 import ProtectedRoute from './components/ProtectedRoute';
 import ErrorBoundary from './components/ErrorBoundary';
 import SessionExpiredModal from './components/common/SessionExpiredModal';
@@ -40,7 +39,6 @@ const App: React.FC = () => {
 
   return (
     <ErrorBoundary>
-      <ThemeProvider>
         <AuthProvider>
           <Router>
           <Routes>
@@ -113,7 +111,6 @@ const App: React.FC = () => {
           />
         </Router>
       </AuthProvider>
-      </ThemeProvider>
     </ErrorBoundary>
   );
 };

@@ -1,5 +1,6 @@
 import React, { useMemo } from 'react';
 import { useTokenContext } from '../../context/useTokenContext';
+import type { CurrencyFormatterFn, SupportedCurrency } from '../../hooks/useCurrencyFormatter';
 
 interface StatCardProps {
   icon: React.ReactNode;
@@ -58,9 +59,11 @@ interface StatCardsWrapperProps {
     avgSpread: number;
     chains: string[];
   } | null;
+  formatCurrency: CurrencyFormatterFn;
+  currency: SupportedCurrency;
 }
 
-const StatCardsWrapper: React.FC<StatCardsWrapperProps> = ({ bestOpportunity, topToken }) => {
+const StatCardsWrapper: React.FC<StatCardsWrapperProps> = ({ bestOpportunity, topToken, formatCurrency, currency }) => {
   const { tokens, loading } = useTokenContext();
 
   // Calculate unique token symbols and chains
@@ -87,7 +90,7 @@ const StatCardsWrapper: React.FC<StatCardsWrapperProps> = ({ bestOpportunity, to
     : 'None found';
   
   const bestOppSubtitle = bestOpportunity
-    ? `$${bestOpportunity.netProfitUsd.toFixed(2)} profit | ${bestOpportunity.chainFrom} → ${bestOpportunity.chainTo}`
+    ? `${formatCurrency(bestOpportunity.netProfitUsd, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} profit (${currency}) | ${bestOpportunity.chainFrom} → ${bestOpportunity.chainTo}`
     : 'No profitable opportunities currently';
 
   // Top token card - show token with highest average spread

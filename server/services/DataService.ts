@@ -1,4 +1,3 @@
-// services/DataService.ts
 import * as axios from 'axios';
 import fs from 'fs';
 import path from 'path';
@@ -10,9 +9,6 @@ import {
   type SupportedToken
 } from '../config/tokens';
 
-// Liquidity threshold: lowered to capture more DEX pairs while filtering out very illiquid pools
-// Original: 2500 was too restrictive and filtered out many valid trading pairs
-// New: 1000 provides better coverage while still avoiding extremely noisy data
 const MIN_LIQUIDITY_USD = 1000; // Skip illiquid pools that produce noisy quotes
 const STABLE_TOKENS = new Set<SupportedToken>();
 const STABLE_PRICE_MIN = 0.8;
@@ -87,10 +83,7 @@ export class DataService {
   private readonly polygonGasUrl = 'https://gasstation.polygon.technology/v2';
   private readonly bscGasUrl = 'https://bscgas.info/gas';
   private readonly blocknativeUrl = 'https://api.blocknative.com/gasprices/blockprices';
-
-  // Backoff state persisted to disk so it survives restarts
   private readonly cacheDir = path.resolve(__dirname, '..', '.cache');
-  // Etherscan API fallback for gas (requires ETHERSCAN_API_KEY)
   private readonly etherscanGasUrl = 'https://api.etherscan.io/api';
 
   private constructor() {}

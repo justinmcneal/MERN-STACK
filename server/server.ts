@@ -6,19 +6,11 @@ import { webSocketService } from './services';
 import jobManager from './jobs';
 
 const PORT = process.env.PORT || 5001;
-
-// Create HTTP server
 const server = createServer(app);
-
-// Initialize WebSocket service
 webSocketService.initialize(server);
 
-// Connect to database
 connectDB();
 
-// Background jobs are automatically started by JobManager
-
-// Start server
 server.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT}`);
   console.log(`🔌 WebSocket service enabled`);

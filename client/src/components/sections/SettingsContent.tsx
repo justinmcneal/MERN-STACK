@@ -2,7 +2,6 @@ import React from "react";
 import { Save, AlertCircle } from "lucide-react";
 import GeneralSettings from "./GeneralSettings";
 import { useSettings } from "../../hooks/useSettings";
-import { useThemeClasses } from "../ThemeAware";
 
 const SettingsContent: React.FC = () => {
   const {
@@ -16,8 +15,6 @@ const SettingsContent: React.FC = () => {
     validateSettings,
     resetSettings
   } = useSettings();
-
-  const { border, bg, buttonPrimary } = useThemeClasses();
 
   const handleSaveChanges = async () => {
     if (!validateSettings()) {
@@ -58,18 +55,15 @@ const SettingsContent: React.FC = () => {
 
         {/* General Settings */}
         <GeneralSettings
-          themeMode={settings.themeMode}
           defaultCurrency={settings.defaultCurrency}
-          onThemeModeChange={() => updateSetting('themeMode', !settings.themeMode)}
           onDefaultCurrencyChange={(value) => updateSetting('defaultCurrency', value)}
           errors={{
-            themeMode: errors.themeMode,
             defaultCurrency: errors.defaultCurrency
           }}
         />
 
         {/* Save Button */}
-        <div className={`${bg}/50 backdrop-blur border ${border}/50 rounded-2xl p-6`}>
+        <div className="bg-white/70 backdrop-blur border border-slate-200/60 rounded-2xl p-6">
           <div className="flex flex-col items-center gap-4">
             <div className="flex gap-3">
               <button
@@ -78,7 +72,7 @@ const SettingsContent: React.FC = () => {
                 className={`inline-flex items-center justify-center gap-3 px-8 py-4 rounded-xl font-semibold shadow-lg transition-all duration-300 transform ${
                   !hasChanges || isUpdating
                     ? 'bg-slate-600 text-slate-400 cursor-not-allowed'
-                    : `${buttonPrimary} hover:scale-105`
+                    : 'bg-gradient-to-r from-blue-500 to-purple-600 text-white hover:scale-105 hover:from-blue-400 hover:to-purple-500'
                 }`}
               >
                 {isUpdating ? (
@@ -97,14 +91,14 @@ const SettingsContent: React.FC = () => {
               {hasChanges && (
                 <button
                   onClick={resetSettings}
-                  className="px-6 py-4 rounded-xl bg-slate-700/50 hover:bg-slate-600/50 text-slate-300 font-semibold transition-all duration-300"
+                  className="px-6 py-4 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold transition-all duration-300"
                 >
                   Reset
                 </button>
               )}
             </div>
             
-            <p className="text-sm text-slate-400 text-center">
+            <p className="text-sm text-slate-500 text-center">
               {hasChanges 
                 ? "You have unsaved changes" 
                 : "All changes have been saved"

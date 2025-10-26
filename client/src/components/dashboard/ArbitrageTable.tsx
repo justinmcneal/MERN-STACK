@@ -1,18 +1,15 @@
 import React from 'react';
 import type { OpportunityDto, OpportunityFlagReason } from '../../services/OpportunityService';
+import type { CurrencyFormatterFn, SupportedCurrency } from '../../hooks/useCurrencyFormatter';
 
 interface ArbitrageTableProps {
   opportunities: OpportunityDto[];
   loading?: boolean;
   error?: string | null;
   onRefresh?: () => void;
+  formatCurrency: CurrencyFormatterFn;
+  currency: SupportedCurrency;
 }
-
-const usdFormatter = new Intl.NumberFormat('en-US', {
-  style: 'currency',
-  currency: 'USD',
-  maximumFractionDigits: 2
-});
 
 const formatPercent = (value?: number) => {
   if (value === undefined || value === null || Number.isNaN(value)) {
@@ -23,12 +20,6 @@ const formatPercent = (value?: number) => {
   return `${prefix}${rounded}%`;
 };
 
-const formatUsd = (value: number) => {
-  if (!Number.isFinite(value)) {
-    return '—';
-  }
-  return usdFormatter.format(value);
-};
 
 const capitalizeChain = (chain: string) => {
   if (!chain) return 'Unknown';
@@ -55,7 +46,7 @@ const describeFlags = (reasons: OpportunityFlagReason[] | undefined): string | n
     .join(', ');
 };
 
-const ArbitrageTable: React.FC<ArbitrageTableProps> = ({ opportunities, loading, error, onRefresh }) => {
+const ArbitrageTable: React.FC<ArbitrageTableProps> = ({ opportunities, loading, error, onRefresh, formatCurrency, currency }) => {
   // Filter out stablecoins - no meaningful arbitrage opportunities
   const hasData = opportunities.length > 0;
 
@@ -86,9 +77,9 @@ const ArbitrageTable: React.FC<ArbitrageTableProps> = ({ opportunities, loading,
                 <th className="text-left text-xs text-slate-400 font-medium py-3 px-4">Token</th>
                 <th className="text-left text-xs text-slate-400 font-medium py-3 px-4">From → To</th>
                 <th className="text-right text-xs text-slate-400 font-medium py-3 px-4">Price Diff (%)</th>
-                <th className="text-right text-xs text-slate-400 font-medium py-3 px-4">Trade Size</th>
-                <th className="text-right text-xs text-slate-400 font-medium py-3 px-4">Gas Fee</th>
-                <th className="text-right text-xs text-slate-400 font-medium py-3 px-4">Net Profit</th>
+                <th className="text-right text-xs text-slate-400 font-medium py-3 px-4">Trade Size ({currency})</th>
+                <th className="text-right text-xs text-slate-400 font-medium py-3 px-4">Gas Fee ({currency})</th>
+                <th className="text-right text-xs text-slate-400 font-medium py-3 px-4">Net Profit ({currency})</th>
                 <th className="text-right text-xs text-slate-400 font-medium py-3 px-4">Score</th>
               </tr>
             </thead>
@@ -135,12 +126,10 @@ const ArbitrageTable: React.FC<ArbitrageTableProps> = ({ opportunities, loading,
                       </span>
                     </td>
                     <td className="py-3 px-4 text-right text-slate-300">
-                      {opportunity.tradeVolumeUsd !== undefined
-                        ? formatUsd(opportunity.tradeVolumeUsd)
-                        : '—'}
+                      {formatCurrency(opportunity.tradeVolumeUsd, { notation: 'compact', maximumFractionDigits: 1 })}
                     </td>
-                    <td className="py-3 px-4 text-right text-slate-300">{formatUsd(opportunity.gasCostUsd)}</td>
-                    <td className="py-3 px-4 text-right text-cyan-400 font-medium">{formatUsd(opportunity.netProfitUsd)}</td>
+                    <td className="py-3 px-4 text-right text-slate-300">{formatCurrency(opportunity.gasCostUsd, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                    <td className="py-3 px-4 text-right text-cyan-400 font-medium">{formatCurrency(opportunity.netProfitUsd, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
                     <td className="py-3 px-4 text-right">
                       <span className={`font-bold ${scoreClass}`}>{scorePercent}</span>
                     </td>
@@ -174,7 +163,7 @@ const ArbitrageTable: React.FC<ArbitrageTableProps> = ({ opportunities, loading,
       </div>
       {(hasData || loading) && (
         <p className="mt-4 text-xs text-slate-500">
-          Trade size reflects the assumed USD amount used when evaluating each opportunity.
+          Trade size reflects the assumed {currency} amount used when evaluating each opportunity.
         </p>
       )}
     </div>
