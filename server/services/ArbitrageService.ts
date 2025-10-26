@@ -232,8 +232,14 @@ export async function evaluateOpportunity(
       const prediction = await mlService.getPrediction({
         token: symbol,
         chain: chainFrom,
-        price: priceDiffPerTokenUsd,
-        gas: gasCostUsd
+        price: grossProfitUsd,
+        gas: gasCostUsd,
+        grossProfit: grossProfitUsd,
+        netProfit: netProfitUsd,
+        roi: roi ?? 0,
+        tradeVolume: tradeUsdAmount,
+        priceDiffPercent,
+        pricePerToken: priceDiffPerTokenUsd
       });
       score = Math.max(0, Math.min(1, Number(prediction.score ?? 0)));
     } catch (error) {

@@ -127,9 +127,9 @@ const ChartComponent: React.FC<ChartComponentProps> = ({ formatCurrency, currenc
   }, [baseToken, timeframe, pointsCount]);
 
   // Chart drawing params
-  const width = 800;
-  const height = 200;
-  const padding = 20;
+  const width = 720;
+  const height = 140;
+  const padding = 16;
   const innerW = width - padding * 2;
   const innerH = height - padding * 2;
 
@@ -179,8 +179,8 @@ const ChartComponent: React.FC<ChartComponentProps> = ({ formatCurrency, currenc
   const hasSeries = combinedSeries.length > 0;
 
   return (
-    <div className="bg-slate-800/50 backdrop-blur border border-slate-700/50 rounded-2xl p-6">
-      <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center mb-6 gap-4">
+    <div className="bg-slate-800/50 backdrop-blur border border-slate-700/50 rounded-2xl p-5">
+      <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center mb-4 gap-4">
         <h3 className="text-lg font-semibold text-slate-200 flex items-center gap-2">
           <svg className="w-5 h-5 text-cyan-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
@@ -192,7 +192,7 @@ const ChartComponent: React.FC<ChartComponentProps> = ({ formatCurrency, currenc
             <button 
               key={tf} 
               onClick={() => setTimeframe(tf)} 
-              className={`px-3 py-1.5 text-xs rounded-lg transition-all ${
+              className={`px-3 py-1 text-xs rounded-lg transition-all ${
                 timeframe===tf
                   ? 'bg-cyan-600 text-white' 
                   : 'bg-slate-700/50 text-slate-400 hover:text-slate-300'
@@ -205,7 +205,7 @@ const ChartComponent: React.FC<ChartComponentProps> = ({ formatCurrency, currenc
             <select 
               value={selectedSymbol || (baseToken?.symbol ?? '')} 
               onChange={(e) => setSelectedSymbol(e.target.value)} 
-              className="appearance-none w-full px-3 py-1.5 text-xs rounded-lg bg-slate-800/50 border border-slate-700/50 text-slate-300 pr-8 focus:outline-none focus:ring-2 focus:ring-cyan-400/50 transition-all duration-300"
+              className="appearance-none w-full px-3 py-1 text-xs rounded-lg bg-slate-800/50 border border-slate-700/50 text-slate-300 pr-8 focus:outline-none focus:ring-2 focus:ring-cyan-400/50 transition-all duration-300"
             >
               <option value="">Select token</option>
               {(!loading ? Array.from(new Set(tokens.map(t => t.symbol))).map(sym => (
@@ -220,7 +220,10 @@ const ChartComponent: React.FC<ChartComponentProps> = ({ formatCurrency, currenc
       </div>
 
       {/* Chart container with responsive aspect ratio */}
-      <div className="relative w-full mb-4" style={{ aspectRatio: `${width} / ${height}`, minHeight: '200px' }}>
+      <div
+        className="relative w-full mb-3"
+        style={{ aspectRatio: `${width} / ${height}`, minHeight: '150px', maxHeight: '220px' }}
+      >
         <svg className="w-full h-full" viewBox={`0 0 ${width} ${height}`} preserveAspectRatio="xMidYMid meet">
           <defs>
             <linearGradient id={`areaGrad-${baseToken?.symbol || 'g'}`} x1="0%" y1="0%" x2="0%" y2="100%">
@@ -250,7 +253,7 @@ const ChartComponent: React.FC<ChartComponentProps> = ({ formatCurrency, currenc
                   <path 
                     d={pathD} 
                     stroke={chainColor} 
-                    strokeWidth={isSelectedChain ? 2.5 : 2} 
+                    strokeWidth={isSelectedChain ? 2.1 : 1.6} 
                     fill="none" 
                     strokeLinejoin="round" 
                     strokeLinecap="round" 
@@ -295,7 +298,7 @@ const ChartComponent: React.FC<ChartComponentProps> = ({ formatCurrency, currenc
       </div>
 
       {/* Legend - improved layout and spacing */}
-      <div className="flex flex-wrap gap-4 lg:gap-6 text-xs items-center justify-center lg:justify-start pt-4 border-t border-slate-700/30">
+  <div className="flex flex-wrap gap-3 lg:gap-5 text-xs items-center justify-center lg:justify-start pt-3 border-t border-slate-700/30">
         <div className="flex items-center gap-2">
           <div className="w-3 h-3 rounded-full" style={{ backgroundColor: colorByChain('polygon') }}></div>
           <span className="text-slate-400">Polygon</span>

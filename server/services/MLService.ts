@@ -5,6 +5,12 @@ interface MLPredictionRequest {
   chain: string;
   price: number;
   gas: number;
+  grossProfit?: number;
+  netProfit?: number;
+  roi?: number | null;
+  tradeVolume?: number;
+  pricePerToken?: number;
+  priceDiffPercent?: number;
 }
 
 interface MLPredictionResponse {
