@@ -53,8 +53,8 @@ export class ProfileService {
         email: user.email,
         profilePicture: user.profilePicture,
         avatar: user.avatar,
-        createdAt: (user as any).createdAt,
-        updatedAt: (user as any).updatedAt,
+        createdAt: user.createdAt,
+        updatedAt: user.updatedAt,
       },
       preferences,
     };
@@ -66,7 +66,7 @@ export class ProfileService {
       throw createError('User not found', 404);
     }
 
-    if ('email' in data && data.email !== undefined) {
+    if ('email' in data) {
       throw createError('Email address cannot be changed. Please contact support if you need to update your email.', 400);
     }
 
@@ -135,13 +135,11 @@ export class ProfileService {
       throw createError('User not found', 404);
     }
 
-    // This would typically involve more complex queries to get actual stats
-    // For now, returning mock data structure
     return {
       totalOpportunities: 0,
       totalAlerts: 0,
-      accountAge: Math.floor((Date.now() - (user as any).createdAt.getTime()) / (1000 * 60 * 60 * 24)),
-      lastLogin: (user as any).updatedAt,
+      accountAge: Math.floor((Date.now() - user.createdAt.getTime()) / (1000 * 60 * 60 * 24)),
+      lastLogin: user.updatedAt,
     };
   }
 }

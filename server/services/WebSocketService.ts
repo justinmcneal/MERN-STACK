@@ -5,6 +5,7 @@ import { IOpportunity } from '../models/Opportunity';
 import { IToken } from '../models/Token';
 import { IAlert } from '../models/Alert';
 import { Types } from 'mongoose';
+import logger from '../utils/logger';
 
 interface AuthenticatedSocket extends Socket {
   userId?: string;
@@ -28,7 +29,7 @@ export class WebSocketService {
   public initialize(server: HTTPServer): void {
     this.io = new SocketIOServer(server, {
       cors: {
-        origin: process.env.CLIENT_URL || 'http://localhost:5173',
+        origin: process.env.CLIENT_URL!,
         methods: ['GET', 'POST'],
         credentials: true,
       },
@@ -38,7 +39,7 @@ export class WebSocketService {
     this.setupMiddleware();
     this.setupEventHandlers();
     
-    console.log('🔌 WebSocket service initialized');
+    logger.success('WebSocket service initialized');
   }
 
   private setupMiddleware(): void {
@@ -69,7 +70,7 @@ export class WebSocketService {
 
     this.io.on('connection', (socket: Socket) => {
       const authSocket = socket as AuthenticatedSocket;
-      console.log(`🔌 User ${authSocket.userEmail} connected (${socket.id})`);
+      logger.info(`User ${authSocket.userEmail} connected (${socket.id})`);
 
       if (authSocket.userId) {
         if (!this.connectedUsers.has(authSocket.userId)) {
@@ -95,7 +96,7 @@ export class WebSocketService {
       });
 
       socket.on('disconnect', () => {
-        console.log(`🔌 User ${authSocket.userEmail} disconnected (${socket.id})`);
+        logger.info(`User ${authSocket.userEmail} disconnected (${socket.id})`);
         
         if (authSocket.userId) {
           const userSockets = this.connectedUsers.get(authSocket.userId);
@@ -110,9 +111,6 @@ export class WebSocketService {
     });
   }
 
-  /**
-   * Handle subscription to data types
-   */
   private handleSubscription(socket: AuthenticatedSocket, data: { type: string; filters?: any }): void {
     const { type, filters } = data;
     
@@ -139,9 +137,6 @@ export class WebSocketService {
     }
   }
 
-  /**
-   * Handle unsubscription from data types
-   */
   private handleUnsubscription(socket: AuthenticatedSocket, data: { type: string }): void {
     const { type } = data;
     
@@ -273,6 +268,7 @@ export class WebSocketService {
     }
     return total;
   }
+
   public getConnectionStats(): {
     connectedUsers: number;
     totalConnections: number;

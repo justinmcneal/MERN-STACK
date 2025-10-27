@@ -1,4 +1,5 @@
 import axios from 'axios';
+import logger from '../utils/logger';
 
 interface MLPredictionRequest {
   token: string;
@@ -46,7 +47,7 @@ export class MLService {
   private readonly mlServiceUrl: string;
 
   private constructor() {
-    this.mlServiceUrl = process.env.ML_SERVICE_URL || 'http://localhost:8000';
+    this.mlServiceUrl = process.env.ML_SERVICE_URL!;
   }
 
   public static getInstance(): MLService {
@@ -71,7 +72,7 @@ export class MLService {
 
       return response.data;
     } catch (error) {
-      console.error('Error getting ML prediction:', error);
+      logger.error('Failed to get ML prediction');
       throw new Error('Failed to get ML prediction');
     }
   }
@@ -82,7 +83,7 @@ export class MLService {
         `${this.mlServiceUrl}/arbitrage_opportunity`,
         request,
         {
-          timeout: 15000, 
+          timeout: 15000,
           headers: {
             'Content-Type': 'application/json'
           }
@@ -91,7 +92,7 @@ export class MLService {
 
       return response.data;
     } catch (error) {
-      console.error('Error getting arbitrage opportunity:', error);
+      logger.error('Failed to get arbitrage opportunity');
       throw new Error('Failed to get arbitrage opportunity analysis');
     }
   }
@@ -101,7 +102,7 @@ export class MLService {
       await axios.get(`${this.mlServiceUrl}/health`, { timeout: 5000 });
       return true;
     } catch (error) {
-      console.error('ML service health check failed:', error);
+      logger.error('ML service health check failed');
       return false;
     }
   }
