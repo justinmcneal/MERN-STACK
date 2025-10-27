@@ -7,7 +7,6 @@ const mockedAxios = axios as jest.Mocked<typeof axios>;
 
 import DataPipeline from '../../server/jobs/dataPipeline';
 import TokenModel from '../../server/models/Token';
-import DataService from '../../server/services/DataService';
 import { TOKEN_CONTRACTS } from '../../server/config/tokens';
 
 describe('DataPipeline integration', () => {

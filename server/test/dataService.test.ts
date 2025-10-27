@@ -7,7 +7,6 @@ describe('DataService helpers', () => {
     const supported = ds.getSupportedTokens();
     expect(Array.isArray(supported)).toBe(true);
     expect(supported.length).toBeGreaterThan(0);
-    // ensure it contains known tokens
-  expect(supported).toEqual(expect.arrayContaining(['ETH', 'XRP', 'SOL', 'BNB', 'MATIC']));
+    expect(supported).toEqual(expect.arrayContaining(['ETH', 'XRP', 'SOL', 'BNB', 'MATIC']));
   });
 });
