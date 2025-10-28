@@ -90,6 +90,20 @@ const FAQPage = () => {
     }
   }, [isAuthenticated]);
 
+  useEffect(() => {
+    if (sidebarOpen) {
+      setNotificationOpen(false);
+      setProfileDropdownOpen(false);
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+    }
+
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [sidebarOpen]);
+
   const activeCategoryLabel =
     categoriesWithCounts.find((category) => category.id === selectedCategory)?.name ??
     "All Questions";
