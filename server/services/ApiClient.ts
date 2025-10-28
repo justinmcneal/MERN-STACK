@@ -100,7 +100,6 @@ export class ApiClient {
     }
   }
 
-  // HTTP Methods
   async get<T = any>(url: string, config?: any): Promise<ApiResponse<T>> {
     const response: any = await this.client.get(url, config);
     return response.data as ApiResponse<T>;

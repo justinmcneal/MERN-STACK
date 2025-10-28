@@ -13,13 +13,13 @@ import {
 const DEFAULT_TRADE_SIZE_USD = 1000;
 
 const OUTBOUND_GAS_UNITS: Record<SupportedChain, number> = {
-  ethereum: 450000, // swap + bridge initiation
+  ethereum: 450000,
   polygon: 320000,
   bsc: 360000
 };
 
 const INBOUND_GAS_UNITS: Record<SupportedChain, number> = {
-  ethereum: 220000, // swap on destination chain
+  ethereum: 220000,
   polygon: 160000,
   bsc: 200000
 };
