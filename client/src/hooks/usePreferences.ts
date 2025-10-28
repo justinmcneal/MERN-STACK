@@ -1,10 +1,14 @@
 // hooks/usePreferences.ts
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import ProfileService from '../services/profileService';
 import type { 
   UserPreference, 
   UpdatePreferencesData 
 } from '../services/profileService';
+
+interface UsePreferencesOptions {
+  enabled?: boolean;
+}
 
 export interface PreferencesErrors {
   tokensTracked?: string;
@@ -21,7 +25,8 @@ const extractErrorMessage = (error: unknown, fallback: string): string => {
   return fallback;
 };
 
-export const usePreferences = () => {
+export const usePreferences = (options?: UsePreferencesOptions) => {
+  const enabled = options?.enabled ?? true;
   const [preferences, setPreferences] = useState<UserPreference | null>(null);
   const [supportedTokens, setSupportedTokens] = useState<Array<{ symbol: string; name: string }>>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -29,7 +34,13 @@ export const usePreferences = () => {
   const [errors, setErrors] = useState<PreferencesErrors>({});
 
   // Load preferences data
-  const loadPreferences = async () => {
+  const loadPreferences = useCallback(async () => {
+    if (!enabled) {
+      setIsLoading(false);
+      setPreferences(null);
+      return;
+    }
+
     try {
       setIsLoading(true);
       setErrors({});
@@ -40,20 +51,28 @@ export const usePreferences = () => {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [enabled]);
 
   // Load supported tokens
-  const loadSupportedTokens = async () => {
+  const loadSupportedTokens = useCallback(async () => {
+    if (!enabled) {
+      setSupportedTokens([]);
+      return;
+    }
+
     try {
       const tokens = await ProfileService.getSupportedTokens();
       setSupportedTokens(tokens);
     } catch (error: unknown) {
       console.error('Failed to load supported tokens:', error);
     }
-  };
+  }, [enabled]);
 
   // Update preferences
   const updatePreferences = async (data: UpdatePreferencesData) => {
+    if (!enabled) {
+      return { success: false, error: 'Preferences are not available in the current context' };
+    }
     try {
       setIsUpdating(true);
       setErrors({});
@@ -72,6 +91,9 @@ export const usePreferences = () => {
 
   // Update tracked tokens
   const updateTrackedTokens = async (tokens: string[]) => {
+    if (!enabled) {
+      return { success: false, error: 'Preferences are not available in the current context' };
+    }
     try {
       setIsUpdating(true);
       setErrors({});
@@ -90,6 +112,9 @@ export const usePreferences = () => {
 
   // Update alert thresholds
   const updateAlertThresholds = async (alertThresholds: UserPreference['alertThresholds']) => {
+    if (!enabled) {
+      return { success: false, error: 'Preferences are not available in the current context' };
+    }
     try {
       setIsUpdating(true);
       setErrors({});
@@ -108,6 +133,9 @@ export const usePreferences = () => {
 
   // Update notification settings
   const updateNotificationSettings = async (notificationSettings: UserPreference['notificationSettings']) => {
+    if (!enabled) {
+      return { success: false, error: 'Preferences are not available in the current context' };
+    }
     try {
       setIsUpdating(true);
       setErrors({});
@@ -128,6 +156,9 @@ export const usePreferences = () => {
   const updateAppearanceSettings = async (
     currency: 'USD' | 'EUR' | 'GBP' | 'JPY' | 'PHP'
   ) => {
+    if (!enabled) {
+      return { success: false, error: 'Preferences are not available in the current context' };
+    }
     try {
       setIsUpdating(true);
       setErrors({});
@@ -146,6 +177,9 @@ export const usePreferences = () => {
 
   // Reset preferences
   const resetPreferences = async () => {
+    if (!enabled) {
+      return { success: false, error: 'Preferences are not available in the current context' };
+    }
     try {
       setIsUpdating(true);
       setErrors({});
@@ -200,9 +234,16 @@ export const usePreferences = () => {
 
   // Load data on mount
   useEffect(() => {
+    if (!enabled) {
+      setIsLoading(false);
+      setPreferences(null);
+      setSupportedTokens([]);
+      return;
+    }
+
     loadPreferences();
     loadSupportedTokens();
-  }, []);
+  }, [enabled, loadPreferences, loadSupportedTokens]);
 
   return {
     preferences,

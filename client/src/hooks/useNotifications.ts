@@ -12,13 +12,18 @@ const capitalizeChain = (chain: string): string => {
     .join(' ');
 };
 
-export const useNotifications = (limit: number = 10, pollIntervalMs: number = 3600000) => {
-  const { preferences } = usePreferences();
+interface UseNotificationsOptions {
+  enabled?: boolean;
+}
+
+export const useNotifications = (limit: number = 10, pollIntervalMs: number = 3600000, options?: UseNotificationsOptions) => {
+  const enabled = options?.enabled ?? true;
+  const { preferences } = usePreferences({ enabled });
   const alertQuery = useMemo(() => ({ limit }), [limit]);
-  const { alerts, loading, error, refresh, markAsRead, markAllAsRead, unreadCount, clearAllNotifications, clearReadNotifications } = useAlerts({ pollIntervalMs, query: alertQuery });
+  const { alerts, loading, error, refresh, markAsRead, markAllAsRead, unreadCount, clearAllNotifications, clearReadNotifications } = useAlerts({ pollIntervalMs, query: alertQuery, enabled });
 
   const notifications: (NotificationItem & { id: string, isRead: boolean })[] | (DashboardNotificationItem & { id: string, isRead: boolean })[] = useMemo(() => {
-    if (!alerts || !preferences?.notificationSettings?.dashboard) return [];
+    if (!enabled || !alerts || !preferences?.notificationSettings?.dashboard) return [];
 
     return alerts.map(alert => {
       if (alert.type === 'opportunity') {
@@ -52,7 +57,7 @@ export const useNotifications = (limit: number = 10, pollIntervalMs: number = 36
         time: alert.time
       };
     });
-  }, [alerts, preferences]);
+  }, [alerts, enabled, preferences]);
 
   return {
     notifications,

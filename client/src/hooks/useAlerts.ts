@@ -4,10 +4,11 @@ import AlertService, { type AlertDto, type AlertQuery } from '../services/AlertS
 export interface UseAlertsOptions {
   pollIntervalMs?: number;
   query?: AlertQuery;
+  enabled?: boolean;
 }
 
 export function useAlerts(options?: UseAlertsOptions) {
-  const { pollIntervalMs, query } = options ?? {};
+  const { pollIntervalMs, query, enabled = true } = options ?? {};
   const [alerts, setAlerts] = useState<AlertDto[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [loading, setLoading] = useState(false);
@@ -15,6 +16,14 @@ export function useAlerts(options?: UseAlertsOptions) {
   const intervalRef = useRef<number | null>(null);
 
   const fetchAlerts = useCallback(async () => {
+    if (!enabled) {
+      setAlerts([]);
+      setUnreadCount(0);
+      setLoading(false);
+      setError(null);
+      return;
+    }
+
     setLoading(true);
     setError(null);
 
@@ -37,9 +46,12 @@ export function useAlerts(options?: UseAlertsOptions) {
       setLoading(false);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [JSON.stringify(query)]);
+  }, [enabled, JSON.stringify(query)]);
 
   const markAsRead = useCallback(async (alertIds: string[]) => {
+    if (!enabled) {
+      return;
+    }
     console.log('🔄 useAlerts.markAsRead called with:', alertIds);
     try {
       await AlertService.markAsRead(alertIds);
@@ -49,9 +61,12 @@ export function useAlerts(options?: UseAlertsOptions) {
     } catch (err) {
       console.error('❌ Failed to mark alerts as read:', err);
     }
-  }, [fetchAlerts]);
+  }, [enabled, fetchAlerts]);
 
   const markAllAsRead = useCallback(async () => {
+    if (!enabled) {
+      return;
+    }
     console.log('🔄 useAlerts.markAllAsRead called');
     try {
       await AlertService.markAllAsRead();
@@ -61,18 +76,24 @@ export function useAlerts(options?: UseAlertsOptions) {
     } catch (err) {
       console.error('❌ Failed to mark all alerts as read:', err);
     }
-  }, [fetchAlerts]);
+  }, [enabled, fetchAlerts]);
 
   const deleteAlert = useCallback(async (alertId: string) => {
+    if (!enabled) {
+      return;
+    }
     try {
       await AlertService.deleteAlert(alertId);
       await fetchAlerts();
     } catch (err) {
       console.error('Failed to delete alert:', err);
     }
-  }, [fetchAlerts]);
+  }, [enabled, fetchAlerts]);
 
   const clearAllNotifications = useCallback(async () => {
+    if (!enabled) {
+      return;
+    }
     console.log('🔄 useAlerts.clearAllNotifications called');
     try {
       await AlertService.clearAllNotifications();
@@ -82,9 +103,12 @@ export function useAlerts(options?: UseAlertsOptions) {
     } catch (err) {
       console.error('❌ Failed to clear all notifications:', err);
     }
-  }, [fetchAlerts]);
+  }, [enabled, fetchAlerts]);
 
   const clearReadNotifications = useCallback(async () => {
+    if (!enabled) {
+      return;
+    }
     console.log('🔄 useAlerts.clearReadNotifications called');
     try {
       await AlertService.clearReadNotifications();
@@ -94,9 +118,25 @@ export function useAlerts(options?: UseAlertsOptions) {
     } catch (err) {
       console.error('❌ Failed to clear read notifications:', err);
     }
-  }, [fetchAlerts]);
+  }, [enabled, fetchAlerts]);
 
   useEffect(() => {
+    if (!enabled) {
+      setAlerts([]);
+      setUnreadCount(0);
+      setLoading(false);
+      if (intervalRef.current) {
+        window.clearInterval(intervalRef.current);
+        intervalRef.current = null;
+      }
+      return () => {
+        if (intervalRef.current) {
+          window.clearInterval(intervalRef.current);
+          intervalRef.current = null;
+        }
+      };
+    }
+
     fetchAlerts();
 
     if (pollIntervalMs && pollIntervalMs > 0) {
@@ -108,9 +148,10 @@ export function useAlerts(options?: UseAlertsOptions) {
     return () => {
       if (intervalRef.current) {
         window.clearInterval(intervalRef.current);
+        intervalRef.current = null;
       }
     };
-  }, [fetchAlerts, pollIntervalMs]);
+  }, [enabled, fetchAlerts, pollIntervalMs]);
 
   return {
     alerts,

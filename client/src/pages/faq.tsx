@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { useNotifications } from "../hooks/useNotifications";
@@ -18,6 +18,7 @@ import {
 const FAQPage = () => {
   const navigate = useNavigate();
   const { user, logout } = useAuth();
+  const isAuthenticated = Boolean(user);
 
   const [activeTab, setActiveTab] = useState("FAQ");
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -27,7 +28,7 @@ const FAQPage = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("all");
 
-  const { notifications, unreadCount, markAsRead, markAllAsRead, clearAllNotifications } = useNotifications(10, 3600000);
+  const { notifications, unreadCount, markAsRead, markAllAsRead, clearAllNotifications } = useNotifications(10, 3600000, { enabled: isAuthenticated });
 
   const categoriesWithCounts = useMemo<FAQCategoryWithCount[]>(() => {
     return FAQ_CATEGORIES.map((category) => {
@@ -82,6 +83,13 @@ const FAQPage = () => {
     setOpenFAQItems([]);
   };
 
+  useEffect(() => {
+    if (!isAuthenticated) {
+      setProfileDropdownOpen(false);
+      setNotificationOpen(false);
+    }
+  }, [isAuthenticated]);
+
   const activeCategoryLabel =
     categoriesWithCounts.find((category) => category.id === selectedCategory)?.name ??
     "All Questions";
@@ -110,6 +118,7 @@ const FAQPage = () => {
         }}
       >
         <FAQHeader
+          isAuthenticated={isAuthenticated}
           onSidebarToggle={() => setSidebarOpen((prev) => !prev)}
           notificationOpen={notificationOpen}
           onNotificationToggle={() => setNotificationOpen((prev) => !prev)}

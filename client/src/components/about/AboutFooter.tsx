@@ -1,17 +1,28 @@
+import { useState } from "react";
 import { Link } from "react-router-dom";
-import { useAuth } from "../../context/AuthContext";
+import LegalModal, { type LegalModalType } from "../ui/LegalModal/LegalModal";
 
 const AboutFooter = () => {
-  const { isAuthenticated } = useAuth();
+  const [activeLegalModal, setActiveLegalModal] = useState<LegalModalType | null>(null);
 
   const quickLinks = [
-    { label: "FAQ", to: isAuthenticated ? "/faq" : "/logIn" },
-    { label: "About Us", to: isAuthenticated ? "/about-us" : "/about" },
+    { label: "FAQ", to: "/faq" },
+    { label: "About Us", to: "/about" }
   ];
 
+  const handleLegalClick = (type: LegalModalType) => {
+    setActiveLegalModal(type);
+  };
 
   return (
-    <footer className="relative z-10 border-t border-slate-800/50 mt-20">
+    <>
+      <LegalModal
+        isOpen={activeLegalModal !== null}
+        type={activeLegalModal || "terms"}
+        onClose={() => setActiveLegalModal(null)}
+      />
+
+      <footer className="relative z-10 border-t border-slate-800/50 mt-20">
       <div className="max-w-7xl mx-auto px-6 lg:px-8 py-8">
         <div className="grid grid-cols-1 md:grid-cols-5 gap-11">
           <div className="col-span-1 md:col-span-2">
@@ -53,19 +64,28 @@ const AboutFooter = () => {
             <h5 className="text-cyan-200 font-semibold mb-4">Legal</h5>
             <ul className="space-y-2 text-slate-400">
               <li>
-                <a href="#" className="hover:text-white transition-colors">
+                <button
+                  onClick={() => handleLegalClick("terms")}
+                  className="hover:text-white transition-colors text-left"
+                >
                   Terms of Service
-                </a>
+                </button>
               </li>
               <li>
-                <a href="#" className="hover:text-white transition-colors">
+                <button
+                  onClick={() => handleLegalClick("privacy")}
+                  className="hover:text-white transition-colors text-left"
+                >
                   Privacy Policy
-                </a>
+                </button>
               </li>
               <li>
-                <a href="#" className="hover:text-white transition-colors">
+                <button
+                  onClick={() => handleLegalClick("disclaimer")}
+                  className="hover:text-white transition-colors text-left"
+                >
                   Risk Disclaimer
-                </a>
+                </button>
               </li>
             </ul>
           </div>
@@ -86,6 +106,7 @@ const AboutFooter = () => {
         </div>
       </div>
     </footer>
+    </>
   );
 };
 
