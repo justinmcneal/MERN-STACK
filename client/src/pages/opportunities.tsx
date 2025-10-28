@@ -166,6 +166,7 @@ const OpportunitiesPage: React.FC = () => {
 
         <OpportunitiesMainContent
           opportunities={mappedOpportunities}
+          rawOpportunities={opportunities || []}
           tokenOptions={tokenOptions}
           chainOptions={chainOptions}
         />

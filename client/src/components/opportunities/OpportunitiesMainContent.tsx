@@ -5,8 +5,22 @@ import OpportunitiesTable from './OpportunitiesTable';
 import OpportunitiesChart from './OpportunitiesChart';
 import type { OpportunityItem } from './types';
 
+interface RawOpportunity {
+  tokenSymbol: string;
+  chainFrom: string;
+  chainTo: string;
+  priceFrom?: number;
+  priceTo?: number;
+  priceDiffPercent?: number;
+  roi?: number | null;
+  netProfitUsd: number;
+  gasCostUsd: number;
+  flagged?: boolean;
+}
+
 interface OpportunitiesMainContentProps {
   opportunities: OpportunityItem[];
+  rawOpportunities?: RawOpportunity[];
   tokenOptions: string[];
   chainOptions: string[];
 }
@@ -15,6 +29,7 @@ const TABLE_VIEW_OPTIONS = ["By Profit", "By Token", "ROI"];
 
 const OpportunitiesMainContent: React.FC<OpportunitiesMainContentProps> = ({
   opportunities,
+  rawOpportunities = [],
   tokenOptions,
   chainOptions
 }) => {
@@ -86,6 +101,7 @@ const OpportunitiesMainContent: React.FC<OpportunitiesMainContentProps> = ({
         onTimeframeChange={(timeframe) => setSelectedTimeframe(timeframe)}
         selectedToken={selectedToken}
         onTokenChange={setSelectedToken}
+        opportunities={rawOpportunities}
       />
     </main>
   );
