@@ -11,14 +11,19 @@ export interface PreferencesErrors {
   alertThresholds?: string;
   notificationSettings?: string;
   refreshInterval?: string;
-  theme?: string;
   general?: string;
 }
+
+const extractErrorMessage = (error: unknown, fallback: string): string => {
+  if (error instanceof Error && error.message) {
+    return error.message;
+  }
+  return fallback;
+};
 
 export const usePreferences = () => {
   const [preferences, setPreferences] = useState<UserPreference | null>(null);
   const [supportedTokens, setSupportedTokens] = useState<Array<{ symbol: string; name: string }>>([]);
-  const [availableThemes, setAvailableThemes] = useState<Array<{ value: string; label: string }>>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isUpdating, setIsUpdating] = useState(false);
   const [errors, setErrors] = useState<PreferencesErrors>({});
@@ -30,8 +35,8 @@ export const usePreferences = () => {
       setErrors({});
       const preferencesData = await ProfileService.getPreferences();
       setPreferences(preferencesData);
-    } catch (error: any) {
-      setErrors({ general: error.message });
+    } catch (error: unknown) {
+      setErrors({ general: extractErrorMessage(error, 'Failed to load preferences') });
     } finally {
       setIsLoading(false);
     }
@@ -42,18 +47,8 @@ export const usePreferences = () => {
     try {
       const tokens = await ProfileService.getSupportedTokens();
       setSupportedTokens(tokens);
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Failed to load supported tokens:', error);
-    }
-  };
-
-  // Load available themes
-  const loadAvailableThemes = async () => {
-    try {
-      const themes = await ProfileService.getAvailableThemes();
-      setAvailableThemes(themes);
-    } catch (error: any) {
-      console.error('Failed to load available themes:', error);
     }
   };
 
@@ -66,8 +61,8 @@ export const usePreferences = () => {
       const updatedPreferences = await ProfileService.updatePreferences(data);
       setPreferences(updatedPreferences);
       return { success: true };
-    } catch (error: any) {
-      const errorMessage = error.message;
+    } catch (error: unknown) {
+      const errorMessage = extractErrorMessage(error, 'Failed to update preferences');
       setErrors({ general: errorMessage });
       return { success: false, error: errorMessage };
     } finally {
@@ -84,8 +79,8 @@ export const usePreferences = () => {
       const updatedPreferences = await ProfileService.updateTrackedTokens(tokens);
       setPreferences(updatedPreferences);
       return { success: true };
-    } catch (error: any) {
-      const errorMessage = error.message;
+    } catch (error: unknown) {
+      const errorMessage = extractErrorMessage(error, 'Failed to update tracked tokens');
       setErrors({ general: errorMessage });
       return { success: false, error: errorMessage };
     } finally {
@@ -102,8 +97,8 @@ export const usePreferences = () => {
       const updatedPreferences = await ProfileService.updateAlertThresholds(alertThresholds);
       setPreferences(updatedPreferences);
       return { success: true };
-    } catch (error: any) {
-      const errorMessage = error.message;
+    } catch (error: unknown) {
+      const errorMessage = extractErrorMessage(error, 'Failed to update alert thresholds');
       setErrors({ general: errorMessage });
       return { success: false, error: errorMessage };
     } finally {
@@ -120,8 +115,8 @@ export const usePreferences = () => {
       const updatedPreferences = await ProfileService.updateNotificationSettings(notificationSettings);
       setPreferences(updatedPreferences);
       return { success: true };
-    } catch (error: any) {
-      const errorMessage = error.message;
+    } catch (error: unknown) {
+      const errorMessage = extractErrorMessage(error, 'Failed to update notification settings');
       setErrors({ general: errorMessage });
       return { success: false, error: errorMessage };
     } finally {
@@ -130,16 +125,18 @@ export const usePreferences = () => {
   };
 
   // Update appearance settings
-  const updateAppearanceSettings = async (theme?: 'light' | 'dark' | 'auto', refreshInterval?: number) => {
+  const updateAppearanceSettings = async (
+    currency: 'USD' | 'EUR' | 'GBP' | 'JPY' | 'PHP'
+  ) => {
     try {
       setIsUpdating(true);
       setErrors({});
       
-      const updatedPreferences = await ProfileService.updateAppearanceSettings(theme, refreshInterval);
+  const updatedPreferences = await ProfileService.updateAppearanceSettings(currency);
       setPreferences(updatedPreferences);
       return { success: true };
-    } catch (error: any) {
-      const errorMessage = error.message;
+    } catch (error: unknown) {
+      const errorMessage = extractErrorMessage(error, 'Failed to update appearance settings');
       setErrors({ general: errorMessage });
       return { success: false, error: errorMessage };
     } finally {
@@ -156,8 +153,8 @@ export const usePreferences = () => {
       const defaultPreferences = await ProfileService.resetPreferences();
       setPreferences(defaultPreferences);
       return { success: true };
-    } catch (error: any) {
-      const errorMessage = error.message;
+    } catch (error: unknown) {
+      const errorMessage = extractErrorMessage(error, 'Failed to reset preferences');
       setErrors({ general: errorMessage });
       return { success: false, error: errorMessage };
     } finally {
@@ -197,11 +194,6 @@ export const usePreferences = () => {
       newErrors.refreshInterval = 'Refresh interval must be between 5 and 300 seconds';
     }
 
-    // Validate theme
-    if (data.theme && !['light', 'dark', 'auto'].includes(data.theme)) {
-      newErrors.theme = 'Theme must be light, dark, or auto';
-    }
-
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -210,19 +202,16 @@ export const usePreferences = () => {
   useEffect(() => {
     loadPreferences();
     loadSupportedTokens();
-    loadAvailableThemes();
   }, []);
 
   return {
     preferences,
     supportedTokens,
-    availableThemes,
     isLoading,
     isUpdating,
     errors,
     loadPreferences,
     loadSupportedTokens,
-    loadAvailableThemes,
     updatePreferences,
     updateTrackedTokens,
     updateAlertThresholds,

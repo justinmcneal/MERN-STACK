@@ -1,10 +1,17 @@
 import axios from 'axios';
+import logger from '../utils/logger';
 
 interface MLPredictionRequest {
   token: string;
   chain: string;
   price: number;
   gas: number;
+  grossProfit?: number;
+  netProfit?: number;
+  roi?: number | null;
+  tradeVolume?: number;
+  pricePerToken?: number;
+  priceDiffPercent?: number;
 }
 
 interface MLPredictionResponse {
@@ -40,7 +47,7 @@ export class MLService {
   private readonly mlServiceUrl: string;
 
   private constructor() {
-    this.mlServiceUrl = process.env.ML_SERVICE_URL || 'http://localhost:8000';
+    this.mlServiceUrl = process.env.ML_SERVICE_URL!;
   }
 
   public static getInstance(): MLService {
@@ -64,9 +71,12 @@ export class MLService {
       );
 
       return response.data;
-    } catch (error) {
-      console.error('Error getting ML prediction:', error);
-      throw new Error('Failed to get ML prediction');
+    } catch (error: any) {
+      const errorMsg = error.code === 'ECONNREFUSED' 
+        ? `ML service not available at ${this.mlServiceUrl}`
+        : error.response?.data?.error || error.message || 'Unknown error';
+      logger.error(`Failed to get ML prediction: ${errorMsg}`);
+      throw new Error(`Failed to get ML prediction: ${errorMsg}`);
     }
   }
 
@@ -76,7 +86,7 @@ export class MLService {
         `${this.mlServiceUrl}/arbitrage_opportunity`,
         request,
         {
-          timeout: 15000, 
+          timeout: 15000,
           headers: {
             'Content-Type': 'application/json'
           }
@@ -84,9 +94,12 @@ export class MLService {
       );
 
       return response.data;
-    } catch (error) {
-      console.error('Error getting arbitrage opportunity:', error);
-      throw new Error('Failed to get arbitrage opportunity analysis');
+    } catch (error: any) {
+      const errorMsg = error.code === 'ECONNREFUSED' 
+        ? `ML service not available at ${this.mlServiceUrl}`
+        : error.response?.data?.error || error.message || 'Unknown error';
+      logger.error(`Failed to get arbitrage opportunity: ${errorMsg}`);
+      throw new Error(`Failed to get arbitrage opportunity: ${errorMsg}`);
     }
   }
 
@@ -94,8 +107,8 @@ export class MLService {
     try {
       await axios.get(`${this.mlServiceUrl}/health`, { timeout: 5000 });
       return true;
-    } catch (error) {
-      console.error('ML service health check failed:', error);
+    } catch (error: any) {
+      logger.error(`ML service health check failed: ${error.code || error.message}`);
       return false;
     }
   }

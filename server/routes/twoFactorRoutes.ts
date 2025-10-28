@@ -1,4 +1,3 @@
-// routes/twoFactorRoutes.ts
 import { Router } from 'express';
 import rateLimit from 'express-rate-limit';
 import { 
@@ -16,20 +15,16 @@ import { validate } from '../middleware/validationMiddleware';
 
 const router = Router();
 
-// Rate limiter: max 5 requests per minute per IP for 2FA endpoints
 const twoFactorRateLimiter = rateLimit({
-  windowMs: 60 * 1000, // 1 minute
+  windowMs: 60 * 1000,
   max: process.env.NODE_ENV === 'production' ? 5 : 20,
   message: 'Too many two-factor authentication attempts, please try again later.',
 });
 
-// 2FA login verification (no auth required)
 router.post('/verify-login', twoFactorRateLimiter, validate(twoFactorSchemas.verifyLogin), verifyTwoFactorLogin);
 
-// All other 2FA routes require authentication
 router.use(protect);
 
-// 2FA setup and management routes
 router.post('/setup', twoFactorRateLimiter, validate(twoFactorSchemas.setup), setupTwoFactor);
 router.post('/verify-setup', twoFactorRateLimiter, validate(twoFactorSchemas.verifySetup), verifyTwoFactorSetup);
 router.post('/verify', twoFactorRateLimiter, validate(twoFactorSchemas.verifyToken), verifyTwoFactorToken);

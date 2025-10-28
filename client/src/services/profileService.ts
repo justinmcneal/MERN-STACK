@@ -1,6 +1,85 @@
 // services/profileService.ts
 import { apiClient } from './api';
 
+type CurrencyCode = 'USD' | 'EUR' | 'GBP' | 'JPY' | 'PHP';
+
+type ApiErrorResponse = Partial<Error> & {
+  response?: {
+    status?: number;
+    data?: {
+      error?: string | { message?: string | null } | null;
+      message?: string | null;
+      errors?: Array<{ msg?: string | null }> | null;
+    };
+  };
+  request?: unknown;
+};
+
+const safeString = (value?: string | null): string | undefined => {
+  if (typeof value !== 'string') {
+    return undefined;
+  }
+
+  const trimmed = value.trim();
+  return trimmed.length > 0 ? trimmed : undefined;
+};
+
+const extractApiErrorMessage = (error: unknown): string | undefined => {
+  const candidate = error as ApiErrorResponse | undefined;
+  const data = candidate?.response?.data;
+
+  if (!data) {
+    return safeString(candidate?.message);
+  }
+
+  const nestedError = data.error;
+
+  if (typeof nestedError === 'string') {
+    return safeString(nestedError);
+  }
+
+  if (nestedError && typeof nestedError === 'object' && 'message' in nestedError) {
+    const message = (nestedError as { message?: string | null }).message;
+    const resolvedNested = safeString(message ?? undefined);
+    if (resolvedNested) {
+      return resolvedNested;
+    }
+  }
+
+  const message = safeString(data.message ?? undefined);
+  if (message) {
+    return message;
+  }
+
+  if (Array.isArray(data.errors)) {
+    for (const validationError of data.errors) {
+      const validationMessage = safeString(validationError?.msg ?? undefined);
+      if (validationMessage) {
+        return validationMessage;
+      }
+    }
+  }
+
+  return safeString(candidate?.message);
+};
+
+const statusMessages: Record<number, string> = {
+  400: 'Invalid request. Please check your input.',
+  401: 'Please log in to continue.',
+  403: 'Access denied. Please contact support.',
+  404: 'Profile not found.',
+  429: 'Too many attempts. Please try again later.',
+  500: 'Server error. Please try again later.',
+};
+
+const getStatusMessage = (status?: number): string | undefined => {
+  if (typeof status !== 'number') {
+    return undefined;
+  }
+
+  return statusMessages[status] ?? `Server error (${status}). Please try again.`;
+};
+
 export interface ProfileData {
   _id: string;
   name: string;
@@ -28,7 +107,7 @@ export interface UserPreference {
     discord?: boolean;
   };
   refreshInterval: number;
-  theme: 'light' | 'dark' | 'auto';
+  currency: CurrencyCode;
 }
 
 export interface ProfileResponse {
@@ -60,7 +139,7 @@ export interface UpdatePreferencesData {
   alertThresholds?: Partial<UserPreference['alertThresholds']>;
   notificationSettings?: Partial<UserPreference['notificationSettings']>;
   refreshInterval?: number;
-  theme?: 'light' | 'dark' | 'auto';
+  currency?: CurrencyCode;
 }
 
 export interface DeleteAccountData {
@@ -75,7 +154,7 @@ class ProfileService {
     try {
       const response = await apiClient.get<{ success: boolean; data: ProfileResponse }>('/profile');
       return response.data.data;
-    } catch (error: any) {
+    } catch (error: unknown) {
       throw this.handleError(error);
     }
   }
@@ -87,7 +166,7 @@ class ProfileService {
     try {
       const response = await apiClient.put<{ success: boolean; data: ProfileResponse; message: string }>('/profile', data);
       return response.data.data;
-    } catch (error: any) {
+    } catch (error: unknown) {
       throw this.handleError(error);
     }
   }
@@ -98,7 +177,7 @@ class ProfileService {
   static async changePassword(data: ChangePasswordData): Promise<void> {
     try {
       await apiClient.put<{ success: boolean; message: string }>('/profile/password', data);
-    } catch (error: any) {
+    } catch (error: unknown) {
       throw this.handleError(error);
     }
   }
@@ -110,7 +189,7 @@ class ProfileService {
     try {
       const response = await apiClient.get<{ success: boolean; data: UserStats }>('/profile/stats');
       return response.data.data;
-    } catch (error: any) {
+    } catch (error: unknown) {
       throw this.handleError(error);
     }
   }
@@ -121,7 +200,7 @@ class ProfileService {
   static async deleteAccount(data: DeleteAccountData): Promise<void> {
     try {
       await apiClient.delete<{ success: boolean; message: string }>('/profile', { data });
-    } catch (error: any) {
+    } catch (error: unknown) {
       throw this.handleError(error);
     }
   }
@@ -133,7 +212,7 @@ class ProfileService {
     try {
       const response = await apiClient.get<{ success: boolean; data: UserPreference }>('/preferences');
       return response.data.data;
-    } catch (error: any) {
+    } catch (error: unknown) {
       throw this.handleError(error);
     }
   }
@@ -145,7 +224,7 @@ class ProfileService {
     try {
       const response = await apiClient.put<{ success: boolean; data: UserPreference; message: string }>('/preferences', data);
       return response.data.data;
-    } catch (error: any) {
+    } catch (error: unknown) {
       throw this.handleError(error);
     }
   }
@@ -157,7 +236,7 @@ class ProfileService {
     try {
       const response = await apiClient.put<{ success: boolean; data: UserPreference; message: string }>('/preferences/tokens', { tokens });
       return response.data.data;
-    } catch (error: any) {
+    } catch (error: unknown) {
       throw this.handleError(error);
     }
   }
@@ -167,9 +246,12 @@ class ProfileService {
    */
   static async updateAlertThresholds(alertThresholds: UserPreference['alertThresholds']): Promise<UserPreference> {
     try {
-      const response = await apiClient.put<{ success: boolean; data: UserPreference; message: string }>('/preferences/alerts', { alertThresholds });
+      const response = await apiClient.put<{ success: boolean; data: UserPreference; message: string }>(
+        '/preferences/alerts',
+        { alertThresholds },
+      );
       return response.data.data;
-    } catch (error: any) {
+    } catch (error: unknown) {
       throw this.handleError(error);
     }
   }
@@ -177,11 +259,16 @@ class ProfileService {
   /**
    * Update notification settings
    */
-  static async updateNotificationSettings(notificationSettings: UserPreference['notificationSettings']): Promise<UserPreference> {
+  static async updateNotificationSettings(
+    notificationSettings: UserPreference['notificationSettings'],
+  ): Promise<UserPreference> {
     try {
-      const response = await apiClient.put<{ success: boolean; data: UserPreference; message: string }>('/preferences/notifications', { notificationSettings });
+      const response = await apiClient.put<{ success: boolean; data: UserPreference; message: string }>(
+        '/preferences/notifications',
+        { notificationSettings },
+      );
       return response.data.data;
-    } catch (error: any) {
+    } catch (error: unknown) {
       throw this.handleError(error);
     }
   }
@@ -189,11 +276,14 @@ class ProfileService {
   /**
    * Update appearance settings
    */
-  static async updateAppearanceSettings(theme?: 'light' | 'dark' | 'auto', refreshInterval?: number): Promise<UserPreference> {
+  static async updateAppearanceSettings(currency: CurrencyCode): Promise<UserPreference> {
     try {
-      const response = await apiClient.put<{ success: boolean; data: UserPreference; message: string }>('/preferences/appearance', { theme, refreshInterval });
+      const response = await apiClient.put<{ success: boolean; data: UserPreference; message: string }>(
+        '/preferences/appearance',
+        { currency },
+      );
       return response.data.data;
-    } catch (error: any) {
+    } catch (error: unknown) {
       throw this.handleError(error);
     }
   }
@@ -203,9 +293,11 @@ class ProfileService {
    */
   static async resetPreferences(): Promise<UserPreference> {
     try {
-      const response = await apiClient.post<{ success: boolean; data: UserPreference; message: string }>('/preferences/reset');
+      const response = await apiClient.post<{ success: boolean; data: UserPreference; message: string }>(
+        '/preferences/reset',
+      );
       return response.data.data;
-    } catch (error: any) {
+    } catch (error: unknown) {
       throw this.handleError(error);
     }
   }
@@ -215,21 +307,11 @@ class ProfileService {
    */
   static async getSupportedTokens(): Promise<Array<{ symbol: string; name: string }>> {
     try {
-      const response = await apiClient.get<{ success: boolean; data: Array<{ symbol: string; name: string }> }>('/preferences/supported-tokens');
+      const response = await apiClient.get<{ success: boolean; data: Array<{ symbol: string; name: string }> }>(
+        '/preferences/supported-tokens',
+      );
       return response.data.data;
-    } catch (error: any) {
-      throw this.handleError(error);
-    }
-  }
-
-  /**
-   * Get available themes
-   */
-  static async getAvailableThemes(): Promise<Array<{ value: string; label: string }>> {
-    try {
-      const response = await apiClient.get<{ success: boolean; data: Array<{ value: string; label: string }> }>('/preferences/available-themes');
-      return response.data.data;
-    } catch (error: any) {
+    } catch (error: unknown) {
       throw this.handleError(error);
     }
   }
@@ -237,57 +319,27 @@ class ProfileService {
   /**
    * Handle API errors
    */
-  private static handleError(error: any): Error {
-    // Handle Axios errors
-    if (error.response) {
-      const { status, data } = error.response;
-      
-      // Server responded with error status - handle different error formats
-      
-      // Format 1: { error: { message: "..." } } - from error middleware
-      if (data?.error?.message) {
-        return new Error(data.error.message);
-      }
-      
-      // Format 2: { error: "Validation Error", message: "..." } - from validation middleware
-      if (data?.message && typeof data.message === 'string') {
-        return new Error(data.message);
-      }
-      
-      // Format 3: { error: "string" } - direct error string
-      if (data?.error && typeof data.error === 'string') {
-        return new Error(data.error);
-      }
-      
-      // Handle specific HTTP status codes
-      switch (status) {
-        case 400:
-          return new Error('Invalid request. Please check your input.');
-        case 401:
-          return new Error('Please log in to continue.');
-        case 403:
-          return new Error('Access denied. Please contact support.');
-        case 404:
-          return new Error('Profile not found.');
-        case 429:
-          return new Error('Too many attempts. Please try again later.');
-        case 500:
-          return new Error('Server error. Please try again later.');
-        default:
-          return new Error(`Server error (${status}). Please try again.`);
-      }
-    }
-    
-    // Handle network errors
-    if (error.request) {
+  private static handleError(error: unknown): Error {
+    const candidate = error as ApiErrorResponse | undefined;
+
+    if (candidate?.request && !candidate?.response) {
       return new Error('Network error. Please check your internet connection.');
     }
-    
-    // Handle other errors
-    if (error.message) {
+
+    const message = extractApiErrorMessage(candidate);
+    if (message) {
+      return new Error(message);
+    }
+
+    const statusMessage = getStatusMessage(candidate?.response?.status);
+    if (statusMessage) {
+      return new Error(statusMessage);
+    }
+
+    if (error instanceof Error && error.message) {
       return new Error(error.message);
     }
-    
+
     return new Error('An unexpected error occurred. Please try again.');
   }
 }

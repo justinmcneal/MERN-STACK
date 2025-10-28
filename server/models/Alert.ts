@@ -1,7 +1,5 @@
-// models/Alert.ts
 import mongoose, { Document, Schema, Model, Types } from 'mongoose';
 
-// Interface for Alert document
 export interface IAlert extends Document {
   _id: string;
   userId: Types.ObjectId;
@@ -85,12 +83,10 @@ const alertSchema: Schema<IAlert> = new mongoose.Schema(
   }
 );
 
-// Compound indexes for efficient queries
 alertSchema.index({ userId: 1, isRead: 1, createdAt: -1 });
 alertSchema.index({ userId: 1, alertType: 1, createdAt: -1 });
 alertSchema.index({ userId: 1, priority: 1, createdAt: -1 });
 alertSchema.index({ opportunityId: 1 });
-
 
 const Alert: Model<IAlert> = mongoose.model<IAlert>('Alert', alertSchema);
 export default Alert;

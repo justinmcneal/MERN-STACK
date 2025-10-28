@@ -2,7 +2,7 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Theme-aware base styles */
+/* Base styles */
 @layer base {
   html {
     @apply transition-colors duration-300;
@@ -10,31 +10,6 @@
   
   body {
     @apply font-inter antialiased;
-  }
-  
-  /* Light theme */
-  .light {
-    @apply bg-white text-slate-900;
-  }
-  
-  /* Dark theme */
-  .dark {
-    @apply bg-slate-950 text-white;
-  }
-
-  /*
-   * When light mode is active we want a plain white UI.
-   * Some components use gradients or background-image utilities which
-   * can produce non-white areas. The rules below aggressively remove
-   * background-images and force white backgrounds for elements when
-   * the root has the `light` class.
-   */
-  html.light * {
-    background-image: none !important;
-  }
-
-  html.light, html.light body, html.light #root, html.light #app {
-    background-color: #ffffff !important;
   }
 }
 

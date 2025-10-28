@@ -1,7 +1,6 @@
 import React from "react";
 import { BarChart3, Zap, User, Phone, HelpCircle, Settings, Info } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { useThemeClasses } from "../ThemeAware";
 
 interface SettingsSidebarProps {
   activeTab: string;
@@ -15,8 +14,6 @@ const SettingsSidebar: React.FC<SettingsSidebarProps> = ({
   onSidebarToggle 
 }) => {
   const navigate = useNavigate();
-
-  const { textSecondary, bg, border } = useThemeClasses();
 
   const navigation = [
     { name: "Dashboard", icon: <BarChart3 className="w-5 h-5" />, path: "/dashboard" },
@@ -32,10 +29,10 @@ const SettingsSidebar: React.FC<SettingsSidebarProps> = ({
     <div
       className={`${sidebarOpen ? "translate-x-0" : "-translate-x-full"} 
                   fixed inset-y-0 left-0 z-[100] w-64 transform 
-                  ${bg}/95 backdrop-blur-xl border-r ${border}/50 
+                  bg-slate-900/80 backdrop-blur-xl border-r border-slate-800/60 text-slate-300
                   transition-transform duration-300 ease-in-out lg:translate-x-0 lg:static lg:inset-auto lg:transform-none`}
     >
-  <div className={`flex items-center justify-between gap-3 p-6 border-b ${border}/50`}>
+  <div className="flex items-center justify-between gap-3 p-6 border-b border-slate-800/60">
         {/* Logo */}
         <div className="flex items-center gap-3">
           <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-cyan-400 to-purple-500 flex items-center justify-center">
@@ -52,7 +49,7 @@ const SettingsSidebar: React.FC<SettingsSidebarProps> = ({
         {/* X button (only visible on mobile) */}
         <button
           onClick={onSidebarToggle}
-          className="lg:hidden p-2 rounded-lg hover:bg-slate-800/50 transition"
+          className="lg:hidden p-2 rounded-lg hover:bg-slate-800/60 transition"
         >
           <svg className="w-6 h-6 text-slate-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -61,7 +58,7 @@ const SettingsSidebar: React.FC<SettingsSidebarProps> = ({
       </div>
 
   <div className="p-4">
-  <div className={`text-xs ${textSecondary} uppercase tracking-wider mb-4`}>Main Navigation</div>
+  <div className="text-xs text-slate-400 uppercase tracking-wider mb-4">Main Navigation</div>
         {/* Sidebar Navigation */}
         <nav className="space-y-2">
           {navigation.map(item => (
@@ -74,8 +71,8 @@ const SettingsSidebar: React.FC<SettingsSidebarProps> = ({
               }}
               className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 ${
                 activeTab === item.name
-                  ? "bg-gradient-to-r from-cyan-500/20 to-purple-500/20 text-cyan-400 border border-cyan-500/30"
-                  : `${textSecondary} hover:text-slate-200 hover:bg-slate-800/50`
+                  ? "bg-gradient-to-r from-cyan-500/20 to-purple-500/20 text-cyan-300 border border-cyan-500/30"
+                  : 'text-slate-300 hover:text-white hover:bg-slate-800/60'
               }`}
             >
               <span className="text-lg">{item.icon}</span>

@@ -1,7 +1,8 @@
-import DataService from './DataService';
-import MLService from './MLService';
-import Token, { type IToken } from '../models/Token';
-import Opportunity, { type IOpportunity } from '../models/Opportunity';
+import { DataService } from './DataService';
+import { MLService } from './MLService';
+import Token, { IToken } from '../models/Token';
+import Opportunity, { IOpportunity } from '../models/Opportunity';
+import logger from '../utils/logger';
 import {
   CHAIN_NATIVE_TOKENS,
   SUPPORTED_TOKENS,
@@ -12,13 +13,13 @@ import {
 const DEFAULT_TRADE_SIZE_USD = 1000;
 
 const OUTBOUND_GAS_UNITS: Record<SupportedChain, number> = {
-  ethereum: 450000, // swap + bridge initiation
+  ethereum: 450000,
   polygon: 320000,
   bsc: 360000
 };
 
 const INBOUND_GAS_UNITS: Record<SupportedChain, number> = {
-  ethereum: 220000, // swap on destination chain
+  ethereum: 220000,
   polygon: 160000,
   bsc: 200000
 };
@@ -208,18 +209,7 @@ export async function evaluateOpportunity(
   };
 
   if (anomalyFlags.length > 0) {
-    console.warn(
-      `[ArbitrageService] anomaly detected for ${symbol} ${chainFrom}->${chainTo}: ${anomalyFlags.join(', ')}`,
-      {
-        priceFrom,
-        priceTo,
-        chainFromDexPrice,
-        chainToDexPrice,
-        priceDiffPercent,
-        grossProfitUsd,
-        gasCostUsd
-      }
-    );
+    logger.warn(`Anomaly detected for ${symbol} ${chainFrom}->${chainTo}: ${anomalyFlags.join(', ')}`);
   }
 
   if (anomalyFlags.some((flag) => SEVERE_ANOMALIES.has(flag))) {
@@ -232,12 +222,18 @@ export async function evaluateOpportunity(
       const prediction = await mlService.getPrediction({
         token: symbol,
         chain: chainFrom,
-        price: priceDiffPerTokenUsd,
-        gas: gasCostUsd
+        price: grossProfitUsd,
+        gas: gasCostUsd,
+        grossProfit: grossProfitUsd,
+        netProfit: netProfitUsd,
+        roi: roi ?? 0,
+        tradeVolume: tradeUsdAmount,
+        priceDiffPercent,
+        pricePerToken: priceDiffPerTokenUsd
       });
       score = Math.max(0, Math.min(1, Number(prediction.score ?? 0)));
     } catch (error) {
-      console.warn(`ML scoring failed for ${symbol} ${chainFrom}->${chainTo}:`, (error as Error)?.message || error);
+      logger.warn(`ML scoring failed for ${symbol} ${chainFrom}->${chainTo}`);
       score = 0;
     }
   }

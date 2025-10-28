@@ -1,9 +1,7 @@
-// controllers/websocketController.ts
 import { Request, Response } from 'express';
 import asyncHandler from 'express-async-handler';
 import { webSocketService } from '../services';
 
-// GET /api/websocket/status - Get WebSocket connection status
 export const getWebSocketStatus = asyncHandler(async (req: Request, res: Response) => {
   const stats = webSocketService.getConnectionStats();
   
@@ -17,7 +15,6 @@ export const getWebSocketStatus = asyncHandler(async (req: Request, res: Respons
   });
 });
 
-// GET /api/websocket/connections - Get detailed connection information
 export const getWebSocketConnections = asyncHandler(async (req: Request, res: Response) => {
   const stats = webSocketService.getConnectionStats();
   
@@ -27,7 +24,6 @@ export const getWebSocketConnections = asyncHandler(async (req: Request, res: Re
   });
 });
 
-// POST /api/websocket/broadcast - Broadcast message to all connected clients
 export const broadcastMessage = asyncHandler(async (req: Request, res: Response) => {
   const { type, data, target } = req.body;
   
@@ -36,8 +32,6 @@ export const broadcastMessage = asyncHandler(async (req: Request, res: Response)
     throw new Error('Type and data are required for broadcast');
   }
 
-  // This would be implemented in the WebSocketService
-  // For now, just return success
   res.status(200).json({
     success: true,
     message: 'Broadcast message queued',
@@ -45,9 +39,7 @@ export const broadcastMessage = asyncHandler(async (req: Request, res: Response)
   });
 });
 
-// GET /api/websocket/rooms - Get active WebSocket rooms
 export const getWebSocketRooms = asyncHandler(async (req: Request, res: Response) => {
-  // This would return active rooms from the WebSocket service
   const rooms = [
     'opportunities',
     'tokens',

@@ -18,15 +18,14 @@ export interface IUser extends Document {
   emailVerificationExpires: Date | null;
   passwordResetToken: string | null;
   passwordResetExpires: Date | null;
-  // Two-Factor Authentication fields
   twoFactorEnabled: boolean;
   twoFactorSecret: string | null;
   twoFactorBackupCodes: string[];
   twoFactorVerifiedAt: Date | null;
-  // Profile picture
   profilePicture: string | null;
-  // Avatar selection
   avatar: number;
+  createdAt: Date;
+  updatedAt: Date;
 }
 
 const userSchema: Schema<IUser> = new mongoose.Schema(

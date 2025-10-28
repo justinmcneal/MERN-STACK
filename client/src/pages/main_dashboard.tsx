@@ -10,6 +10,7 @@ import ChartComponent from "../components/dashboard/ChartComponent";
 import ArbitrageTable from "../components/dashboard/ArbitrageTable";
 import useOpportunities from "../hooks/useOpportunities";
 import useAlerts from "../hooks/useAlerts";
+import { useCurrencyFormatter, type SupportedCurrency } from "../hooks/useCurrencyFormatter";
 
 const DashboardContent = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -30,6 +31,8 @@ const DashboardContent = () => {
 
   // Get user preferences from settings
   const { preferences } = usePreferences();
+  const currencyPreference = (preferences?.currency ?? 'USD') as SupportedCurrency;
+  const { formatCurrency, convertFromUsd } = useCurrencyFormatter(currencyPreference);
   const trackedTokens = useMemo(
     () => (preferences?.tokensTracked ? [...preferences.tokensTracked] : []),
     [preferences]
@@ -179,8 +182,8 @@ const DashboardContent = () => {
                     </p>
                     <p className="text-cyan-300/80 text-xs">
                       You're tracking {trackedTokens.length} token{trackedTokens.length > 1 ? 's' : ''}: <span className="font-semibold">{trackedTokens.join(', ')}</span>
-                      {' • '}Min Profit: <span className="font-semibold">${thresholds.minProfit}</span>
-                      {' • '}Max Gas: <span className="font-semibold">${thresholds.maxGasCost}</span>
+                      {' • '}Min Profit: <span className="font-semibold">{formatCurrency(thresholds.minProfit)}</span>
+                      {' • '}Max Gas: <span className="font-semibold">{formatCurrency(thresholds.maxGasCost)}</span>
                       {thresholds.minROI !== undefined && thresholds.minROI > 0 && ` • Min ROI: ${thresholds.minROI}%`}
                       {thresholds.minScore !== undefined && thresholds.minScore > 0 && ` • Min Score: ${(thresholds.minScore * 100).toFixed(0)}%`}
                     </p>
@@ -195,6 +198,8 @@ const DashboardContent = () => {
             <StatCardsWrapper 
               bestOpportunity={stats.bestOpportunity}
               topToken={stats.topToken}
+              currency={currencyPreference}
+              formatCurrency={formatCurrency}
             />
 
               <div className="grid grid-cols-1 xl:grid-cols-2 gap-8 mb-8">
@@ -243,6 +248,9 @@ const DashboardContent = () => {
                     onSelectChain={setSelectedChain}
                     selectedToken={selectedToken}
                     onSelectToken={setSelectedToken}
+                    currency={currencyPreference}
+                    formatCurrency={formatCurrency}
+                    convertFromUsd={convertFromUsd}
                   />
                 </div>
 
@@ -251,10 +259,15 @@ const DashboardContent = () => {
                   loading={opportunitiesLoading}
                   error={opportunitiesError}
                   onRefresh={refreshOpportunities}
+                  currency={currencyPreference}
+                  formatCurrency={formatCurrency}
                 />
               </div>
 
-              <ChartComponent />
+              <ChartComponent 
+                currency={currencyPreference}
+                formatCurrency={formatCurrency}
+              />
             </main>
 
             {notificationOpen && (

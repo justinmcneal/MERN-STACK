@@ -1,10 +1,16 @@
 import React, { useMemo, useState, useEffect, useRef } from 'react';
 import { useTokenContext } from '../../context/useTokenContext';
 import TokenService from '../../services/TokenService';
+import type { CurrencyFormatterFn, SupportedCurrency } from '../../hooks/useCurrencyFormatter';
 
 const CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
 
-const ChartComponent: React.FC = () => {
+interface ChartComponentProps {
+  formatCurrency: CurrencyFormatterFn;
+  currency: SupportedCurrency;
+}
+
+const ChartComponent: React.FC<ChartComponentProps> = ({ formatCurrency, currency }) => {
   const { tokens, loading } = useTokenContext();
   const [timeframe, setTimeframe] = useState<'1h'|'24h'|'7d'>('24h');
   const [selectedSymbol, setSelectedSymbol] = useState<string>('');
@@ -120,7 +126,7 @@ const ChartComponent: React.FC = () => {
     return () => { mounted = false; };
   }, [baseToken, timeframe, pointsCount]);
 
-  // Chart drawing params
+  // Chart drawing params - optimized for card container
   const width = 800;
   const height = 200;
   const padding = 20;
@@ -179,14 +185,14 @@ const ChartComponent: React.FC = () => {
           <svg className="w-5 h-5 text-cyan-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
           </svg>
-          Token Trends
+          Token Trends ({currency})
         </h3>
         <div className="flex flex-wrap gap-2 items-center">
           {(['1h','24h','7d'] as const).map(tf=> (
             <button 
               key={tf} 
               onClick={() => setTimeframe(tf)} 
-              className={`px-3 py-1.5 text-xs rounded-lg transition-all ${
+              className={`px-3 py-1 text-xs rounded-lg transition-all ${
                 timeframe===tf
                   ? 'bg-cyan-600 text-white' 
                   : 'bg-slate-700/50 text-slate-400 hover:text-slate-300'
@@ -199,7 +205,7 @@ const ChartComponent: React.FC = () => {
             <select 
               value={selectedSymbol || (baseToken?.symbol ?? '')} 
               onChange={(e) => setSelectedSymbol(e.target.value)} 
-              className="appearance-none w-full px-3 py-1.5 text-xs rounded-lg bg-slate-800/50 border border-slate-700/50 text-slate-300 pr-8 focus:outline-none focus:ring-2 focus:ring-cyan-400/50 transition-all duration-300"
+              className="appearance-none w-full px-3 py-1 text-xs rounded-lg bg-slate-800/50 border border-slate-700/50 text-slate-300 pr-8 focus:outline-none focus:ring-2 focus:ring-cyan-400/50 transition-all duration-300"
             >
               <option value="">Select token</option>
               {(!loading ? Array.from(new Set(tokens.map(t => t.symbol))).map(sym => (
@@ -213,8 +219,7 @@ const ChartComponent: React.FC = () => {
         </div>
       </div>
 
-      {/* Chart container with responsive aspect ratio */}
-      <div className="relative w-full mb-4" style={{ aspectRatio: `${width} / ${height}`, minHeight: '200px' }}>
+      <div className="relative w-full mb-4 h-[280px]">
         <svg className="w-full h-full" viewBox={`0 0 ${width} ${height}`} preserveAspectRatio="xMidYMid meet">
           <defs>
             <linearGradient id={`areaGrad-${baseToken?.symbol || 'g'}`} x1="0%" y1="0%" x2="0%" y2="100%">
@@ -274,7 +279,11 @@ const ChartComponent: React.FC = () => {
           {hasSeries && [0,0.25,0.5,0.75,1].map((f, idx) => {
             const val = combinedMin + (1 - f) * (combinedMax - combinedMin || 1);
             const y = padding + innerH * f;
-            return <text key={idx} x={6} y={y+3} fill="#64748b" fontSize="10">{`$${Number(val).toLocaleString(undefined, {maximumFractionDigits:2})}`}</text>;
+            return (
+              <text key={idx} x={6} y={y+3} fill="#64748b" fontSize="10">
+                {formatCurrency(val, { maximumFractionDigits: 2 })}
+              </text>
+            );
           })}
         </svg>
         {!hasSeries && historyNotice && (

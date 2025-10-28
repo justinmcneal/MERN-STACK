@@ -9,15 +9,12 @@ import {
   evaluateOpportunity,
   upsertOpportunity
 } from '../services/ArbitrageService';
+import { createError } from '../middleware/errorMiddleware';
+import { sendSuccess, sendPaginatedSuccess, sendUpdateSuccess } from '../utils/responseHelpers';
+import { buildSortObject, parsePaginationParams, buildRangeFilter, toArray, parseBoolean } from '../utils/queryHelpers';
+import { filterOpportunities } from '../utils/opportunityHelpers';
+import logger from '../utils/logger';
 
-const SEVERE_ANOMALIES = new Set<string>([
-  'spread-outlier',
-  'gas-vs-profit-outlier',
-  'from-dex-cex-divergence',
-  'to-dex-cex-divergence'
-]);
-
-// GET /api/opportunities - Get all opportunities with filtering
 export const getOpportunities = asyncHandler(async (req: Request, res: Response) => {
   const { 
     status = 'active',
@@ -28,12 +25,10 @@ export const getOpportunities = asyncHandler(async (req: Request, res: Response)
     maxProfit,
     minScore,
     maxScore,
-    limit = 50,
-    skip = 0,
-    sortBy = 'score',
-    sortOrder = 'desc',
     includeFlagged
   } = req.query;
+
+  const { limit, skip, sortBy, sortOrder } = parsePaginationParams(req.query);
 
   let query: any = {};
 
@@ -53,101 +48,25 @@ export const getOpportunities = asyncHandler(async (req: Request, res: Response)
     query.chainTo = chainTo as string;
   }
 
-  if (minProfit) {
-    query.estimatedProfit = { ...query.estimatedProfit, $gte: Number(minProfit) };
-  }
+  Object.assign(query, buildRangeFilter('estimatedProfit', minProfit as any, maxProfit as any));
+  Object.assign(query, buildRangeFilter('score', minScore as any, maxScore as any));
 
-  if (maxProfit) {
-    query.estimatedProfit = { ...query.estimatedProfit, $lte: Number(maxProfit) };
-  }
-
-  if (minScore) {
-    query.score = { ...query.score, $gte: Number(minScore) };
-  }
-
-  if (maxScore) {
-    query.score = { ...query.score, $lte: Number(maxScore) };
-  }
-
-  // Build sort object
-  const sort: any = {};
-  sort[sortBy as string] = sortOrder === 'asc' ? 1 : -1;
+  const sort = buildSortObject(sortBy, sortOrder);
 
   const opportunities = await Opportunity.find(query)
     .populate('tokenId', 'symbol chain name currentPrice')
     .sort(sort)
-    .limit(Number(limit))
-    .skip(Number(skip));
+    .limit(limit)
+    .skip(skip);
 
   const total = await Opportunity.countDocuments(query);
 
-  const allowFlagged = typeof includeFlagged === 'string'
-    ? includeFlagged.toLowerCase() === 'true'
-    : Array.isArray(includeFlagged)
-      ? includeFlagged.some((value) => String(value).toLowerCase() === 'true')
-      : false;
+  const allowFlagged = parseBoolean(includeFlagged);
+  const filtered = filterOpportunities(opportunities.map(o => o.toObject()), allowFlagged);
 
-  const normalized = opportunities.map((opp) => {
-    const plain = opp.toObject();
-    const priceDiffPercent = plain.priceDiffPercent;
-    const estimatedProfit = plain.estimatedProfit;
-    const gasCost = plain.gasCost;
-
-    const anomalies = new Set<string>();
-    if (Array.isArray(plain.anomalyFlags)) {
-      for (const flag of plain.anomalyFlags) {
-        if (typeof flag === 'string' && flag.trim().length > 0) {
-          anomalies.add(flag);
-        }
-      }
-    }
-
-    if (typeof priceDiffPercent === 'number' && Math.abs(priceDiffPercent) > 5000) {
-      anomalies.add('spread-outlier');
-    }
-
-    if (
-      typeof estimatedProfit === 'number' &&
-      typeof gasCost === 'number' &&
-      estimatedProfit > 0 &&
-      gasCost >= 0 &&
-      gasCost < estimatedProfit * 0.0001
-    ) {
-      anomalies.add('gas-vs-profit-outlier');
-    }
-
-    if (anomalies.size === 0) {
-      return plain;
-    }
-
-    const flagReasons = Array.from(anomalies);
-    return {
-      ...plain,
-      flagged: true,
-      flagReason: flagReasons[0],
-      flagReasons
-    };
-  });
-
-  const filtered = allowFlagged
-    ? normalized
-    : normalized.filter((item) => {
-        const reasons = Array.isArray((item as any).flagReasons) ? (item as any).flagReasons : [];
-        if (reasons.length === 0 && !(item as any).flagged) {
-          return true;
-        }
-        return !reasons.some((reason: string) => SEVERE_ANOMALIES.has(reason));
-      });
-
-  res.json({
-    success: true,
-    count: filtered.length,
-    total,
-    data: filtered
-  });
+  sendPaginatedSuccess(res, filtered, total);
 });
 
-// GET /api/opportunities/:id - Get opportunity by ID
 export const getOpportunityById = asyncHandler(async (req: Request, res: Response) => {
   const { id } = req.params;
 
@@ -155,63 +74,16 @@ export const getOpportunityById = asyncHandler(async (req: Request, res: Respons
     .populate('tokenId', 'symbol chain name currentPrice');
 
   if (!opportunity) {
-    res.status(404);
-    throw new Error('Opportunity not found');
+    throw createError('Opportunity not found', 404);
   }
 
-  const plain = opportunity.toObject();
-  const priceDiffPercent = plain.priceDiffPercent;
-  const estimatedProfit = plain.estimatedProfit;
-  const gasCost = plain.gasCost;
+  const flagged = filterOpportunities([opportunity.toObject()], true)[0];
 
-  const responseBody = {
-    ...plain
-  } as typeof plain & { flagged?: boolean; flagReason?: string; flagReasons?: string[] };
-
-  const anomalies = new Set<string>();
-  if (Array.isArray(plain.anomalyFlags)) {
-    for (const flag of plain.anomalyFlags) {
-      if (typeof flag === 'string' && flag.trim().length > 0) {
-        anomalies.add(flag);
-      }
-    }
-  }
-
-  if (typeof priceDiffPercent === 'number' && Math.abs(priceDiffPercent) > 5000) {
-    anomalies.add('spread-outlier');
-  }
-
-  if (
-    typeof estimatedProfit === 'number' &&
-    typeof gasCost === 'number' &&
-    estimatedProfit > 0 &&
-    gasCost >= 0 &&
-    gasCost < estimatedProfit * 0.0001
-  ) {
-    anomalies.add('gas-vs-profit-outlier');
-  }
-
-  if (anomalies.size > 0) {
-    const flagReasons = Array.from(anomalies);
-    responseBody.flagged = true;
-    responseBody.flagReason = flagReasons[0];
-    responseBody.flagReasons = flagReasons;
-  }
-
-  res.json({
-    success: true,
-    data: responseBody
-  });
+  sendSuccess(res, flagged);
 });
 
-// POST /api/opportunities/scan - Trigger opportunity scan for all tokens
 export const scanOpportunities = asyncHandler(async (req: Request, res: Response) => {
   const { tokens, chains, forceRefresh = false } = req.body;
-
-  const toArray = <T,>(value: T | T[] | undefined): T[] => {
-    if (value === undefined || value === null) return [];
-    return Array.isArray(value) ? value : [value];
-  };
 
   try {
     const dataService = DataService.getInstance();
@@ -219,9 +91,8 @@ export const scanOpportunities = asyncHandler(async (req: Request, res: Response
     const supportedTokens = dataService.getSupportedTokens() as SupportedToken[];
 
     if (forceRefresh) {
-      console.log('🔄 Refreshing prices (CEX + DEX)...');
+      logger.info('Refreshing prices (CEX + DEX)');
       
-      // Fetch CEX prices
       const priceData = await dataService.fetchTokenPrices();
       
       for (const priceInfo of priceData) {
@@ -249,8 +120,7 @@ export const scanOpportunities = asyncHandler(async (req: Request, res: Response
         }
       }
 
-      // Fetch DEX prices for real arbitrage
-      console.log('💱 Fetching chain-specific DEX prices...');
+      logger.info('Fetching chain-specific DEX prices');
       const dexPrices = await dataService.fetchDexPrices();
       
       let dexUpdated = 0;
@@ -267,7 +137,7 @@ export const scanOpportunities = asyncHandler(async (req: Request, res: Response
         );
         dexUpdated++;
       }
-      console.log(`✅ Updated ${dexPrices.length} CEX prices and ${dexUpdated} DEX prices`);
+      logger.info(`Updated ${dexPrices.length} CEX prices and ${dexUpdated} DEX prices`);
     }
 
     const tokensToAnalyze = (() => {
@@ -366,7 +236,7 @@ export const scanOpportunities = asyncHandler(async (req: Request, res: Response
               opportunityId
             });
           } catch (error) {
-            console.error(`Error analyzing ${tokenSymbol} ${chainFrom} -> ${chainTo}:`, error);
+            logger.error(`Error analyzing ${tokenSymbol} ${chainFrom} -> ${chainTo}`, error);
           }
         }
       }
@@ -382,7 +252,7 @@ export const scanOpportunities = asyncHandler(async (req: Request, res: Response
       results: results.slice(0, 25)
     });
   } catch (error: any) {
-    console.error('Error scanning opportunities:', error);
+    logger.error('Error scanning opportunities', error);
     res.status(500).json({
       success: false,
       message: 'Failed to scan opportunities',
@@ -391,7 +261,6 @@ export const scanOpportunities = asyncHandler(async (req: Request, res: Response
   }
 });
 
-// POST /api/opportunities/:id/expire - Mark opportunity as expired
 export const markOpportunityAsExpired = asyncHandler(async (req: Request, res: Response) => {
   const { id } = req.params;
 
@@ -402,18 +271,12 @@ export const markOpportunityAsExpired = asyncHandler(async (req: Request, res: R
   );
 
   if (!opportunity) {
-    res.status(404);
-    throw new Error('Opportunity not found');
+    throw createError('Opportunity not found', 404);
   }
 
-  res.json({
-    success: true,
-    message: 'Opportunity marked as expired',
-    data: opportunity
-  });
+  sendUpdateSuccess(res, opportunity, 'Opportunity marked as expired');
 });
 
-// POST /api/opportunities/:id/execute - Mark opportunity as executed
 export const markOpportunityAsExecuted = asyncHandler(async (req: Request, res: Response) => {
   const { id } = req.params;
 
@@ -424,18 +287,12 @@ export const markOpportunityAsExecuted = asyncHandler(async (req: Request, res: 
   );
 
   if (!opportunity) {
-    res.status(404);
-    throw new Error('Opportunity not found');
+    throw createError('Opportunity not found', 404);
   }
 
-  res.json({
-    success: true,
-    message: 'Opportunity marked as executed',
-    data: opportunity
-  });
+  sendUpdateSuccess(res, opportunity, 'Opportunity marked as executed');
 });
 
-// GET /api/opportunities/stats - Get opportunity statistics
 export const getOpportunityStats = asyncHandler(async (req: Request, res: Response) => {
   const stats = await Opportunity.aggregate([
     { $group: {
@@ -456,35 +313,25 @@ export const getOpportunityStats = asyncHandler(async (req: Request, res: Respon
 
   const totalOpportunities = await Opportunity.countDocuments({});
 
-  res.json({
-    success: true,
-    data: {
-      byStatus: stats,
-      profitableCount: profitableOpportunities,
-      totalCount: totalOpportunities,
-      profitabilityRate: totalOpportunities > 0 ? 
-        (profitableOpportunities / totalOpportunities) * 100 : 0
-    }
+  sendSuccess(res, {
+    byStatus: stats,
+    profitableOpportunities,
+    totalOpportunities
   });
 });
 
-// GET /api/opportunities/pairs - Get available chain pairs (all directional pairs)
 export const getSupportedChainPairs = asyncHandler(async (req: Request, res: Response) => {
   const dataService = DataService.getInstance();
   const chains = dataService.getSupportedChains();
   const pairs: string[] = [];
 
-  // Generate all directional pairs (A -> B and B -> A)
   for (let i = 0; i < chains.length; i++) {
     for (let j = 0; j < chains.length; j++) {
-      if (i !== j) { // Don't include same chain pairs
+      if (i !== j) {
         pairs.push(`${chains[i]} -> ${chains[j]}`);
       }
     }
   }
 
-  res.json({
-    success: true,
-    data: pairs
-  });
+  sendSuccess(res, pairs);
 });

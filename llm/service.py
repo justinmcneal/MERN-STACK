@@ -1,7 +1,8 @@
 # llm/service.py
 
 from fastapi import FastAPI, HTTPException
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
+from typing import Optional
 from predict import predict_opportunity
 import requests
 import os
@@ -11,6 +12,11 @@ from pymongo import MongoClient
 load_dotenv()
 
 app = FastAPI()
+
+
+@app.get("/health")
+def health_check():
+    return {"status": "ok"}
 
 # MongoDB connection for fetching chain-specific DEX prices
 MONGODB_URI = os.getenv("MONGODB_URI", "mongodb://localhost:27017/arbitrader")
@@ -27,6 +33,15 @@ class OppInput(BaseModel):
     chain: str
     price: float
     gas: float
+    gross_profit: Optional[float] = Field(default=None, alias='grossProfit')
+    net_profit: Optional[float] = Field(default=None, alias='netProfit')
+    roi: Optional[float] = None
+    trade_volume: Optional[float] = Field(default=None, alias='tradeVolume')
+    price_diff_percent: Optional[float] = Field(default=None, alias='priceDiffPercent')
+    price_per_token: Optional[float] = Field(default=None, alias='pricePerToken')
+
+    class Config:
+        allow_population_by_field_name = True
 
 @app.post("/predict")
 def get_prediction(data: OppInput):
@@ -34,7 +49,13 @@ def get_prediction(data: OppInput):
         token=data.token,
         chain=data.chain,
         price=data.price,
-        gas=data.gas
+        gas=data.gas,
+        gross_profit=data.gross_profit,
+        net_profit=data.net_profit,
+        roi=data.roi,
+        trade_volume=data.trade_volume,
+        price_diff_percent=data.price_diff_percent,
+        price_per_token=data.price_per_token
     )
     return result
 
@@ -71,13 +92,11 @@ def arbitrage_opportunity(data: ArbitrageInput):
                     # Prefer dexPrice over currentPrice for arbitrage
                     dex_price = token_doc.get('dexPrice')
                     if dex_price and dex_price > 0:
-                        print(f"Found DEX price for {token_symbol} on {chain}: ${dex_price}")
                         return dex_price
                     
                     # Fallback to currentPrice if dexPrice not available
                     current_price = token_doc.get('currentPrice')
                     if current_price and current_price > 0:
-                        print(f"Using CEX price for {token_symbol} on {chain}: ${current_price} (DEX price not available)")
                         return current_price
                 
                 raise HTTPException(
@@ -85,7 +104,6 @@ def arbitrage_opportunity(data: ArbitrageInput):
                     detail=f"No price found for {token_symbol} on {chain}. Price may not have been fetched yet."
                 )
             except Exception as e:
-                print(f"Error fetching price from MongoDB: {e}")
                 raise HTTPException(status_code=502, detail=f"Database error: {str(e)}")
 
         price_a = fetch_dex_price(token, chain_a)
@@ -100,11 +118,9 @@ def arbitrage_opportunity(data: ArbitrageInput):
                     if api_key:
                         headers["Authorization"] = api_key
                     url = "https://api.blocknative.com/gasprices/blockprices?chainid=1"
-                    print("Fetching Blocknative gas price for ethereum...")
                     resp = requests.get(url, headers=headers, timeout=5)
                     resp.raise_for_status()
                     data = resp.json()
-                    print(f"Blocknative gas API response: {data}")
                     prices = data.get("blockPrices", [{}])[0].get("estimatedPrices", [])
                     if prices:
                         for p in prices:
@@ -114,24 +130,19 @@ def arbitrage_opportunity(data: ArbitrageInput):
                     raise Exception(f"No gas price found in Blocknative response: {data}")
                 elif chain == "polygon":
                     url = "https://gasstation.polygon.technology/v2"
-                    print("Fetching Polygon gas price...")
                     resp = requests.get(url, timeout=5)
                     resp.raise_for_status()
                     data = resp.json()
-                    print(f"Polygon gas API response: {data}")
                     return float(data["standard"]["maxFee"])
                 elif chain in ["bsc", "binance smart chain"]:
                     url = "https://bscgas.info/gas"
-                    print("Fetching BSC gas price...")
                     resp = requests.get(url, timeout=5)
                     resp.raise_for_status()
                     data = resp.json()
-                    print(f"BSC gas API response: {data}")
                     return float(data["standard"])
                 else:
                     raise HTTPException(status_code=400, detail=f"Chain {chain} not supported.")
             except Exception as e:
-                print(f"WARNING: Gas API failed for {chain} ({e}), using mock value 20 gwei.")
                 return 20.0  # fallback mock value in gwei
 
         gas_a = fetch_gas_price(chain_a)
@@ -160,8 +171,6 @@ def arbitrage_opportunity(data: ArbitrageInput):
         profitable = net_profit > 0
 
         # Debug prints for all calculated values
-        print(f"DEBUG: price_a={price_a}, price_b={price_b}, gas_a={gas_a}, gas_b={gas_b}, cost_a={cost_a}, cost_b={cost_b}, total_gas_cost={total_gas_cost}, spread={spread}, net_profit={net_profit}, profitable={profitable}")
-
         return {
             "token": token,
             "chain_a": chain_a,

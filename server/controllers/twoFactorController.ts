@@ -1,14 +1,12 @@
-// controllers/twoFactorController.ts
 import { Request, Response } from 'express';
 import asyncHandler from 'express-async-handler';
 import { TwoFactorService } from '../services/TwoFactorService';
 import { validate } from '../middleware/validationMiddleware';
 import Joi from 'joi';
+import { createError } from '../middleware/errorMiddleware';
+import { sendSuccess } from '../utils/responseHelpers';
 
-// Validation schemas
-const setupSchema = Joi.object({
-  // No body required for setup
-});
+const setupSchema = Joi.object({});
 
 const verifySetupSchema = Joi.object({
   token: Joi.string().length(6).pattern(/^\d+$/).required()
@@ -46,57 +44,39 @@ const disableSchema = Joi.object({
     })
 });
 
-// POST /api/auth/2fa/setup
 export const setupTwoFactor = asyncHandler(async (req: Request, res: Response) => {
   const userId = req.user?._id;
   if (!userId) {
-    res.status(401);
-    throw new Error('User not authenticated');
+    throw createError('User not authenticated', 401);
   }
 
   const result = await TwoFactorService.setupTwoFactor(userId);
   
-  res.json({
-    success: true,
-    data: result,
-    message: 'Two-factor authentication setup initiated'
-  });
+  sendSuccess(res, result, 'Two-factor authentication setup initiated');
 });
 
-// POST /api/auth/2fa/verify-setup
 export const verifyTwoFactorSetup = asyncHandler(async (req: Request, res: Response) => {
   const userId = req.user?._id;
   if (!userId) {
-    res.status(401);
-    throw new Error('User not authenticated');
+    throw createError('User not authenticated', 401);
   }
 
   const { token } = req.body;
   const result = await TwoFactorService.verifyTwoFactorSetup(userId, token);
   
-  res.json({
-    success: true,
-    data: result,
-    message: 'Two-factor authentication enabled successfully'
-  });
+  sendSuccess(res, result, 'Two-factor authentication enabled successfully');
 });
 
-// POST /api/auth/2fa/verify
 export const verifyTwoFactorToken = asyncHandler(async (req: Request, res: Response) => {
   const userId = req.user?._id;
   if (!userId) {
-    res.status(401);
-    throw new Error('User not authenticated');
+    throw createError('User not authenticated', 401);
   }
 
   const { token } = req.body;
   const result = await TwoFactorService.verifyTwoFactorToken(userId, token);
   
-  res.json({
-    success: true,
-    data: result,
-    message: result.backupCodeUsed ? 'Login successful using backup code' : 'Login successful'
-  });
+  sendSuccess(res, result, result.backupCodeUsed ? 'Login successful using backup code' : 'Login successful');
 });
 
 // POST /api/auth/2fa/verify-login
@@ -104,37 +84,29 @@ export const verifyTwoFactorLogin = asyncHandler(async (req: Request, res: Respo
   const { email, token } = req.body;
   
   if (!email || !token) {
-    res.status(400);
-    throw new Error('Email and token are required');
+    throw createError('Email and token are required', 400);
   }
 
-  // Find user by email
   const User = require('../models/User').default;
   const user = await User.findOne({ email });
   if (!user) {
-    res.status(401);
-    throw new Error('Invalid credentials');
+    throw createError('Invalid credentials', 401);
   }
 
   if (!user.twoFactorEnabled) {
-    res.status(400);
-    throw new Error('Two-factor authentication is not enabled');
+    throw createError('Two-factor authentication is not enabled', 400);
   }
 
-  // Verify 2FA token
   const result = await TwoFactorService.verifyTwoFactorToken(user._id.toString(), token);
   
   if (!result.success) {
-    res.status(401);
-    throw new Error('Invalid verification code');
+    throw createError('Invalid verification code', 401);
   }
 
-  // Generate tokens for successful login
   const { generateAccessToken, generateRefreshToken } = require('../utils/generateTokens');
   const refreshToken = generateRefreshToken(user._id.toString());
   const accessToken = generateAccessToken(user._id.toString());
   
-  // Save refresh token
   user.refreshTokens.push(refreshToken);
   await user.save();
 
@@ -152,57 +124,40 @@ export const verifyTwoFactorLogin = asyncHandler(async (req: Request, res: Respo
   });
 });
 
-// POST /api/auth/2fa/disable
 export const disableTwoFactor = asyncHandler(async (req: Request, res: Response) => {
   const userId = req.user?._id;
   if (!userId) {
-    res.status(401);
-    throw new Error('User not authenticated');
+    throw createError('User not authenticated', 401);
   }
 
   const { password } = req.body;
   await TwoFactorService.disableTwoFactor(userId, password);
   
-  res.json({
-    success: true,
-    message: 'Two-factor authentication disabled successfully'
-  });
+  sendSuccess(res, undefined, 'Two-factor authentication disabled successfully');
 });
 
-// POST /api/auth/2fa/regenerate-backup-codes
 export const regenerateBackupCodes = asyncHandler(async (req: Request, res: Response) => {
   const userId = req.user?._id;
   if (!userId) {
-    res.status(401);
-    throw new Error('User not authenticated');
+    throw createError('User not authenticated', 401);
   }
 
   const backupCodes = await TwoFactorService.regenerateBackupCodes(userId);
   
-  res.json({
-    success: true,
-    data: { backupCodes },
-    message: 'Backup codes regenerated successfully'
-  });
+  sendSuccess(res, { backupCodes }, 'Backup codes regenerated successfully');
 });
 
-// GET /api/auth/2fa/status
 export const getTwoFactorStatus = asyncHandler(async (req: Request, res: Response) => {
   const userId = req.user?._id;
   if (!userId) {
-    res.status(401);
-    throw new Error('User not authenticated');
+    throw createError('User not authenticated', 401);
   }
 
   const status = await TwoFactorService.getTwoFactorStatus(userId);
   
-  res.json({
-    success: true,
-    data: status
-  });
+  sendSuccess(res, status);
 });
 
-// Export validation schemas
 export const twoFactorSchemas = {
   setup: setupSchema,
   verifySetup: verifySetupSchema,

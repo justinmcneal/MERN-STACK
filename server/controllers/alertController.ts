@@ -2,19 +2,20 @@ import { Request, Response } from 'express';
 import asyncHandler from 'express-async-handler';
 import Alert from '../models/Alert';
 import Opportunity from '../models/Opportunity';
+import { createError } from '../middleware/errorMiddleware';
+import { sendSuccess, sendPaginatedSuccess, sendDeleteSuccess, sendCreatedSuccess } from '../utils/responseHelpers';
+import { buildSortObject, parsePaginationParams } from '../utils/queryHelpers';
+import { validateRequired } from '../utils/validationHelpers';
 
-// GET /api/alerts - Get user alerts with filtering
 export const getUserAlerts = asyncHandler(async (req: Request, res: Response) => {
   const userId = req.user!._id;
   const { 
     isRead,
     alertType,
     priority,
-    limit = 50,
-    skip = 0,
-    sortBy = 'createdAt',
-    sortOrder = 'desc'
   } = req.query;
+
+  const { limit, skip, sortBy, sortOrder } = parsePaginationParams(req.query);
 
   let query: any = { userId };
 
@@ -30,9 +31,7 @@ export const getUserAlerts = asyncHandler(async (req: Request, res: Response) =>
     query.priority = priority;
   }
 
-  // Build sort object
-  const sort: any = {};
-  sort[sortBy as string] = sortOrder === 'asc' ? 1 : -1;
+  const sort = buildSortObject(sortBy, sortOrder);
 
   const alerts = await Alert.find(query)
     .populate({
@@ -44,20 +43,14 @@ export const getUserAlerts = asyncHandler(async (req: Request, res: Response) =>
       }
     })
     .sort(sort)
-    .limit(Number(limit))
-    .skip(Number(skip));
+    .limit(limit)
+    .skip(skip);
 
   const total = await Alert.countDocuments(query);
 
-  res.json({
-    success: true,
-    count: alerts.length,
-    total,
-    data: alerts
-  });
+  sendPaginatedSuccess(res, alerts, total);
 });
 
-// GET /api/alerts/:id - Get specific alert
 export const getAlertById = asyncHandler(async (req: Request, res: Response) => {
   const { id } = req.params;
   const userId = req.user!._id;
@@ -73,17 +66,12 @@ export const getAlertById = asyncHandler(async (req: Request, res: Response) => 
     });
 
   if (!alert) {
-    res.status(404);
-    throw new Error('Alert not found');
+    throw createError('Alert not found', 404);
   }
 
-  res.json({
-    success: true,
-    data: alert
-  });
+  sendSuccess(res, alert);
 });
 
-// POST /api/alerts/mark-read - Mark alerts as read
 export const markAlertsAsRead = asyncHandler(async (req: Request, res: Response) => {
   const userId = req.user!._id;
   const { alertIds, markAll } = req.body;
@@ -91,30 +79,22 @@ export const markAlertsAsRead = asyncHandler(async (req: Request, res: Response)
   let result;
   
   if (markAll) {
-    // Mark all user alerts as read
     result = await Alert.updateMany(
       { userId, isRead: false },
       { isRead: true }
     );
   } else if (alertIds && Array.isArray(alertIds)) {
-    // Mark specific alerts as read
     result = await Alert.updateMany(
       { _id: { $in: alertIds }, userId },
       { isRead: true }
     );
   } else {
-    res.status(400);
-    throw new Error('Invalid request: provide alertIds array or markAll: true');
+    throw createError('Invalid request: provide alertIds array or markAll: true', 400);
   }
 
-  res.json({
-    success: true,
-    message: `${result.modifiedCount} alert(s) marked as read`,
-    modifiedCount: result.modifiedCount
-  });
+  sendSuccess(res, { modifiedCount: result.modifiedCount }, `${result.modifiedCount} alert(s) marked as read`);
 });
 
-// DELETE /api/alerts/:id - Delete specific alert
 export const deleteAlert = asyncHandler(async (req: Request, res: Response) => {
   const { id } = req.params;
   const userId = req.user!._id;
@@ -122,17 +102,12 @@ export const deleteAlert = asyncHandler(async (req: Request, res: Response) => {
   const alert = await Alert.findOneAndDelete({ _id: id, userId });
 
   if (!alert) {
-    res.status(404);
-    throw new Error('Alert not found');
+    throw createError('Alert not found', 404);
   }
 
-  res.json({
-    success: true,
-    message: 'Alert deleted successfully'
-  });
+  sendDeleteSuccess(res, 'Alert deleted successfully');
 });
 
-// DELETE /api/alerts - Delete multiple alerts
 export const deleteAlerts = asyncHandler(async (req: Request, res: Response) => {
   const userId = req.user!._id;
   const { alertIds, deleteAll, deleteRead } = req.body;
@@ -140,41 +115,28 @@ export const deleteAlerts = asyncHandler(async (req: Request, res: Response) => 
   let query: any = { userId };
 
   if (deleteAll) {
-    // Delete all user alerts
     query = { userId };
   } else if (deleteRead) {
-    // Delete only read alerts
     query.isRead = true;
   } else if (alertIds && Array.isArray(alertIds)) {
-    // Delete specific alerts
     query._id = { $in: alertIds };
   } else {
-    res.status(400);
-    throw new Error('Invalid request: provide alertIds array, deleteAll: true, or deleteRead: true');
+    throw createError('Invalid request: provide alertIds array, deleteAll: true, or deleteRead: true', 400);
   }
 
   const result = await Alert.deleteMany(query);
 
-  res.json({
-    success: true,
-    message: `${result.deletedCount} alert(s) deleted`,
-    deletedCount: result.deletedCount
-  });
+  sendSuccess(res, { deletedCount: result.deletedCount }, `${result.deletedCount} alert(s) deleted`);
 });
 
-// GET /api/alerts/unread-count - Get count of unread alerts
 export const getUnreadAlertCount = asyncHandler(async (req: Request, res: Response) => {
   const userId = req.user!._id;
 
   const count = await Alert.countDocuments({ userId, isRead: false });
 
-  res.json({
-    success: true,
-    unreadCount: count
-  });
+  sendSuccess(res, { unreadCount: count });
 });
 
-// GET /api/alerts/stats - Get alert statistics
 export const getAlertStats = asyncHandler(async (req: Request, res: Response) => {
   const userId = req.user!._id;
 
@@ -207,31 +169,19 @@ export const getAlertStats = asyncHandler(async (req: Request, res: Response) =>
   const totalAlerts = await Alert.countDocuments({ userId });
   const unreadAlerts = await Alert.countDocuments({ userId, isRead: false });
 
-  res.json({
-    success: true,
-    data: {
-      byType: stats,
-      totalAlerts,
-      unreadAlerts,
-      readAlerts: totalAlerts - unreadAlerts
-    }
+  sendSuccess(res, {
+    byType: stats,
+    totalAlerts,
+    unreadAlerts,
+    readAlerts: totalAlerts - unreadAlerts
   });
 });
 
-// POST /api/alerts/test - Create test alert (for development/testing)
 export const createTestAlert = asyncHandler(async (req: Request, res: Response) => {
   const userId = req.user!._id;
-  
-  // Debug: Log the request body
-  console.log('Alert test - Request body:', req.body);
-  console.log('Alert test - Request headers:', req.headers);
-  
   const { message, priority = 'medium', alertType = 'system' } = req.body;
 
-  if (!message) {
-    res.status(400);
-    throw new Error('Message is required');
-  }
+  validateRequired(message, 'Message');
 
   const alert = await Alert.create({
     userId,
@@ -241,14 +191,9 @@ export const createTestAlert = asyncHandler(async (req: Request, res: Response) 
     isRead: false
   });
 
-  res.json({
-    success: true,
-    message: 'Test alert created successfully',
-    data: alert
-  });
+  sendCreatedSuccess(res, alert, 'Test alert created successfully');
 });
 
-// GET /api/alerts/types - Get available alert types
 export const getAlertTypes = asyncHandler(async (req: Request, res: Response) => {
   const alertTypes = [
     { value: 'opportunity', label: 'Opportunity Alert', description: 'New profitable arbitrage opportunities' },
@@ -257,13 +202,9 @@ export const getAlertTypes = asyncHandler(async (req: Request, res: Response) =>
     { value: 'custom', label: 'Custom Alert', description: 'User-defined alerts' }
   ];
 
-  res.json({
-    success: true,
-    data: alertTypes
-  });
+  sendSuccess(res, alertTypes);
 });
 
-// GET /api/alerts/priorities - Get available alert priorities
 export const getAlertPriorities = asyncHandler(async (req: Request, res: Response) => {
   const priorities = [
     { value: 'low', label: 'Low', description: 'Informational alerts', color: '#10b981' },
@@ -272,13 +213,9 @@ export const getAlertPriorities = asyncHandler(async (req: Request, res: Respons
     { value: 'urgent', label: 'Urgent', description: 'Requires immediate attention', color: '#dc2626' }
   ];
 
-  res.json({
-    success: true,
-    data: priorities
-  });
+  sendSuccess(res, priorities);
 });
 
-// POST /api/alerts/cleanup - Clean up old alerts (admin function)
 export const cleanupOldAlerts = asyncHandler(async (req: Request, res: Response) => {
   const { daysOld = 30 } = req.body;
 
@@ -288,32 +225,22 @@ export const cleanupOldAlerts = asyncHandler(async (req: Request, res: Response)
   const result = await Alert.deleteMany({
     createdAt: { $lt: cutoffDate },
     isRead: true,
-    priority: { $in: ['low', 'medium'] } // Only delete low/medium priority read alerts
+    priority: { $in: ['low', 'medium'] }
   });
 
-  res.json({
-    success: true,
-    message: `Cleanup completed: ${result.deletedCount} old alerts deleted`,
-    deletedCount: result.deletedCount,
-    daysOld
-  });
+  sendSuccess(res, { deletedCount: result.deletedCount, daysOld }, `Cleanup completed: ${result.deletedCount} old alerts deleted`);
 });
 
-// POST /api/alerts/create-opportunity-alert - Helper to create opportunity alert
 export const createOpportunityAlert = asyncHandler(async (req: Request, res: Response) => {
   const userId = req.user!._id;
   const { opportunityId, message, priority } = req.body;
 
-  if (!opportunityId || !message) {
-    res.status(400);
-    throw new Error('opportunityId and message are required');
-  }
+  validateRequired(opportunityId, 'opportunityId');
+  validateRequired(message, 'message');
 
-  // Verify opportunity exists
   const opportunity = await Opportunity.findById(opportunityId);
   if (!opportunity) {
-    res.status(404);
-    throw new Error('Opportunity not found');
+    throw createError('Opportunity not found', 404);
   }
 
   const alert = await Alert.create({
@@ -325,9 +252,5 @@ export const createOpportunityAlert = asyncHandler(async (req: Request, res: Res
     isRead: false
   });
 
-  res.json({
-    success: true,
-    message: 'Opportunity alert created successfully',
-    data: alert
-  });
+  sendCreatedSuccess(res, alert, 'Opportunity alert created successfully');
 });

@@ -1,9 +1,7 @@
 import React from "react";
 import { Save, AlertCircle } from "lucide-react";
 import GeneralSettings from "./GeneralSettings";
-import MonitoringSettings from "./MonitoringSettings";
 import { useSettings } from "../../hooks/useSettings";
-import { useThemeClasses } from "../ThemeAware";
 
 const SettingsContent: React.FC = () => {
   const {
@@ -17,8 +15,6 @@ const SettingsContent: React.FC = () => {
     validateSettings,
     resetSettings
   } = useSettings();
-
-  const { border, bg, buttonPrimary } = useThemeClasses();
 
   const handleSaveChanges = async () => {
     if (!validateSettings()) {
@@ -59,30 +55,15 @@ const SettingsContent: React.FC = () => {
 
         {/* General Settings */}
         <GeneralSettings
-          themeMode={settings.themeMode}
           defaultCurrency={settings.defaultCurrency}
-          onThemeModeChange={() => updateSetting('themeMode', !settings.themeMode)}
           onDefaultCurrencyChange={(value) => updateSetting('defaultCurrency', value)}
           errors={{
-            themeMode: errors.themeMode,
             defaultCurrency: errors.defaultCurrency
           }}
         />
 
-        {/* Monitoring Settings */}
-        <MonitoringSettings
-          minProfitThreshold={settings.minProfitThreshold}
-          maxGasFee={settings.maxGasFee}
-          onMinProfitThresholdChange={(value) => updateSetting('minProfitThreshold', value)}
-          onMaxGasFeeChange={(value) => updateSetting('maxGasFee', value)}
-          errors={{
-            minProfitThreshold: errors.minProfitThreshold,
-            maxGasFee: errors.maxGasFee
-          }}
-        />
-
         {/* Save Button */}
-        <div className={`${bg}/50 backdrop-blur border ${border}/50 rounded-2xl p-6`}>
+        <div className="bg-slate-900/70 backdrop-blur border border-slate-700/60 rounded-2xl p-6">
           <div className="flex flex-col items-center gap-4">
             <div className="flex gap-3">
               <button
@@ -90,8 +71,8 @@ const SettingsContent: React.FC = () => {
                 disabled={!hasChanges || isUpdating}
                 className={`inline-flex items-center justify-center gap-3 px-8 py-4 rounded-xl font-semibold shadow-lg transition-all duration-300 transform ${
                   !hasChanges || isUpdating
-                    ? 'bg-slate-600 text-slate-400 cursor-not-allowed'
-                    : `${buttonPrimary} hover:scale-105`
+                    ? 'bg-slate-700 text-slate-400 cursor-not-allowed'
+                    : 'bg-gradient-to-r from-cyan-500 to-purple-600 text-white hover:scale-105 hover:from-cyan-400 hover:to-purple-500'
                 }`}
               >
                 {isUpdating ? (
@@ -110,7 +91,7 @@ const SettingsContent: React.FC = () => {
               {hasChanges && (
                 <button
                   onClick={resetSettings}
-                  className="px-6 py-4 rounded-xl bg-slate-700/50 hover:bg-slate-600/50 text-slate-300 font-semibold transition-all duration-300"
+                  className="px-6 py-4 rounded-xl bg-slate-800/60 hover:bg-slate-700/60 text-slate-200 font-semibold transition-all duration-300"
                 >
                   Reset
                 </button>
