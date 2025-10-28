@@ -105,8 +105,8 @@ export class AuthService {
     const normalizedEmail = email.trim().toLowerCase();
     const normalizedName = name.trim();
 
-    console.log('🔐 [AuthService] Starting user registration process...');
-    console.log('🔐 [AuthService] Registration data:', {
+    logger.info('[AuthService] Starting user registration process...');
+    logger.info('[AuthService] Registration data:', {
       name: normalizedName,
       email: normalizedEmail,
       hasPassword: !!password
@@ -116,7 +116,7 @@ export class AuthService {
     let passwordHash: string;
 
     if (existingUser) {
-      console.log('🔐 [AuthService] Found existing user record:', {
+      logger.info('[AuthService] Found existing user record:', {
         email: normalizedEmail,
         isEmailVerified: existingUser.isEmailVerified,
       });

@@ -114,7 +114,6 @@ export class DataService {
     const normalizedAddress = address.toLowerCase();
 
     try {
-      // Rate limiting: 300ms delay between requests
       await new Promise(resolve => setTimeout(resolve, 300));
 
       const response = await (axios as any).get(
@@ -152,13 +151,13 @@ export class DataService {
       }
 
       if (!Number.isFinite(best.liquidityUsd) || (best.liquidityUsd ?? 0) < MIN_LIQUIDITY_USD) {
-        console.warn(`DexScreener skipping ${normalizedAddress} on ${chain}: liquidity below ${MIN_LIQUIDITY_USD}`);
+        logger.warn(`DexScreener skipping ${normalizedAddress} on ${chain}: liquidity below ${MIN_LIQUIDITY_USD}`);
         return null;
       }
 
-  if (token && STABLE_TOKENS.has(token)) {
+      if (token && STABLE_TOKENS.has(token)) {
         if (best.price < STABLE_PRICE_MIN || best.price > STABLE_PRICE_MAX) {
-          console.warn(`DexScreener stablecoin price out of range for ${token} on ${chain}: ${best.price}`);
+          logger.warn(`DexScreener stablecoin price out of range for ${token} on ${chain}: ${best.price}`);
           return null;
         }
       }
@@ -166,19 +165,15 @@ export class DataService {
       return best?.price ?? null;
     } catch (error: any) {
       if (error.response?.status === 429) {
-        console.warn(`⚠️  DexScreener rate limit hit for ${normalizedAddress}, waiting 1s...`);
+        logger.warn(`DexScreener rate limit hit for ${normalizedAddress}, waiting 1s`);
         await new Promise(resolve => setTimeout(resolve, 1000));
       }
-      const message = error instanceof Error ? error.message : String(error);
-      console.warn(`DexScreener price fetch failed for ${normalizedAddress} on ${chain}: ${message}`);
       return null;
     }
   }
 
   private async fetchDexScreenerPrices(): Promise<Map<SupportedToken, Record<string, number>>> {
     const priceMap = new Map<SupportedToken, Record<string, number>>();
-    let successCount = 0;
-    let failCount = 0;
 
     for (const token of SUPPORTED_TOKENS as readonly SupportedToken[]) {
       const chainMap = TOKEN_CONTRACTS[token] || {};
@@ -186,13 +181,9 @@ export class DataService {
         const address = chainMap[chain];
         if (!address) continue;
 
-  const price = await this.fetchDexScreenerPrice(chain, address, token);
-        if (price === null) {
-          failCount++;
-          continue;
-        }
+        const price = await this.fetchDexScreenerPrice(chain, address, token);
+        if (price === null) continue;
 
-        successCount++;
         if (!priceMap.has(token)) {
           priceMap.set(token, {});
         }
@@ -200,7 +191,6 @@ export class DataService {
       }
     }
 
-    console.log(`📊 DexScreener Results: ${successCount} prices fetched, ${failCount} failed`);
     return priceMap;
   }
 
@@ -231,7 +221,7 @@ export class DataService {
         .map(([chain, value]) => [chain, Number(value)] as const);
 
       if (sanitizedEntries.length === 0) {
-        console.warn(`⚠️  Skipping ${token}: no live price data returned by DexScreener.`);
+        logger.warn(`Skipping ${token}: no live price data`);
         continue;
       }
 
@@ -244,14 +234,14 @@ export class DataService {
         if (median > 0) {
           const ratio = price / median;
           if (ratio > 20 || ratio < 0.05) {
-            console.warn(`⚠️  Dropping ${token} price on ${chain}: ${price} diverges from median ${median}`);
+            logger.warn(`Dropping ${token} price on ${chain}: ${price} diverges from median ${median}`);
             return false;
           }
         }
 
         if (STABLE_TOKENS.has(token)) {
           if (price < STABLE_PRICE_MIN || price > STABLE_PRICE_MAX) {
-            console.warn(`⚠️  Dropping stablecoin quote for ${token} on ${chain}: ${price}`);
+            logger.warn(`Dropping stablecoin quote for ${token} on ${chain}: ${price}`);
             return false;
           }
         }
@@ -260,7 +250,7 @@ export class DataService {
       });
 
       if (filteredEntries.length === 0) {
-        console.warn(`⚠️  All quotes discarded for ${token} after sanity checks.`);
+        logger.warn(`All quotes discarded for ${token} after sanity checks`);
         continue;
       }
 
@@ -289,13 +279,12 @@ export class DataService {
     const dexPrices: DexPrice[] = [];
     const timestamp = new Date();
 
-    // Import TOKEN_CONTRACTS to get contract addresses
     const { TOKEN_CONTRACTS } = await import('../config/tokens');
 
     for (const chain of SUPPORTED_CHAINS) {
       const chainId = chainIdMap[chain];
       if (!chainId) {
-        console.warn(`No DexScreener chainId mapping for ${chain}`);
+        logger.warn(`No DexScreener chainId mapping for ${chain}`);
         continue;
       }
 
@@ -305,11 +294,10 @@ export class DataService {
           const contractAddr = tokenContracts?.[chain];
 
           if (!contractAddr || contractAddr === 'NATIVE') {
-            // For native tokens, use wrapped token pairs (WETH, WBNB, WMATIC)
             const wrappedAddresses: Record<string, string> = {
-              'ethereum-ETH': '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2', // WETH
-              'bsc-BNB': '0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c', // WBNB
-              'polygon-MATIC': '0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270' // WMATIC
+              'ethereum-ETH': '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2',
+              'bsc-BNB': '0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c',
+              'polygon-MATIC': '0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270'
             };
             const wrappedKey = `${chain}-${symbol}`;
             const wrappedAddr = wrappedAddresses[wrappedKey];
@@ -318,29 +306,24 @@ export class DataService {
               const price = await this.fetchDexPriceForToken(chainId, wrappedAddr, symbol, chain);
               if (price) dexPrices.push({ ...price, timestamp });
             } else {
-              console.warn(`No wrapped address for native token ${symbol} on ${chain}`);
+              logger.warn(`No wrapped address for native token ${symbol} on ${chain}`);
             }
           } else {
-            // Regular ERC20 tokens
             const price = await this.fetchDexPriceForToken(chainId, contractAddr, symbol, chain);
             if (price) dexPrices.push({ ...price, timestamp });
           }
 
-          // Rate limit: 300ms delay between requests to avoid hitting DexScreener limits
           await new Promise(resolve => setTimeout(resolve, 300));
         } catch (err) {
-          console.error(`Error fetching DEX price for ${symbol} on ${chain}:`, err);
+          logger.error(`Error fetching DEX price for ${symbol} on ${chain}`);
         }
       }
     }
 
-    console.info(`Fetched ${dexPrices.length} DEX prices from DexScreener`);
+    logger.info(`Fetched ${dexPrices.length} DEX prices from DexScreener`);
     return dexPrices;
   }
 
-  /**
-   * Helper method to fetch price for a specific token from DexScreener
-   */
   private async fetchDexPriceForToken(
     chainId: string,
     tokenAddress: string,
@@ -352,21 +335,19 @@ export class DataService {
       const response = await axios.get<DexScreenerResponse>(url, { timeout: 10000 });
 
       if (!response.data?.pairs || response.data.pairs.length === 0) {
-        console.warn(`No DEX pairs found for ${symbol} (${tokenAddress}) on ${chain}`);
+        logger.warn(`No DEX pairs found for ${symbol} (${tokenAddress}) on ${chain}`);
         return null;
       }
 
-      // Filter pairs for the specific chain and sort by liquidity
       const chainPairs = response.data.pairs.filter((pair: DexScreenerPair) => 
         pair.chainId === chainId
       );
 
       if (chainPairs.length === 0) {
-        console.warn(`No pairs on ${chainId} for ${symbol}`);
+        logger.warn(`No pairs on ${chainId} for ${symbol}`);
         return null;
       }
 
-      // Sort by liquidity and take the most liquid pair
       const sortedPairs = chainPairs.sort((a: DexScreenerPair, b: DexScreenerPair) => {
         const liqA = a.liquidity?.usd || 0;
         const liqB = b.liquidity?.usd || 0;
@@ -378,18 +359,18 @@ export class DataService {
       const liquidityUsd = bestPair.liquidity?.usd ?? 0;
 
       if (!Number.isFinite(liquidityUsd) || liquidityUsd < MIN_LIQUIDITY_USD) {
-        console.warn(`Dex price skipped for ${symbol} on ${chain}: liquidity ${liquidityUsd}`);
+        logger.warn(`Dex price skipped for ${symbol} on ${chain}: liquidity ${liquidityUsd}`);
         return null;
       }
 
       if (isNaN(priceUsd) || priceUsd <= 0) {
-        console.warn(`Invalid price for ${symbol} on ${chain}: ${bestPair.priceUsd}`);
+        logger.warn(`Invalid price for ${symbol} on ${chain}: ${bestPair.priceUsd}`);
         return null;
       }
 
       if (STABLE_TOKENS.has(symbol as SupportedToken)) {
         if (priceUsd < STABLE_PRICE_MIN || priceUsd > STABLE_PRICE_MAX) {
-          console.warn(`Stablecoin price out of range for ${symbol} on ${chain}: ${priceUsd}`);
+          logger.warn(`Stablecoin price out of range for ${symbol} on ${chain}: ${priceUsd}`);
           return null;
         }
       }
@@ -404,9 +385,9 @@ export class DataService {
       };
     } catch (err: any) {
       if (err.response?.status === 404) {
-        console.warn(`Token ${symbol} (${tokenAddress}) not found on DexScreener for ${chain}`);
+        logger.warn(`Token ${symbol} (${tokenAddress}) not found on DexScreener for ${chain}`);
       } else {
-        console.error(`DexScreener API error for ${symbol} on ${chain}:`, err?.message || err);
+        logger.error(`DexScreener API error for ${symbol} on ${chain}`, { error: err?.message });
       }
       return null;
     }
@@ -489,7 +470,7 @@ export class DataService {
     try {
       const response = await axios.get<BSCGasResponse>(
         this.bscGasUrl,
-        { timeout: 5000 } // Reduced timeout
+        { timeout: 5000 }
       );
 
       return {
@@ -498,8 +479,7 @@ export class DataService {
         timestamp: new Date()
       };
     } catch (error) {
-      console.warn('BSC gas API failed, using fallback value (5 gwei)');
-      // Fallback to reasonable default for BSC (typically 3-5 gwei)
+      logger.warn('BSC gas API failed, using fallback value (5 gwei)');
       return {
         chain: 'bsc',
         gasPrice: 5,

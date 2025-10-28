@@ -1,5 +1,6 @@
 import { createError } from '../middleware/errorMiddleware';
 import { EmailService } from './EmailService';
+import logger from '../utils/logger';
 
 export interface ContactSupportData {
   fullName: string;
@@ -17,15 +18,10 @@ export interface ContactSupportResult {
 }
 
 class ContactSupportService {
-  /**
-   * Submit a support ticket
-   */
   static async submitSupportTicket(data: ContactSupportData): Promise<ContactSupportResult> {
     try {
-      // Generate a unique ticket ID
       const ticketId = this.generateTicketId();
       
-      // Send confirmation email to user
       await EmailService.sendSupportTicketConfirmation(
         data.email,
         data.fullName,
@@ -34,7 +30,6 @@ class ContactSupportService {
         data.priorityLevel
       );
 
-      // Send notification email to support team
       await EmailService.sendSupportTicketNotification(
         data.fullName,
         data.email,
@@ -51,14 +46,11 @@ class ContactSupportService {
         ticketId
       };
     } catch (error) {
-      console.error('ContactSupportService: Error submitting support ticket:', error);
+      logger.error('ContactSupportService: Error submitting support ticket:', error);
       throw createError('Failed to submit support ticket. Please try again.', 500);
     }
   }
 
-  /**
-   * Generate a unique ticket ID
-   */
   private static generateTicketId(): string {
     const timestamp = Date.now().toString(36);
     const randomStr = Math.random().toString(36).substring(2, 8);
