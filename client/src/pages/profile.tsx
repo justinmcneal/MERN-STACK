@@ -316,7 +316,7 @@ const ProfilePage = () => {
       {/* Background */}
       <div className="fixed inset-0 bg-[radial-gradient(ellipse_at_top_left,_var(--tw-gradient-stops))] from-cyan-900/10 via-slate-950 to-purple-900/10"></div>
       
-      <div className="relative z-50 flex h-screen">
+      <div className="relative flex h-screen">
         {/* Sidebar */}
         <ProfileSidebar 
           activeTab={activeTab}
@@ -364,35 +364,36 @@ const ProfilePage = () => {
               />
             </div>
 
-            {/* Security */}
-            <ProfileSecurity
-              twoFactorAuth={twoFactorAuth}
-              onUpdate={handlePreferencesUpdate}
-              isUpdating={preferencesUpdating}
-              className="mt-8"
-            />
+            <div className="mt-8 space-y-6">
+              {/* Security */}
+              <ProfileSecurity
+                twoFactorAuth={twoFactorAuth}
+                onUpdate={handlePreferencesUpdate}
+                isUpdating={preferencesUpdating}
+              />
 
-            {/* Save Button */}
-            <div className="mt-8 bg-slate-800/50 backdrop-blur border border-slate-700/50 rounded-2xl p-6">
-              <div className="flex flex-col items-center gap-4">
-                <button
-                  onClick={handleSaveChanges}
-                  disabled={!hasActualChanges || profileUpdating || preferencesUpdating}
-                  className={`w-full sm:w-auto inline-flex items-center justify-center gap-3 px-8 py-4 rounded-xl font-semibold shadow-lg transition-all duration-300 ${
-                    !hasActualChanges || profileUpdating || preferencesUpdating
-                      ? 'bg-slate-600 text-slate-400 cursor-default opacity-50'
-                      : 'bg-gradient-to-r from-cyan-500 to-purple-600 hover:from-cyan-400 hover:to-purple-500 text-white hover:shadow-cyan-500/25 transform hover:scale-105 cursor-pointer'
-                  }`}
-                >
-                  <Save className="w-5 h-5" />
-                  {profileUpdating || preferencesUpdating ? 'Saving...' : 'Save All Changes'}
-                </button>
-                <p className="text-sm text-slate-400 text-center">
-                  {hasActualChanges 
-                    ? 'You have unsaved changes' 
-                    : 'No changes detected'
-                  }
-                </p>
+              {/* Save Button */}
+              <div className="bg-slate-800/50 backdrop-blur border border-slate-700/50 rounded-2xl p-6">
+                <div className="flex flex-col items-center gap-4">
+                  <button
+                    onClick={handleSaveChanges}
+                    disabled={!hasActualChanges || profileUpdating || preferencesUpdating}
+                    className={`w-full sm:w-auto inline-flex items-center justify-center gap-3 px-8 py-4 rounded-xl font-semibold shadow-lg transition-all duration-300 ${
+                      !hasActualChanges || profileUpdating || preferencesUpdating
+                        ? 'bg-slate-600 text-slate-400 cursor-default opacity-50'
+                        : 'bg-gradient-to-r from-cyan-500 to-purple-600 hover:from-cyan-400 hover:to-purple-500 text-white hover:shadow-cyan-500/25 transform hover:scale-105 cursor-pointer'
+                    }`}
+                  >
+                    <Save className="w-5 h-5" />
+                    {profileUpdating || preferencesUpdating ? 'Saving...' : 'Save All Changes'}
+                  </button>
+                  <p className="text-sm text-slate-400 text-center">
+                    {hasActualChanges 
+                      ? 'You have unsaved changes' 
+                      : 'No changes detected'
+                    }
+                  </p>
+                </div>
               </div>
             </div>
           </main>

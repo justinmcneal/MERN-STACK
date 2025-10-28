@@ -5,6 +5,7 @@ import { useNavigate } from "react-router-dom";
 import { useTwoFactor } from "../../hooks/useTwoFactor";
 import TwoFactorSetupModal from "../ui/TwoFactorSetupModal";
 import TwoFactorDisableModal from "../ui/TwoFactorDisableModal";
+import { createPortal } from "react-dom";
 
 interface ProfileSecurityProps {
   twoFactorAuth: boolean;
@@ -190,24 +191,29 @@ const ProfileSecurity: React.FC<ProfileSecurityProps> = ({
       </div>
 
       {/* Modals */}
-      <TwoFactorSetupModal
-        isOpen={showSetupModal}
-        onClose={() => {
-          setShowSetupModal(false);
-          clearSetupData();
-        }}
-        qrCodeUrl={setupData?.qrCodeUrl || ''}
-        backupCodes={setupData?.backupCodes || []}
-        onVerify={handleVerifySetup}
-        isVerifying={is2FAUpdating}
-      />
+      {createPortal(
+        <>
+          <TwoFactorSetupModal
+            isOpen={showSetupModal}
+            onClose={() => {
+              setShowSetupModal(false);
+              clearSetupData();
+            }}
+            qrCodeUrl={setupData?.qrCodeUrl || ''}
+            backupCodes={setupData?.backupCodes || []}
+            onVerify={handleVerifySetup}
+            isVerifying={is2FAUpdating}
+          />
 
-      <TwoFactorDisableModal
-        isOpen={showDisableModal}
-        onClose={() => setShowDisableModal(false)}
-        onDisable={handleDisable}
-        isDisabling={is2FAUpdating}
-      />
+          <TwoFactorDisableModal
+            isOpen={showDisableModal}
+            onClose={() => setShowDisableModal(false)}
+            onDisable={handleDisable}
+            isDisabling={is2FAUpdating}
+          />
+        </>,
+        document.body
+      )}
     </div>
   );
 };
