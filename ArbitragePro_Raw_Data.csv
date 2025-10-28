@@ -1,0 +1,301 @@
+Timestamp,Blockchain,Token,Token_Price_USD,Manual_Profit_USD,Automated_Profit_USD,Gas_Fee_USD,Profit_After_Fee_USD,Profit_to_Gas_Ratio,Opportunity_Score,Liquidity_USD,Arbitrage_Spread_%,Monitoring_Type,ROI_%,Opportunity_Type,Data_Source,Notes
+2025-01-01 00:00:00,Ethereum,XRP,1123.93,143.1,181.04,13.53,129.57,9.58,49.36,12421185.22,1.45,Manual,11.53,Same-Chain,CoinMarketCap,Fast execution
+2025-01-01 00:00:00,Ethereum,XRP,62.24,145.79,188.25,4.9,183.35,37.42,50.91,9206955.35,0.65,Automated,294.59,Cross-Chain,CoinGecko,"Low gas, stable profit"
+2025-01-02 00:00:00,Ethereum,XRP,1835.75,29.53,47.68,8.34,21.19,2.54,67.36,12255876.81,0.19,Manual,1.15,Cross-Chain,Chainlink,High volatility observed
+2025-01-02 00:00:00,Ethereum,XRP,1822.83,33.87,41.8,21.36,20.44,0.96,97.94,14000427.5,0.94,Automated,1.12,Cross-Chain,CoinGecko,"High gas, moderate spread"
+2025-01-03 00:00:00,Ethereum,XRP,366.55,79.32,85.87,20.47,58.85,2.87,55.53,11387495.31,0.45,Manual,16.06,Same-Chain,CoinMarketCap,Low liquidity risk
+2025-01-03 00:00:00,Ethereum,XRP,2908.77,118.52,165.8,20.15,145.65,7.23,75.87,1859318.49,0.72,Automated,5.01,Cross-Chain,CoinGecko,Fast execution
+2025-01-04 00:00:00,Ethereum,XRP,1166.34,47.99,90.28,8.12,39.87,4.91,56.86,2416462.23,1.98,Manual,3.42,Cross-Chain,CoinMarketCap,Fast execution
+2025-01-04 00:00:00,Ethereum,XRP,2316.85,37.82,43.07,18.38,24.69,1.34,82.41,7810848.84,0.32,Automated,1.07,Cross-Chain,CoinGecko,Low liquidity risk
+2025-01-05 00:00:00,Ethereum,XRP,2589.38,97.26,117.15,1.57,95.69,60.95,58.66,17857042.11,1,Manual,3.7,Cross-Chain,CoinGecko,Fast execution
+2025-01-05 00:00:00,Ethereum,XRP,359.22,109.85,149.09,12.69,136.4,10.75,86.26,1482963.41,0.3,Automated,37.97,Same-Chain,Chainlink,"Low gas, stable profit"
+2025-01-06 00:00:00,Ethereum,XRP,94.77,99.1,118.25,11.52,87.58,7.6,94.45,5347165.14,0.25,Manual,92.41,Cross-Chain,Chainlink,High volatility observed
+2025-01-06 00:00:00,Ethereum,XRP,869.61,32.57,79.41,18.21,61.2,3.36,78,17958620.97,1.12,Automated,7.04,Same-Chain,CoinGecko,Low liquidity risk
+2025-01-07 00:00:00,Ethereum,XRP,2422.42,135.45,154.76,2.61,132.84,50.9,53.68,1132090.48,1.07,Manual,5.48,Cross-Chain,Chainlink,High volatility observed
+2025-01-07 00:00:00,Ethereum,XRP,1252.52,41.1,51.49,7.7,43.79,5.69,96.57,7908962.45,1.95,Automated,3.5,Cross-Chain,Chainlink,High volatility observed
+2025-01-08 00:00:00,Ethereum,XRP,2887.36,45.25,72.63,6.87,38.38,5.59,57.09,1978096.27,0.63,Manual,1.33,Cross-Chain,Chainlink,"Low gas, stable profit"
+2025-01-08 00:00:00,Ethereum,XRP,2724.84,43.54,55.06,11.09,43.97,3.96,99.14,5515113.34,1.48,Automated,1.61,Same-Chain,Chainlink,Fast execution
+2025-01-09 00:00:00,Ethereum,XRP,1103.67,98.52,132.03,12.12,86.4,7.13,45.42,1774727.69,1.22,Manual,7.83,Cross-Chain,CoinGecko,"High gas, moderate spread"
+2025-01-09 00:00:00,Ethereum,XRP,2032.85,12.32,40.36,5.21,35.15,6.75,78.71,18797869.79,0.36,Automated,1.73,Same-Chain,Chainlink,Fast execution
+2025-01-10 00:00:00,Ethereum,XRP,1023.53,25.89,72.5,19.76,6.13,0.31,55.48,11063360.99,0.56,Manual,0.6,Cross-Chain,CoinMarketCap,Fast execution
+2025-01-10 00:00:00,Ethereum,XRP,279.76,135.61,181.13,14.3,166.83,11.67,60.34,17854642.06,1.58,Automated,59.63,Same-Chain,Chainlink,High volatility observed
+2025-01-01 00:00:00,Ethereum,SOL,1926.27,21.78,34.05,20.23,1.55,0.08,76.39,1096170.09,0.41,Manual,0.08,Same-Chain,Chainlink,Fast execution
+2025-01-01 00:00:00,Ethereum,SOL,1646.43,106.87,141.21,5.16,136.05,26.37,82.73,13343025.08,1.71,Automated,8.26,Cross-Chain,Chainlink,Fast execution
+2025-01-02 00:00:00,Ethereum,SOL,1973.01,89.56,98.78,8.37,81.19,9.7,55.91,17948884.55,1.3,Manual,4.12,Same-Chain,Chainlink,"Low gas, stable profit"
+2025-01-02 00:00:00,Ethereum,SOL,2384.54,80.37,111.33,11.16,100.17,8.98,51.71,13263973.62,0.44,Automated,4.2,Cross-Chain,Chainlink,"High gas, moderate spread"
+2025-01-03 00:00:00,Ethereum,SOL,2821.41,143.55,189.72,8.42,135.13,16.05,40.93,19308779.56,1.72,Manual,4.79,Same-Chain,CoinGecko,Fast execution
+2025-01-03 00:00:00,Ethereum,SOL,883.7,63.91,107.21,7.23,99.98,13.83,50.17,11831162.23,0.28,Automated,11.31,Cross-Chain,Chainlink,"Low gas, stable profit"
+2025-01-04 00:00:00,Ethereum,SOL,1845.21,148.61,159.91,11.73,136.88,11.67,92.64,7830331.87,0.66,Manual,7.42,Same-Chain,CoinMarketCap,"Low gas, stable profit"
+2025-01-04 00:00:00,Ethereum,SOL,2428.18,123.42,167.44,20.56,146.88,7.14,70.68,14337370.67,1.61,Automated,6.05,Same-Chain,Chainlink,Fast execution
+2025-01-05 00:00:00,Ethereum,SOL,2670.07,57.32,79.22,2.25,55.07,24.48,74.7,6444283.79,1.22,Manual,2.06,Same-Chain,Chainlink,"High gas, moderate spread"
+2025-01-05 00:00:00,Ethereum,SOL,91.99,15.23,57.25,8.2,49.05,5.98,47.62,12834919.04,0.26,Automated,53.32,Cross-Chain,CoinGecko,Low liquidity risk
+2025-01-06 00:00:00,Ethereum,SOL,155.52,84.39,113.72,14.4,69.99,4.86,83.57,16108537.7,0.61,Manual,45,Same-Chain,CoinGecko,"High gas, moderate spread"
+2025-01-06 00:00:00,Ethereum,SOL,1317.19,20.98,27.12,21.67,5.45,0.25,90.16,3972303.81,0.58,Automated,0.41,Same-Chain,CoinMarketCap,"Low gas, stable profit"
+2025-01-07 00:00:00,Ethereum,SOL,1647.91,110.04,144.75,6.41,103.63,16.17,97.29,8972401.19,0.57,Manual,6.29,Same-Chain,Chainlink,Fast execution
+2025-01-07 00:00:00,Ethereum,SOL,1068.24,116.1,121.75,2.74,119.01,43.43,42.76,10009302.75,0.29,Automated,11.14,Same-Chain,CoinGecko,Fast execution
+2025-01-08 00:00:00,Ethereum,SOL,1475.1,76.29,89.08,9.85,66.44,6.75,63.91,8117639.68,1.29,Manual,4.5,Cross-Chain,CoinMarketCap,High volatility observed
+2025-01-08 00:00:00,Ethereum,SOL,1509.66,129.91,164.55,3.79,160.76,42.42,44.23,18864374.59,1.19,Automated,10.65,Same-Chain,CoinMarketCap,"High gas, moderate spread"
+2025-01-09 00:00:00,Ethereum,SOL,1164.82,100.06,125.68,12.34,87.72,7.11,96.49,4720031.56,0.23,Manual,7.53,Cross-Chain,CoinGecko,High volatility observed
+2025-01-09 00:00:00,Ethereum,SOL,302.78,12.55,21.8,15.42,6.38,0.41,44.27,16474901.17,0.64,Automated,2.11,Same-Chain,CoinMarketCap,Fast execution
+2025-01-10 00:00:00,Ethereum,SOL,354.94,107.54,140.84,19.76,87.78,4.44,84.1,15261680.28,1.63,Manual,24.73,Cross-Chain,Chainlink,"Low gas, stable profit"
+2025-01-10 00:00:00,Ethereum,SOL,2971.52,67.77,89.51,17.5,72.01,4.11,60.45,15266550.29,1.53,Automated,2.42,Same-Chain,CoinGecko,"Low gas, stable profit"
+2025-01-01 00:00:00,Ethereum,MATIC,309.82,136.36,164.1,18.62,117.74,6.32,59.2,18202257.55,0.27,Manual,38,Cross-Chain,CoinMarketCap,Fast execution
+2025-01-01 00:00:00,Ethereum,MATIC,958.28,143.01,190.79,12.97,177.82,13.71,77.91,13777850.67,1.53,Automated,18.56,Cross-Chain,Chainlink,"Low gas, stable profit"
+2025-01-02 00:00:00,Ethereum,MATIC,2374.84,120.55,129.65,11.2,109.35,9.76,43.45,7667385.24,0.32,Manual,4.6,Cross-Chain,CoinMarketCap,"Low gas, stable profit"
+2025-01-02 00:00:00,Ethereum,MATIC,429.4,116.61,149.43,2.41,147.02,61,45.05,14418602.32,0.25,Automated,34.24,Cross-Chain,CoinGecko,Fast execution
+2025-01-03 00:00:00,Ethereum,MATIC,254.97,148.13,169.97,8.43,139.7,16.57,88.77,8148932.13,0.26,Manual,54.79,Same-Chain,CoinGecko,High volatility observed
+2025-01-03 00:00:00,Ethereum,MATIC,2331.55,88.18,112.27,20.41,91.86,4.5,46.67,2069762.24,0.33,Automated,3.94,Same-Chain,CoinMarketCap,High volatility observed
+2025-01-04 00:00:00,Ethereum,MATIC,353.02,100.89,139.46,13.19,87.7,6.65,97.73,5248320.93,1.93,Manual,24.84,Same-Chain,Chainlink,"High gas, moderate spread"
+2025-01-04 00:00:00,Ethereum,MATIC,36.96,145.78,152.72,20.07,132.65,6.61,71.66,19416748.18,1.09,Automated,358.9,Cross-Chain,Chainlink,"Low gas, stable profit"
+2025-01-05 00:00:00,Ethereum,MATIC,1888.38,107.4,132.85,14.18,93.22,6.57,75.06,19057818.2,1.79,Manual,4.94,Same-Chain,Chainlink,High volatility observed
+2025-01-05 00:00:00,Ethereum,MATIC,1367.24,96.82,114.3,4.35,109.95,25.28,67.82,19513501.35,1.97,Automated,8.04,Same-Chain,CoinMarketCap,"Low gas, stable profit"
+2025-01-06 00:00:00,Ethereum,MATIC,2094.64,85.05,103.98,18.34,66.71,3.64,81.08,19046198.35,1.48,Manual,3.18,Cross-Chain,CoinGecko,"High gas, moderate spread"
+2025-01-06 00:00:00,Ethereum,MATIC,1840.44,68.55,115.52,19.51,96.01,4.92,42.71,19758246.46,0.39,Automated,5.22,Same-Chain,Chainlink,Fast execution
+2025-01-07 00:00:00,Ethereum,MATIC,1782.6,63.32,111.97,18.97,44.35,2.34,90.3,2071134.44,1.74,Manual,2.49,Cross-Chain,CoinGecko,Low liquidity risk
+2025-01-07 00:00:00,Ethereum,MATIC,2438.8,149.96,199.81,12.56,187.25,14.91,86.14,9560338.57,0.35,Automated,7.68,Same-Chain,CoinMarketCap,"Low gas, stable profit"
+2025-01-08 00:00:00,Ethereum,MATIC,2862.18,94.86,110.15,15.16,79.7,5.26,77.09,10885846.32,1.57,Manual,2.78,Cross-Chain,CoinGecko,Low liquidity risk
+2025-01-08 00:00:00,Ethereum,MATIC,1560.73,129.31,159.15,12.69,146.46,11.54,92.6,15347607.86,1.28,Automated,9.38,Cross-Chain,CoinMarketCap,"High gas, moderate spread"
+2025-01-09 00:00:00,Ethereum,MATIC,2112.39,39.81,50.95,0.48,39.33,81.94,61.04,18179015.2,0.76,Manual,1.86,Cross-Chain,CoinGecko,"Low gas, stable profit"
+2025-01-09 00:00:00,Ethereum,MATIC,1542.21,119.71,142.55,14.05,128.5,9.15,91.74,10350209.57,0.59,Automated,8.33,Same-Chain,CoinMarketCap,Fast execution
+2025-01-10 00:00:00,Ethereum,MATIC,1377.68,147.2,174.37,7.5,139.7,18.63,78,3432870.94,0.39,Manual,10.14,Same-Chain,CoinMarketCap,Low liquidity risk
+2025-01-10 00:00:00,Ethereum,MATIC,416.91,99.72,112.9,7.88,105.02,13.33,93.81,4653491.36,0.18,Automated,25.19,Same-Chain,Chainlink,Fast execution
+2025-01-01 00:00:00,Ethereum,BNB,507.22,49,61.97,2.13,46.87,22,47.24,10564928.15,1.41,Manual,9.24,Cross-Chain,Chainlink,"High gas, moderate spread"
+2025-01-01 00:00:00,Ethereum,BNB,118.42,121.92,155.18,1.98,153.2,77.37,92.41,16317824.32,1.52,Automated,129.37,Same-Chain,CoinMarketCap,"Low gas, stable profit"
+2025-01-02 00:00:00,Ethereum,BNB,553.97,39.31,60.98,10.98,28.33,2.58,77.1,1696980.85,0.58,Manual,5.11,Same-Chain,CoinMarketCap,"High gas, moderate spread"
+2025-01-02 00:00:00,Ethereum,BNB,2140.19,135.33,163.36,12.04,151.32,12.57,46.43,6115621.39,0.82,Automated,7.07,Cross-Chain,Chainlink,"Low gas, stable profit"
+2025-01-03 00:00:00,Ethereum,BNB,60.7,55.09,69.61,7.47,47.62,6.37,47.19,15994253.53,1.05,Manual,78.45,Cross-Chain,Chainlink,"Low gas, stable profit"
+2025-01-03 00:00:00,Ethereum,BNB,261.22,85.19,116.6,16.81,99.79,5.94,65.9,13272427.59,1.18,Automated,38.2,Same-Chain,CoinMarketCap,Low liquidity risk
+2025-01-04 00:00:00,Ethereum,BNB,1068.61,148.11,180.37,5.45,142.66,26.18,46.11,4544773.46,0.64,Manual,13.35,Cross-Chain,CoinMarketCap,Low liquidity risk
+2025-01-04 00:00:00,Ethereum,BNB,520.53,135.55,144.16,11.87,132.29,11.14,64.62,19419938.23,1.74,Automated,25.41,Cross-Chain,Chainlink,"Low gas, stable profit"
+2025-01-05 00:00:00,Ethereum,BNB,2451.31,46.11,58.8,15.09,31.02,2.06,95.76,15620365.73,0.46,Manual,1.27,Same-Chain,CoinMarketCap,High volatility observed
+2025-01-05 00:00:00,Ethereum,BNB,971.38,69.56,97.4,5.57,91.83,16.49,46.89,3932891.59,1.01,Automated,9.45,Same-Chain,Chainlink,High volatility observed
+2025-01-06 00:00:00,Ethereum,BNB,1598,17.26,37.41,3.15,14.11,4.48,43.8,5838172.44,1.39,Manual,0.88,Same-Chain,CoinGecko,"High gas, moderate spread"
+2025-01-06 00:00:00,Ethereum,BNB,2280.8,93.39,119.61,9.35,110.26,11.79,60.93,3361647.25,1.49,Automated,4.83,Same-Chain,CoinGecko,Fast execution
+2025-01-07 00:00:00,Ethereum,BNB,2815.05,35.37,43.36,16.71,18.66,1.12,74.47,4830919.08,0.41,Manual,0.66,Cross-Chain,Chainlink,Fast execution
+2025-01-07 00:00:00,Ethereum,BNB,493.22,124.04,158.97,11.84,147.13,12.43,61.53,9343563.26,0.82,Automated,29.83,Same-Chain,CoinGecko,Low liquidity risk
+2025-01-08 00:00:00,Ethereum,BNB,1388.31,52.19,90.83,11.39,40.8,3.58,53.93,18222970.11,1.29,Manual,2.94,Same-Chain,CoinMarketCap,"High gas, moderate spread"
+2025-01-08 00:00:00,Ethereum,BNB,351.14,141.58,174.83,7.64,167.19,21.88,48.36,17983959.08,1.6,Automated,47.61,Same-Chain,CoinGecko,High volatility observed
+2025-01-09 00:00:00,Ethereum,BNB,455.45,53.64,69.82,16.78,36.86,2.2,42.01,7499553.23,1.66,Manual,8.09,Cross-Chain,CoinGecko,"High gas, moderate spread"
+2025-01-09 00:00:00,Ethereum,BNB,332.34,128.5,139.24,9.03,130.21,14.42,87.84,14680694.19,1.32,Automated,39.18,Cross-Chain,Chainlink,"High gas, moderate spread"
+2025-01-10 00:00:00,Ethereum,BNB,2082,85.98,102.31,7.88,78.1,9.91,50.9,9778110.27,1.9,Manual,3.75,Same-Chain,CoinGecko,Low liquidity risk
+2025-01-10 00:00:00,Ethereum,BNB,460.48,92.07,119.83,13.82,106.01,7.67,41.09,14236365.65,1.85,Automated,23.02,Cross-Chain,CoinMarketCap,"Low gas, stable profit"
+2025-01-01 00:00:00,Ethereum,ETH,2121.86,31.36,62.29,13.71,17.65,1.29,65.45,9565948.06,0.32,Manual,0.83,Same-Chain,Chainlink,High volatility observed
+2025-01-01 00:00:00,Ethereum,ETH,2954.53,127.45,138.06,20.73,117.33,5.66,92.19,2040471.14,0.74,Automated,3.97,Cross-Chain,Chainlink,Fast execution
+2025-01-02 00:00:00,Ethereum,ETH,2408.66,10.65,30.66,9.05,1.6,0.18,72.24,15012523.71,0.96,Manual,0.07,Same-Chain,CoinGecko,Fast execution
+2025-01-02 00:00:00,Ethereum,ETH,674.2,73.34,84.68,4.09,80.59,19.7,69.9,12031178.66,1.3,Automated,11.95,Cross-Chain,CoinMarketCap,"Low gas, stable profit"
+2025-01-03 00:00:00,Ethereum,ETH,39.78,102.9,115.91,21.63,81.27,3.76,48.92,10541705.2,1.23,Manual,204.3,Cross-Chain,CoinGecko,High volatility observed
+2025-01-03 00:00:00,Ethereum,ETH,201.7,114.99,129.44,20.22,109.22,5.4,52.31,11731981.53,0.22,Automated,54.15,Same-Chain,CoinGecko,High volatility observed
+2025-01-04 00:00:00,Ethereum,ETH,2326.7,73.46,102.06,10,63.46,6.35,64.05,17373926.8,1.9,Manual,2.73,Same-Chain,CoinMarketCap,Fast execution
+2025-01-04 00:00:00,Ethereum,ETH,1120.24,47.9,81.88,9.29,72.59,7.81,41.52,1514823.86,0.52,Automated,6.48,Cross-Chain,CoinMarketCap,"High gas, moderate spread"
+2025-01-05 00:00:00,Ethereum,ETH,693.61,104.06,109.95,2.48,101.58,40.96,87.99,2889386.46,0.56,Manual,14.65,Cross-Chain,Chainlink,Low liquidity risk
+2025-01-05 00:00:00,Ethereum,ETH,2166.94,129.8,172.16,9.03,163.13,18.07,80.09,1247036.55,0.26,Automated,7.53,Cross-Chain,CoinMarketCap,High volatility observed
+2025-01-06 00:00:00,Ethereum,ETH,624.05,13.71,26.87,13.18,0.53,0.04,65.29,5929045.24,0.82,Manual,0.08,Cross-Chain,CoinGecko,High volatility observed
+2025-01-06 00:00:00,Ethereum,ETH,1771.09,47.53,80.62,9.3,71.32,7.67,73.12,15508510.09,0.37,Automated,4.03,Cross-Chain,CoinMarketCap,"High gas, moderate spread"
+2025-01-07 00:00:00,Ethereum,ETH,2605.47,78.24,123.49,18.03,60.21,3.34,65.51,13036086.18,0.59,Manual,2.31,Same-Chain,Chainlink,High volatility observed
+2025-01-07 00:00:00,Ethereum,ETH,418.5,126.89,176.19,11.9,164.29,13.81,50.3,3237270.57,1.2,Automated,39.26,Cross-Chain,Chainlink,"High gas, moderate spread"
+2025-01-08 00:00:00,Ethereum,ETH,822.53,87.58,121.89,18.69,68.89,3.69,52.39,17603911.47,1.24,Manual,8.38,Same-Chain,Chainlink,Low liquidity risk
+2025-01-08 00:00:00,Ethereum,ETH,1801.75,103.11,116,20.59,95.41,4.63,65.13,4159384.01,1.5,Automated,5.3,Cross-Chain,CoinMarketCap,"High gas, moderate spread"
+2025-01-09 00:00:00,Ethereum,ETH,248.85,94.44,110.48,8.85,85.59,9.67,57.32,11761688.17,1,Manual,34.39,Cross-Chain,CoinGecko,High volatility observed
+2025-01-09 00:00:00,Ethereum,ETH,1991.18,141.16,179.13,4.95,174.18,35.19,41.87,10430958.7,1.23,Automated,8.75,Same-Chain,CoinGecko,Fast execution
+2025-01-10 00:00:00,Ethereum,ETH,1003.06,117.93,127.73,1.83,116.1,63.44,83.69,5681638.63,1.66,Manual,11.57,Same-Chain,Chainlink,High volatility observed
+2025-01-10 00:00:00,Ethereum,ETH,2398.35,107.26,124.51,13.34,111.17,8.33,61.66,19054509.72,0.95,Automated,4.64,Same-Chain,CoinGecko,Low liquidity risk
+2025-01-01 00:00:00,BSC,XRP,555.81,85.87,130.15,11.01,74.86,6.8,88.39,5743692.17,1.03,Manual,13.47,Cross-Chain,CoinGecko,Fast execution
+2025-01-01 00:00:00,BSC,XRP,664.02,148.27,195.75,0.69,195.06,282.7,82.33,18394277.65,0.16,Automated,29.38,Same-Chain,CoinMarketCap,High volatility observed
+2025-01-02 00:00:00,BSC,XRP,2092.41,51.63,98.23,14.57,37.06,2.54,96.66,7062908.99,1.67,Manual,1.77,Same-Chain,CoinGecko,"Low gas, stable profit"
+2025-01-02 00:00:00,BSC,XRP,111.5,93.48,108.83,1.9,106.93,56.28,44.62,2241770.48,0.7,Automated,95.9,Same-Chain,Chainlink,"High gas, moderate spread"
+2025-01-03 00:00:00,BSC,XRP,1618.7,120.7,140.04,9.43,111.27,11.8,93.16,17531878.6,0.14,Manual,6.87,Same-Chain,CoinMarketCap,High volatility observed
+2025-01-03 00:00:00,BSC,XRP,2624.17,84.05,131.31,12,119.31,9.94,99.88,10117636.79,1.29,Automated,4.55,Cross-Chain,Chainlink,Fast execution
+2025-01-04 00:00:00,BSC,XRP,2621.09,147.77,187.34,6.32,141.45,22.38,65.28,7737821,0.65,Manual,5.4,Cross-Chain,CoinGecko,High volatility observed
+2025-01-04 00:00:00,BSC,XRP,889.28,42.71,49.6,0.37,49.23,133.05,99.26,5146823.87,1.9,Automated,5.54,Cross-Chain,CoinMarketCap,Low liquidity risk
+2025-01-05 00:00:00,BSC,XRP,2359.14,22.52,46.31,13.2,9.32,0.71,96.68,19832203.9,0.54,Manual,0.4,Cross-Chain,CoinGecko,"High gas, moderate spread"
+2025-01-05 00:00:00,BSC,XRP,2828.22,100.95,133.3,7.74,125.56,16.22,53.84,15812105,0.77,Automated,4.44,Same-Chain,Chainlink,"High gas, moderate spread"
+2025-01-06 00:00:00,BSC,XRP,174,145.67,190.44,13.92,131.75,9.46,99.69,14224391.74,0.39,Manual,75.72,Cross-Chain,Chainlink,High volatility observed
+2025-01-06 00:00:00,BSC,XRP,2447.59,41.42,56.49,8.1,48.39,5.97,75.58,6046400.81,0.35,Automated,1.98,Cross-Chain,CoinMarketCap,"Low gas, stable profit"
+2025-01-07 00:00:00,BSC,XRP,2666.3,143.79,187.59,12.16,131.63,10.82,79.31,8081081.82,0.59,Manual,4.94,Cross-Chain,CoinGecko,"High gas, moderate spread"
+2025-01-07 00:00:00,BSC,XRP,2170.4,79.42,88.07,3.38,84.69,25.06,81,10131144.97,1.23,Automated,3.9,Cross-Chain,Chainlink,"High gas, moderate spread"
+2025-01-08 00:00:00,BSC,XRP,2474.13,58.69,94.2,8.53,50.16,5.88,56.02,17161052.85,1.75,Manual,2.03,Same-Chain,CoinGecko,Fast execution
+2025-01-08 00:00:00,BSC,XRP,2125.23,127.18,163.57,10.23,153.34,14.99,77.12,17565027.03,0.16,Automated,7.22,Cross-Chain,CoinGecko,Low liquidity risk
+2025-01-09 00:00:00,BSC,XRP,2477.54,28.04,48.12,11.18,16.86,1.51,49.65,1121331.56,0.65,Manual,0.68,Cross-Chain,CoinMarketCap,"High gas, moderate spread"
+2025-01-09 00:00:00,BSC,XRP,1850.97,147.37,180.8,3.97,176.83,44.54,78.04,15459530.15,1.13,Automated,9.55,Cross-Chain,Chainlink,Low liquidity risk
+2025-01-10 00:00:00,BSC,XRP,2888.99,57.86,91.33,13.99,43.87,3.14,46.15,6718307.77,1.45,Manual,1.52,Same-Chain,Chainlink,Fast execution
+2025-01-10 00:00:00,BSC,XRP,202.52,91.5,112.06,9.35,102.71,10.99,42.74,15243384.8,0.35,Automated,50.72,Cross-Chain,Chainlink,"Low gas, stable profit"
+2025-01-01 00:00:00,BSC,SOL,2274.91,13.44,19.44,4.92,8.52,1.73,69.32,6198906.66,1.99,Manual,0.37,Same-Chain,CoinGecko,"Low gas, stable profit"
+2025-01-01 00:00:00,BSC,SOL,1278.83,73.19,85.55,11.94,73.61,6.16,81.62,13435713.07,0.62,Automated,5.76,Cross-Chain,CoinMarketCap,"High gas, moderate spread"
+2025-01-02 00:00:00,BSC,SOL,2852.62,31.15,55.61,14.16,16.99,1.2,65.18,19695575.31,0.88,Manual,0.6,Same-Chain,CoinMarketCap,Low liquidity risk
+2025-01-02 00:00:00,BSC,SOL,2682.35,42.19,56.78,0.56,56.22,100.39,79.1,19395675.13,0.45,Automated,2.1,Cross-Chain,CoinGecko,"Low gas, stable profit"
+2025-01-03 00:00:00,BSC,SOL,2605.94,118.72,158.41,12.69,106.03,8.36,85.66,18496109.11,1.27,Manual,4.07,Same-Chain,CoinMarketCap,Low liquidity risk
+2025-01-03 00:00:00,BSC,SOL,2389.71,77.41,87.69,1.97,85.72,43.51,81.13,2219969.8,1.21,Automated,3.59,Cross-Chain,CoinGecko,Low liquidity risk
+2025-01-04 00:00:00,BSC,SOL,807.35,121.66,140.63,6.88,114.78,16.68,40.7,12400390.41,0.65,Manual,14.22,Same-Chain,CoinGecko,Fast execution
+2025-01-04 00:00:00,BSC,SOL,2085.1,130.42,170.51,0.69,169.82,246.12,68.83,3707415.32,1.05,Automated,8.14,Same-Chain,Chainlink,"Low gas, stable profit"
+2025-01-05 00:00:00,BSC,SOL,1854.66,108.35,138.53,0.25,108.1,432.4,59.59,1630859.07,0.25,Manual,5.83,Same-Chain,CoinMarketCap,"High gas, moderate spread"
+2025-01-05 00:00:00,BSC,SOL,1191.07,28.58,59.12,10.37,48.75,4.7,88.04,13092174.74,1.44,Automated,4.09,Cross-Chain,CoinGecko,"High gas, moderate spread"
+2025-01-06 00:00:00,BSC,SOL,95.24,141.07,148.41,8.17,132.9,16.27,82.54,7449553.66,1.65,Manual,139.54,Cross-Chain,Chainlink,"High gas, moderate spread"
+2025-01-06 00:00:00,BSC,SOL,240.8,135.27,164.91,12.28,152.63,12.43,67.14,2550969.66,0.21,Automated,63.38,Same-Chain,CoinGecko,High volatility observed
+2025-01-07 00:00:00,BSC,SOL,741.69,32.34,76.57,3.37,28.97,8.6,98.55,13515447.73,1.05,Manual,3.91,Cross-Chain,Chainlink,High volatility observed
+2025-01-07 00:00:00,BSC,SOL,1666.31,110.69,125.97,14.95,111.02,7.43,98.49,2371769.77,0.16,Automated,6.66,Same-Chain,CoinMarketCap,"High gas, moderate spread"
+2025-01-08 00:00:00,BSC,SOL,773.42,74.77,118.84,10.93,63.84,5.84,84.56,19765341.71,0.18,Manual,8.25,Cross-Chain,CoinGecko,"Low gas, stable profit"
+2025-01-08 00:00:00,BSC,SOL,2601.16,91.01,115.75,10.91,104.84,9.61,69.2,6259728.15,1.23,Automated,4.03,Same-Chain,Chainlink,Low liquidity risk
+2025-01-09 00:00:00,BSC,SOL,2737.13,39.49,72.52,9.51,29.98,3.15,83.99,4413979.07,0.55,Manual,1.1,Cross-Chain,CoinGecko,Low liquidity risk
+2025-01-09 00:00:00,BSC,SOL,2914.2,35.34,78.79,7.43,71.36,9.6,54.83,7825434.02,1.23,Automated,2.45,Same-Chain,Chainlink,Fast execution
+2025-01-10 00:00:00,BSC,SOL,490.99,64.75,113.37,3.95,60.8,15.39,79.4,19426599.86,0.96,Manual,12.38,Cross-Chain,Chainlink,"Low gas, stable profit"
+2025-01-10 00:00:00,BSC,SOL,708.53,20.29,32.93,7.84,25.09,3.2,60.22,12725754.75,1.44,Automated,3.54,Same-Chain,CoinMarketCap,Low liquidity risk
+2025-01-01 00:00:00,BSC,MATIC,501.54,33.47,40.12,11.07,22.4,2.02,79.83,12121732.92,1.75,Manual,4.47,Same-Chain,CoinGecko,Low liquidity risk
+2025-01-01 00:00:00,BSC,MATIC,617.92,25.67,42.81,0.95,41.86,44.06,71.87,9591781.54,1.87,Automated,6.77,Cross-Chain,Chainlink,Low liquidity risk
+2025-01-02 00:00:00,BSC,MATIC,948.81,81.01,87.88,2.31,78.7,34.07,99.2,13143278.82,1.75,Manual,8.29,Cross-Chain,CoinGecko,High volatility observed
+2025-01-02 00:00:00,BSC,MATIC,1364.49,82.18,109.18,10.04,99.14,9.87,48.38,4835215.59,1.38,Automated,7.27,Cross-Chain,CoinMarketCap,"Low gas, stable profit"
+2025-01-03 00:00:00,BSC,MATIC,2909.75,23.15,58.42,6.71,16.44,2.45,92.09,18947670.17,1.4,Manual,0.56,Same-Chain,Chainlink,"High gas, moderate spread"
+2025-01-03 00:00:00,BSC,MATIC,1491.78,96.5,140.6,8.6,132,15.35,41.82,5097827.9,1.35,Automated,8.85,Same-Chain,CoinGecko,"Low gas, stable profit"
+2025-01-04 00:00:00,BSC,MATIC,1181.9,101.17,110.97,9.9,91.27,9.22,99.96,17544315.56,1.59,Manual,7.72,Cross-Chain,CoinMarketCap,Low liquidity risk
+2025-01-04 00:00:00,BSC,MATIC,1701.27,113.38,157.91,6.12,151.79,24.8,59.62,16158459.33,0.93,Automated,8.92,Cross-Chain,CoinMarketCap,"Low gas, stable profit"
+2025-01-05 00:00:00,BSC,MATIC,2453.59,26.83,56.33,0.19,26.64,140.21,59.48,8382603.92,0.95,Manual,1.09,Same-Chain,Chainlink,High volatility observed
+2025-01-05 00:00:00,BSC,MATIC,713.01,62.26,77.49,1.19,76.3,64.12,76.21,8215929.82,1.74,Automated,10.7,Same-Chain,CoinMarketCap,High volatility observed
+2025-01-06 00:00:00,BSC,MATIC,1557.49,77.09,83.24,5.18,71.91,13.88,62.81,12550196.76,1.55,Manual,4.62,Same-Chain,CoinMarketCap,Fast execution
+2025-01-06 00:00:00,BSC,MATIC,2439.05,110.54,158.54,0.37,158.17,427.49,51.75,5626163.63,1.86,Automated,6.48,Same-Chain,Chainlink,"Low gas, stable profit"
+2025-01-07 00:00:00,BSC,MATIC,181.27,140.82,161.64,1.61,139.21,86.47,69.15,16257492.06,1.12,Manual,76.8,Same-Chain,CoinGecko,"High gas, moderate spread"
+2025-01-07 00:00:00,BSC,MATIC,934.27,95.45,132.68,4.16,128.52,30.89,64.81,4447328.61,1.1,Automated,13.76,Cross-Chain,Chainlink,Low liquidity risk
+2025-01-08 00:00:00,BSC,MATIC,2127.28,24.96,55.49,3.92,21.04,5.37,97.78,1824838.12,1.3,Manual,0.99,Same-Chain,CoinGecko,"Low gas, stable profit"
+2025-01-08 00:00:00,BSC,MATIC,2854.23,94.23,136.09,13.27,122.82,9.26,53.68,16957364.75,1.81,Automated,4.3,Same-Chain,Chainlink,Low liquidity risk
+2025-01-09 00:00:00,BSC,MATIC,1060.59,43.16,83.28,4.19,38.97,9.3,89.36,12853327.17,0.96,Manual,3.67,Cross-Chain,CoinMarketCap,"Low gas, stable profit"
+2025-01-09 00:00:00,BSC,MATIC,1760.03,33.52,71.68,12.96,58.72,4.53,53,12534786.69,1.14,Automated,3.34,Cross-Chain,CoinGecko,"High gas, moderate spread"
+2025-01-10 00:00:00,BSC,MATIC,696.23,64.73,96.48,7.5,57.23,7.63,99.27,9135792.68,1.46,Manual,8.22,Same-Chain,CoinGecko,"High gas, moderate spread"
+2025-01-10 00:00:00,BSC,MATIC,2077.46,148.78,159.56,1.65,157.91,95.7,83.46,2627506.74,1.8,Automated,7.6,Cross-Chain,CoinGecko,Fast execution
+2025-01-01 00:00:00,BSC,BNB,576.01,55.27,70.47,5.39,49.88,9.25,44.17,5440529.56,1.13,Manual,8.66,Same-Chain,CoinMarketCap,"Low gas, stable profit"
+2025-01-01 00:00:00,BSC,BNB,2640.3,101.12,130.1,4.93,125.17,25.39,59.98,11597884.93,1.49,Automated,4.74,Cross-Chain,CoinGecko,Fast execution
+2025-01-02 00:00:00,BSC,BNB,1395.88,18.42,48.72,14.37,4.05,0.28,50.52,2836852.54,0.96,Manual,0.29,Cross-Chain,Chainlink,Low liquidity risk
+2025-01-02 00:00:00,BSC,BNB,2268.61,58.66,93.58,11.95,81.63,6.83,95.63,19857186.54,1.86,Automated,3.6,Cross-Chain,CoinMarketCap,Fast execution
+2025-01-03 00:00:00,BSC,BNB,1620.1,127.88,156.32,9.39,118.49,12.62,45.35,15858533.67,1.45,Manual,7.31,Cross-Chain,Chainlink,"Low gas, stable profit"
+2025-01-03 00:00:00,BSC,BNB,108.96,52.44,69.28,5.47,63.81,11.67,45.26,8542648.82,0.95,Automated,58.56,Cross-Chain,Chainlink,High volatility observed
+2025-01-04 00:00:00,BSC,BNB,1801.98,82.2,128.57,7.5,74.7,9.96,99.53,3210961.56,1.65,Manual,4.15,Same-Chain,Chainlink,Fast execution
+2025-01-04 00:00:00,BSC,BNB,1142.18,132.92,176.98,12.11,164.87,13.61,87.4,4296965.78,1.42,Automated,14.43,Same-Chain,CoinMarketCap,Low liquidity risk
+2025-01-05 00:00:00,BSC,BNB,1038.63,146.59,180.43,12.35,134.24,10.87,47.95,12518805.82,1.55,Manual,12.92,Same-Chain,CoinGecko,Low liquidity risk
+2025-01-05 00:00:00,BSC,BNB,524.93,80.36,103.3,2.28,101.02,44.31,62.05,19299187.12,1.14,Automated,19.24,Same-Chain,CoinMarketCap,Low liquidity risk
+2025-01-06 00:00:00,BSC,BNB,2897.48,70.55,89.58,7.64,62.91,8.23,66.37,12772171.14,1.34,Manual,2.17,Cross-Chain,CoinMarketCap,Low liquidity risk
+2025-01-06 00:00:00,BSC,BNB,456.5,18.59,58.72,6.95,51.77,7.45,43.49,19689899.58,0.55,Automated,11.34,Same-Chain,CoinMarketCap,"High gas, moderate spread"
+2025-01-07 00:00:00,BSC,BNB,427.18,26.99,45.64,1.61,25.38,15.76,81.53,16465435.12,1.27,Manual,5.94,Same-Chain,CoinGecko,Low liquidity risk
+2025-01-07 00:00:00,BSC,BNB,919.11,97.35,126.07,6.45,119.62,18.55,47.84,7987427.67,0.89,Automated,13.01,Same-Chain,CoinMarketCap,High volatility observed
+2025-01-08 00:00:00,BSC,BNB,2482.7,112.71,152.33,0.26,112.45,432.5,64.97,15445506.64,0.36,Manual,4.53,Same-Chain,CoinGecko,Fast execution
+2025-01-08 00:00:00,BSC,BNB,1606.16,40.13,45.68,3.69,41.99,11.38,98.55,3084987.77,1.14,Automated,2.61,Cross-Chain,CoinGecko,"High gas, moderate spread"
+2025-01-09 00:00:00,BSC,BNB,1363.4,128.21,137.62,7.37,120.84,16.4,49,8141877.42,0.85,Manual,8.86,Same-Chain,Chainlink,"Low gas, stable profit"
+2025-01-09 00:00:00,BSC,BNB,1378.61,119.9,165.04,14.33,150.71,10.52,87.21,5838741.82,1.7,Automated,10.93,Same-Chain,CoinMarketCap,"Low gas, stable profit"
+2025-01-10 00:00:00,BSC,BNB,115.76,136.25,162.02,9.59,126.66,13.21,79.56,2266388.77,1.08,Manual,109.42,Cross-Chain,CoinGecko,High volatility observed
+2025-01-10 00:00:00,BSC,BNB,450.93,113.24,141.29,10.24,131.05,12.8,42.5,2353877.83,0.12,Automated,29.06,Cross-Chain,Chainlink,High volatility observed
+2025-01-01 00:00:00,BSC,ETH,2869.53,113.25,134.15,4.52,108.73,24.06,60.98,4308077.37,0.29,Manual,3.79,Same-Chain,CoinMarketCap,Low liquidity risk
+2025-01-01 00:00:00,BSC,ETH,1981.08,117.01,133.94,0.41,133.53,325.68,44.93,12868607.81,0.83,Automated,6.74,Cross-Chain,CoinMarketCap,Low liquidity risk
+2025-01-02 00:00:00,BSC,ETH,617.46,26.99,59.67,11.64,15.35,1.32,78.63,16175569.64,0.66,Manual,2.49,Cross-Chain,CoinMarketCap,"High gas, moderate spread"
+2025-01-02 00:00:00,BSC,ETH,2939.92,94.26,125.47,11.25,114.22,10.15,88.71,18633589.17,0.53,Automated,3.89,Cross-Chain,CoinMarketCap,High volatility observed
+2025-01-03 00:00:00,BSC,ETH,1116.81,70.49,95.26,9.23,61.26,6.64,96.58,17851573.1,1.33,Manual,5.49,Same-Chain,CoinMarketCap,"Low gas, stable profit"
+2025-01-03 00:00:00,BSC,ETH,858.08,124.23,167.99,12.71,155.28,12.22,95.14,16997972.5,1.48,Automated,18.1,Cross-Chain,Chainlink,Low liquidity risk
+2025-01-04 00:00:00,BSC,ETH,2329.45,101.86,114.84,8.22,93.64,11.39,99.08,3502846.7,1.48,Manual,4.02,Same-Chain,Chainlink,High volatility observed
+2025-01-04 00:00:00,BSC,ETH,2453.45,39.89,67.65,12.63,55.02,4.36,83.97,6653420.58,1.17,Automated,2.24,Same-Chain,CoinMarketCap,High volatility observed
+2025-01-05 00:00:00,BSC,ETH,2066.81,132.27,165.9,11.44,120.83,10.56,49.6,14802772.59,1.98,Manual,5.85,Cross-Chain,CoinMarketCap,High volatility observed
+2025-01-05 00:00:00,BSC,ETH,297.98,66.21,107.21,3.14,104.07,33.14,73.31,7752306.81,1.59,Automated,34.93,Cross-Chain,CoinMarketCap,"Low gas, stable profit"
+2025-01-06 00:00:00,BSC,ETH,1662.9,10.73,49.97,0.63,10.1,16.03,84.74,7211700.71,0.38,Manual,0.61,Cross-Chain,CoinMarketCap,"Low gas, stable profit"
+2025-01-06 00:00:00,BSC,ETH,917.16,132.73,182.57,5.59,176.98,31.66,66.92,8438988.27,0.88,Automated,19.3,Same-Chain,CoinGecko,"High gas, moderate spread"
+2025-01-07 00:00:00,BSC,ETH,2087.01,10.45,43.33,5.4,5.05,0.94,87.65,13204184.99,0.22,Manual,0.24,Cross-Chain,Chainlink,High volatility observed
+2025-01-07 00:00:00,BSC,ETH,1740.16,88.61,118.84,9.09,109.75,12.07,80.59,10466857.96,0.25,Automated,6.31,Same-Chain,CoinMarketCap,High volatility observed
+2025-01-08 00:00:00,BSC,ETH,176.12,56.79,97.11,10.64,46.15,4.34,87.32,7235662.32,0.92,Manual,26.2,Same-Chain,CoinGecko,High volatility observed
+2025-01-08 00:00:00,BSC,ETH,266.26,40.89,72.81,11.06,61.75,5.58,99.9,13087369.93,1.59,Automated,23.19,Same-Chain,CoinMarketCap,Low liquidity risk
+2025-01-09 00:00:00,BSC,ETH,355.45,67.39,110.18,5.82,61.57,10.58,74.31,7355714.49,0.15,Manual,17.32,Same-Chain,CoinMarketCap,"Low gas, stable profit"
+2025-01-09 00:00:00,BSC,ETH,73.06,126.44,143.73,7.82,135.91,17.38,57.92,17581874.76,1.7,Automated,186.03,Cross-Chain,Chainlink,Low liquidity risk
+2025-01-10 00:00:00,BSC,ETH,558.71,122.37,147.99,7.3,115.07,15.76,48.01,9300163.35,1.49,Manual,20.6,Cross-Chain,Chainlink,"High gas, moderate spread"
+2025-01-10 00:00:00,BSC,ETH,2296.66,32.25,64.71,2.12,62.59,29.52,85.08,2084039.7,0.64,Automated,2.73,Same-Chain,CoinMarketCap,Low liquidity risk
+2025-01-01 00:00:00,Polygon,XRP,785.49,44.58,90.36,2.67,41.91,15.7,56.32,2241956.99,1.03,Manual,5.34,Same-Chain,Chainlink,Low liquidity risk
+2025-01-01 00:00:00,Polygon,XRP,101.32,18.77,64.56,1.52,63.04,41.47,71.95,1414644.54,1.36,Automated,62.22,Same-Chain,CoinMarketCap,Low liquidity risk
+2025-01-02 00:00:00,Polygon,XRP,2890.2,88.42,135.58,0.62,87.8,141.61,65.13,5874071.19,1.34,Manual,3.04,Same-Chain,Chainlink,Low liquidity risk
+2025-01-02 00:00:00,Polygon,XRP,594.69,89.15,115.03,10.21,104.82,10.27,76.51,5281021.67,0.58,Automated,17.63,Cross-Chain,CoinGecko,High volatility observed
+2025-01-03 00:00:00,Polygon,XRP,2551.92,88.57,117.12,1.27,87.3,68.74,91.61,11327226.13,0.26,Manual,3.42,Cross-Chain,CoinGecko,Low liquidity risk
+2025-01-03 00:00:00,Polygon,XRP,1375.17,77.86,90.32,9.93,80.39,8.1,91,13368495.88,1.14,Automated,5.85,Same-Chain,CoinGecko,"Low gas, stable profit"
+2025-01-04 00:00:00,Polygon,XRP,187.29,81.75,123.04,4.86,76.89,15.82,43.12,4129420.72,0.73,Manual,41.05,Same-Chain,CoinMarketCap,High volatility observed
+2025-01-04 00:00:00,Polygon,XRP,2270.38,82.71,96.93,9.23,87.7,9.5,92.77,19714803.47,1.57,Automated,3.86,Cross-Chain,CoinMarketCap,"High gas, moderate spread"
+2025-01-05 00:00:00,Polygon,XRP,81.99,19.13,45.01,9.55,9.58,1,72.32,16619960.05,0.82,Manual,11.68,Same-Chain,CoinMarketCap,Fast execution
+2025-01-05 00:00:00,Polygon,XRP,2326.95,145.03,159.2,5.53,153.67,27.79,57.23,16160369.03,0.85,Automated,6.6,Same-Chain,Chainlink,"High gas, moderate spread"
+2025-01-06 00:00:00,Polygon,XRP,2745.31,84.62,96.73,7.33,77.29,10.54,87.6,6261185.26,1.97,Manual,2.82,Same-Chain,CoinMarketCap,"Low gas, stable profit"
+2025-01-06 00:00:00,Polygon,XRP,422.56,38.28,51.57,9.39,42.18,4.49,79.26,2585817.61,1.78,Automated,9.98,Same-Chain,Chainlink,Fast execution
+2025-01-07 00:00:00,Polygon,XRP,2410.91,80.73,129.25,4.43,76.3,17.22,99.05,17756627.41,0.91,Manual,3.16,Cross-Chain,CoinMarketCap,"Low gas, stable profit"
+2025-01-07 00:00:00,Polygon,XRP,487.12,11.77,41.96,5.57,36.39,6.53,83.16,4560826.94,1.73,Automated,7.47,Same-Chain,Chainlink,"High gas, moderate spread"
+2025-01-08 00:00:00,Polygon,XRP,2457.28,85.71,122.67,3.35,82.36,24.59,68.27,10390036.5,1.67,Manual,3.35,Cross-Chain,CoinGecko,Low liquidity risk
+2025-01-08 00:00:00,Polygon,XRP,1005.96,34.33,71.37,8.68,62.69,7.22,46.04,9556668.6,1.52,Automated,6.23,Same-Chain,CoinMarketCap,Low liquidity risk
+2025-01-09 00:00:00,Polygon,XRP,1953.62,96.93,117.79,8.85,88.08,9.95,68.28,13847373.68,0.72,Manual,4.51,Same-Chain,CoinMarketCap,"High gas, moderate spread"
+2025-01-09 00:00:00,Polygon,XRP,2059.14,19.75,32.62,9,23.62,2.62,53.63,14188860.9,1.07,Automated,1.15,Same-Chain,Chainlink,"Low gas, stable profit"
+2025-01-10 00:00:00,Polygon,XRP,916.28,39.77,46.26,3.24,36.53,11.27,79.19,15980499.52,1.36,Manual,3.99,Cross-Chain,CoinMarketCap,"Low gas, stable profit"
+2025-01-10 00:00:00,Polygon,XRP,781.23,137.01,172.19,5.92,166.27,28.09,46.66,11386316.18,0.82,Automated,21.28,Same-Chain,Chainlink,"High gas, moderate spread"
+2025-01-01 00:00:00,Polygon,SOL,2930.41,25.5,49.51,0.51,24.99,49,84.39,6552146.38,1.83,Manual,0.85,Same-Chain,CoinGecko,High volatility observed
+2025-01-01 00:00:00,Polygon,SOL,2262.01,122.69,128.5,10.11,118.39,11.71,83.6,17582322.95,0.31,Automated,5.23,Cross-Chain,CoinGecko,High volatility observed
+2025-01-02 00:00:00,Polygon,SOL,2111.21,85.7,95.04,2.59,83.11,32.09,40.74,6647518.35,0.67,Manual,3.94,Same-Chain,Chainlink,Low liquidity risk
+2025-01-02 00:00:00,Polygon,SOL,2229.71,16.74,62.37,8.96,53.41,5.96,80.07,2500414.08,0.56,Automated,2.4,Cross-Chain,CoinMarketCap,"High gas, moderate spread"
+2025-01-03 00:00:00,Polygon,SOL,2383.84,14.85,46.08,10.45,4.4,0.42,91.34,12380591.66,0.32,Manual,0.18,Cross-Chain,CoinGecko,"High gas, moderate spread"
+2025-01-03 00:00:00,Polygon,SOL,282.02,137.35,172.46,8.72,163.74,18.78,92.74,7021985.17,0.93,Automated,58.06,Same-Chain,CoinGecko,Low liquidity risk
+2025-01-04 00:00:00,Polygon,SOL,2321.75,94.27,139.43,4.69,89.58,19.1,76.43,5511235.9,1.07,Manual,3.86,Cross-Chain,CoinMarketCap,Low liquidity risk
+2025-01-04 00:00:00,Polygon,SOL,313.12,63.83,90.78,6.87,83.91,12.21,97.03,13047976.6,0.23,Automated,26.8,Same-Chain,CoinGecko,"Low gas, stable profit"
+2025-01-05 00:00:00,Polygon,SOL,763.55,60.66,86.92,0.55,60.11,109.29,48.4,10158780.1,0.47,Manual,7.87,Cross-Chain,Chainlink,Fast execution
+2025-01-05 00:00:00,Polygon,SOL,1832.53,49.3,63.61,5.46,58.15,10.65,40.33,3052489.33,0.74,Automated,3.17,Cross-Chain,CoinGecko,"Low gas, stable profit"
+2025-01-06 00:00:00,Polygon,SOL,2407.86,90.09,118.16,3.13,86.96,27.78,95.91,3162929.48,0.76,Manual,3.61,Cross-Chain,CoinMarketCap,Fast execution
+2025-01-06 00:00:00,Polygon,SOL,1522.48,132.39,159.6,7.39,152.21,20.6,99.57,9014735.39,0.88,Automated,10,Same-Chain,CoinGecko,Fast execution
+2025-01-07 00:00:00,Polygon,SOL,2722.88,109.96,142.32,3.3,106.66,32.32,89.43,13091626.03,0.2,Manual,3.92,Cross-Chain,Chainlink,Fast execution
+2025-01-07 00:00:00,Polygon,SOL,773.19,18.33,50.5,7.23,43.27,5.98,46.87,3299475.01,0.9,Automated,5.6,Same-Chain,Chainlink,Low liquidity risk
+2025-01-08 00:00:00,Polygon,SOL,2253.66,19.94,28.55,3.77,16.17,4.29,96.5,12279555.03,0.12,Manual,0.72,Same-Chain,CoinMarketCap,High volatility observed
+2025-01-08 00:00:00,Polygon,SOL,1908.47,137.86,170.43,9.18,161.25,17.57,83.44,11145381.98,0.37,Automated,8.45,Cross-Chain,CoinMarketCap,"High gas, moderate spread"
+2025-01-09 00:00:00,Polygon,SOL,35.61,69.08,87.36,5.14,63.94,12.44,74.63,7520179.71,1.49,Manual,179.56,Cross-Chain,Chainlink,Low liquidity risk
+2025-01-09 00:00:00,Polygon,SOL,1957.05,128.38,164.54,4.55,159.99,35.16,80.38,9481970.81,1.62,Automated,8.18,Cross-Chain,CoinGecko,Low liquidity risk
+2025-01-10 00:00:00,Polygon,SOL,2467.36,130.06,176.31,4.57,125.49,27.46,59.13,14406131.39,1.41,Manual,5.09,Same-Chain,CoinMarketCap,"High gas, moderate spread"
+2025-01-10 00:00:00,Polygon,SOL,1123.97,33.36,57.73,1.56,56.17,36.01,93.41,13270625.34,1.31,Automated,5,Cross-Chain,CoinGecko,"Low gas, stable profit"
+2025-01-01 00:00:00,Polygon,MATIC,1022.14,20.04,43.47,3.32,16.72,5.04,80.63,19772683.36,0.96,Manual,1.64,Cross-Chain,CoinGecko,High volatility observed
+2025-01-01 00:00:00,Polygon,MATIC,2064.98,29.68,56.53,0.36,56.17,156.03,70.33,1588160.03,0.84,Automated,2.72,Same-Chain,CoinMarketCap,Fast execution
+2025-01-02 00:00:00,Polygon,MATIC,480.49,13.27,52.3,4.85,8.42,1.74,57.35,6965367.63,1.79,Manual,1.75,Same-Chain,CoinMarketCap,Low liquidity risk
+2025-01-02 00:00:00,Polygon,MATIC,1809.03,125.74,175.02,3.08,171.94,55.82,97.67,11286744.54,0.39,Automated,9.5,Cross-Chain,Chainlink,Low liquidity risk
+2025-01-03 00:00:00,Polygon,MATIC,1661.36,85.84,125.13,8.76,77.08,8.8,66.43,2095304.06,0.75,Manual,4.64,Same-Chain,Chainlink,Fast execution
+2025-01-03 00:00:00,Polygon,MATIC,811.11,145.3,175.4,3.69,171.71,46.53,74.83,10289058.8,0.86,Automated,21.17,Cross-Chain,Chainlink,"High gas, moderate spread"
+2025-01-04 00:00:00,Polygon,MATIC,2981.55,133.24,166.29,6.01,127.23,21.17,77.24,10035374.71,1.13,Manual,4.27,Cross-Chain,CoinMarketCap,Fast execution
+2025-01-04 00:00:00,Polygon,MATIC,683.64,144.96,190.89,7.6,183.29,24.12,72,3371595.47,1.61,Automated,26.81,Cross-Chain,CoinMarketCap,High volatility observed
+2025-01-05 00:00:00,Polygon,MATIC,827.66,132.79,180.27,1.62,131.17,80.97,67.76,12185898.92,0.81,Manual,15.85,Same-Chain,CoinGecko,"High gas, moderate spread"
+2025-01-05 00:00:00,Polygon,MATIC,857.71,38.45,77.73,4.1,73.63,17.96,70.68,19634047.53,0.87,Automated,8.58,Same-Chain,Chainlink,High volatility observed
+2025-01-06 00:00:00,Polygon,MATIC,2482.64,117.03,147.84,10.04,106.99,10.66,52.03,17092408.23,1.8,Manual,4.31,Cross-Chain,CoinMarketCap,High volatility observed
+2025-01-06 00:00:00,Polygon,MATIC,187.84,133.69,158.86,5.39,153.47,28.47,77.6,14066718.81,1.47,Automated,81.7,Same-Chain,CoinGecko,"Low gas, stable profit"
+2025-01-07 00:00:00,Polygon,MATIC,2077.75,28.82,47.29,3.81,25.01,6.56,88.27,1168402.42,2,Manual,1.2,Same-Chain,CoinGecko,Fast execution
+2025-01-07 00:00:00,Polygon,MATIC,2030.63,125.99,144.25,0.22,144.03,654.68,84.27,15315130.52,1.56,Automated,7.09,Same-Chain,CoinGecko,"Low gas, stable profit"
+2025-01-08 00:00:00,Polygon,MATIC,1975.79,117.26,160.33,6.47,110.79,17.12,45.32,8735023.29,0.23,Manual,5.61,Cross-Chain,CoinGecko,"High gas, moderate spread"
+2025-01-08 00:00:00,Polygon,MATIC,1046.79,25.54,66.91,9.95,56.96,5.72,44.34,2460379.43,1.05,Automated,5.44,Cross-Chain,CoinMarketCap,"Low gas, stable profit"
+2025-01-09 00:00:00,Polygon,MATIC,2383.65,108.99,116.25,0.83,108.16,130.31,64.17,16266172.12,1.87,Manual,4.54,Same-Chain,CoinGecko,"High gas, moderate spread"
+2025-01-09 00:00:00,Polygon,MATIC,1215.61,136.86,156.33,5.04,151.29,30.02,53.56,7798467.6,1.33,Automated,12.45,Cross-Chain,CoinGecko,Low liquidity risk
+2025-01-10 00:00:00,Polygon,MATIC,369.2,134.41,162.05,4.76,129.65,27.24,75.15,5596701.93,1.46,Manual,35.12,Same-Chain,CoinGecko,"Low gas, stable profit"
+2025-01-10 00:00:00,Polygon,MATIC,2467.69,122.55,152.41,5.5,146.91,26.71,48.57,6401207.77,0.35,Automated,5.95,Same-Chain,Chainlink,Fast execution
+2025-01-01 00:00:00,Polygon,BNB,1888.86,17.61,56.3,3.38,14.23,4.21,40.01,14432553.26,0.22,Manual,0.75,Same-Chain,CoinGecko,High volatility observed
+2025-01-01 00:00:00,Polygon,BNB,2518.1,10.53,26.64,7.8,18.84,2.42,58.98,17011526.14,0.7,Automated,0.75,Cross-Chain,CoinMarketCap,"Low gas, stable profit"
+2025-01-02 00:00:00,Polygon,BNB,2366.9,134.86,159.38,9.56,125.3,13.11,62.64,10382466.77,0.84,Manual,5.29,Cross-Chain,CoinMarketCap,High volatility observed
+2025-01-02 00:00:00,Polygon,BNB,1898.32,108.54,113.74,1.81,111.93,61.84,82.78,19064681.45,1.43,Automated,5.9,Same-Chain,CoinGecko,Low liquidity risk
+2025-01-03 00:00:00,Polygon,BNB,894.51,24.75,64.93,6.79,17.96,2.65,42.89,9221853.58,0.97,Manual,2.01,Same-Chain,CoinGecko,High volatility observed
+2025-01-03 00:00:00,Polygon,BNB,627.04,61.62,83.26,0.62,82.64,133.29,86.05,5027887.04,1.35,Automated,13.18,Cross-Chain,Chainlink,Fast execution
+2025-01-04 00:00:00,Polygon,BNB,1417.11,133.22,147.93,7.14,126.08,17.66,76.47,15033351.7,0.7,Manual,8.9,Cross-Chain,CoinMarketCap,Fast execution
+2025-01-04 00:00:00,Polygon,BNB,1934.68,65.32,102.41,2.15,100.26,46.63,93.41,3118732.03,1.08,Automated,5.18,Cross-Chain,Chainlink,Low liquidity risk
+2025-01-05 00:00:00,Polygon,BNB,803.14,126.97,132.63,4.02,122.95,30.58,60.24,10364427.1,0.87,Manual,15.31,Same-Chain,CoinGecko,Fast execution
+2025-01-05 00:00:00,Polygon,BNB,1593.05,93.32,98.77,4.91,93.86,19.12,97.81,15705836.18,1.57,Automated,5.89,Same-Chain,CoinMarketCap,Low liquidity risk
+2025-01-06 00:00:00,Polygon,BNB,1564.13,146.64,157.29,0.25,146.39,585.56,86.21,1333494.9,0.66,Manual,9.36,Same-Chain,CoinGecko,"High gas, moderate spread"
+2025-01-06 00:00:00,Polygon,BNB,2319.54,82.51,103.17,3.95,99.22,25.12,40.08,17094155.71,0.14,Automated,4.28,Cross-Chain,CoinGecko,"High gas, moderate spread"
+2025-01-07 00:00:00,Polygon,BNB,2695.73,119.65,159.77,4.85,114.8,23.67,63.88,5685469.06,1.02,Manual,4.26,Cross-Chain,Chainlink,Low liquidity risk
+2025-01-07 00:00:00,Polygon,BNB,2242.46,76.33,83.93,10.06,73.87,7.34,96.56,19292598.65,0.24,Automated,3.29,Same-Chain,Chainlink,"Low gas, stable profit"
+2025-01-08 00:00:00,Polygon,BNB,1097.36,41.55,55.36,1.54,40.01,25.98,77.34,16411351.63,1.31,Manual,3.65,Same-Chain,CoinGecko,"High gas, moderate spread"
+2025-01-08 00:00:00,Polygon,BNB,1164.8,104.38,121.08,3.67,117.41,31.99,95.05,14446705.66,0.22,Automated,10.08,Same-Chain,CoinMarketCap,Fast execution
+2025-01-09 00:00:00,Polygon,BNB,442.34,11.1,44.49,4.74,6.36,1.34,48.06,10511467.85,1.39,Manual,1.44,Same-Chain,Chainlink,Fast execution
+2025-01-09 00:00:00,Polygon,BNB,229.18,48.46,89.77,4.86,84.91,17.47,72.79,9465291.14,0.5,Automated,37.05,Cross-Chain,Chainlink,Fast execution
+2025-01-10 00:00:00,Polygon,BNB,150.41,128.11,177.26,8.34,119.77,14.36,91.23,19077166.4,1.99,Manual,79.63,Same-Chain,CoinMarketCap,Fast execution
+2025-01-10 00:00:00,Polygon,BNB,2135.31,147.36,177.99,2.78,175.21,63.03,66.22,19642378.9,0.46,Automated,8.21,Same-Chain,CoinMarketCap,High volatility observed
+2025-01-01 00:00:00,Polygon,ETH,2377.89,137.11,184.58,10.08,127.03,12.6,71.29,10061102.02,1.46,Manual,5.34,Cross-Chain,CoinGecko,"Low gas, stable profit"
+2025-01-01 00:00:00,Polygon,ETH,742.4,99.69,134.69,1.77,132.92,75.1,73.91,1171730.91,0.78,Automated,17.9,Same-Chain,Chainlink,Fast execution
+2025-01-02 00:00:00,Polygon,ETH,2778.62,42.01,75.56,2.39,39.62,16.58,59.3,9145338.4,0.16,Manual,1.43,Same-Chain,CoinGecko,"Low gas, stable profit"
+2025-01-02 00:00:00,Polygon,ETH,1442.93,102.74,113.07,3.08,109.99,35.71,63.87,15459150.55,0.81,Automated,7.62,Same-Chain,CoinGecko,Low liquidity risk
+2025-01-03 00:00:00,Polygon,ETH,1177.68,115.6,161.93,9.99,105.61,10.57,74.63,11717406.55,0.78,Manual,8.97,Same-Chain,CoinGecko,Fast execution
+2025-01-03 00:00:00,Polygon,ETH,1970.06,43.66,57.28,9.65,47.63,4.94,46.11,1684357.55,0.43,Automated,2.42,Same-Chain,CoinMarketCap,High volatility observed
+2025-01-04 00:00:00,Polygon,ETH,2600.38,49.55,97.32,6.14,43.41,7.07,66.2,6367425.25,0.77,Manual,1.67,Cross-Chain,CoinGecko,High volatility observed
+2025-01-04 00:00:00,Polygon,ETH,2682.34,142.5,187.67,4.44,183.23,41.27,86.82,12231475.76,0.45,Automated,6.83,Same-Chain,CoinGecko,"Low gas, stable profit"
+2025-01-05 00:00:00,Polygon,ETH,995.03,129.7,144.02,0.81,128.89,159.12,44.14,16406693.04,1.69,Manual,12.95,Cross-Chain,CoinGecko,"Low gas, stable profit"
+2025-01-05 00:00:00,Polygon,ETH,996.91,107.11,146.81,6.9,139.91,20.28,49.1,9079335.52,0.17,Automated,14.03,Cross-Chain,CoinGecko,High volatility observed
+2025-01-06 00:00:00,Polygon,ETH,384.04,117.18,122.18,4.41,112.77,25.57,71.35,6779775.67,0.68,Manual,29.36,Cross-Chain,Chainlink,Fast execution
+2025-01-06 00:00:00,Polygon,ETH,691.63,10.21,48.03,10.15,37.88,3.73,53.46,9029954.74,0.68,Automated,5.48,Same-Chain,CoinMarketCap,"High gas, moderate spread"
+2025-01-07 00:00:00,Polygon,ETH,976.22,109.77,151.53,1.96,107.81,55.01,62.26,15330716.93,0.85,Manual,11.04,Cross-Chain,CoinMarketCap,"High gas, moderate spread"
+2025-01-07 00:00:00,Polygon,ETH,1772.12,102.54,111.07,5.75,105.32,18.32,82.56,19092213.93,0.18,Automated,5.94,Cross-Chain,Chainlink,"Low gas, stable profit"
+2025-01-08 00:00:00,Polygon,ETH,796.35,94.22,112.57,7.52,86.7,11.53,85.54,8016334.63,1.87,Manual,10.89,Same-Chain,CoinGecko,"Low gas, stable profit"
+2025-01-08 00:00:00,Polygon,ETH,2482.61,107.61,144.75,4.89,139.86,28.6,95.26,6207360.2,1.63,Automated,5.63,Cross-Chain,Chainlink,Fast execution
+2025-01-09 00:00:00,Polygon,ETH,586.12,58.35,78.45,10.28,48.07,4.68,91.39,18994722.68,1.04,Manual,8.2,Cross-Chain,CoinGecko,Low liquidity risk
+2025-01-09 00:00:00,Polygon,ETH,1141.86,32.82,73.2,7.73,65.47,8.47,63.06,14370295.81,1.94,Automated,5.73,Cross-Chain,CoinMarketCap,"Low gas, stable profit"
+2025-01-10 00:00:00,Polygon,ETH,1313.27,42.9,79.62,8.59,34.31,3.99,72.79,14650625,1.74,Manual,2.61,Same-Chain,CoinGecko,"Low gas, stable profit"
+2025-01-10 00:00:00,Polygon,ETH,538.18,122,151.87,4.21,147.66,35.07,47.9,6510865.11,1.76,Automated,27.44,Same-Chain,CoinMarketCap,"High gas, moderate spread"

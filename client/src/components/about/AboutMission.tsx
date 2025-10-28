@@ -12,11 +12,11 @@ const AboutMission = () => {
           <p>
             At <span className="text-cyan-400 font-semibold">ArbiTrage Pro</span>, we're shaping the future of cryptocurrency
             monitoring through our <span className="text-purple-400 font-semibold">Cross-Chain Intelligence platform</span>.
-            Leveraging advanced AI and machine learning algorithms, we provide professionals with
+            Leveraging advanced machine learning algorithms, we provide professionals with
             <span className="text-cyan-400 font-semibold"> real-time, actionable insights across multiple blockchains</span>.
           </p>
           <p>
-            Our platform combines cutting-edge artificial intelligence, sophisticated data processing, and
+            Our platform combines cutting-edge machine learning algorithms, sophisticated data processing, and
             comprehensive analytics to deliver <span className="font-semibold text-slate-200">professional-grade monitoring tools</span>
             for accurate and informed decision-making.
           </p>
@@ -34,10 +34,10 @@ const AboutMission = () => {
           </svg>
         </div>
         <h3 className="text-xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-purple-400 mb-4">
-          LLM-Powered Intelligence
+          ML-Powered Intelligence
         </h3>
         <p className="text-slate-300 text-center">
-          Advanced AI algorithms analyze market patterns and provide real-time, intelligent monitoring insights.
+          Advanced machine learning algorithms analyze market patterns and provide real-time, intelligent monitoring insights.
         </p>
       </div>
     </div>
