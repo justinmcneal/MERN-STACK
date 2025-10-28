@@ -248,15 +248,7 @@ const LegalModal: React.FC<LegalModalProps> = ({ isOpen, type, onClose }) => {
           </div>
         </div>
 
-        {/* Footer */}
-        <div className="border-t border-slate-700/50 p-6 bg-slate-950/50 flex gap-3 justify-end">
-          <button
-            onClick={onClose}
-            className="px-6 py-2 bg-slate-800 hover:bg-slate-700 text-white rounded-lg transition-all duration-200 font-medium"
-          >
-            Close
-          </button>
-        </div>
+        {/* Footer (removed duplicate close button) */}
       </div>
     </div>,
     document.body

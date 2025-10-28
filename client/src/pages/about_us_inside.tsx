@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { useNotifications } from "../hooks/useNotifications";
@@ -56,6 +56,13 @@ const AboutUsInside = () => {
 
   const closeNotifications = () => setNotificationOpen(false);
   const closeProfileDropdown = () => setProfileDropdownOpen(false);
+
+  useEffect(() => {
+    if (sidebarOpen) {
+      closeNotifications();
+      closeProfileDropdown();
+    }
+  }, [sidebarOpen]);
 
   return (
     <>
