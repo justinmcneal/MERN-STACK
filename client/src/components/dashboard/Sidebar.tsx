@@ -10,7 +10,7 @@ const Sidebar: React.FC<{
   const navigate = useNavigate();
 
   const navigation: Array<{ name: string; path: string; icon: typeof BarChart3 }> = [
-    { name: 'Dashboard', path: '/', icon: BarChart3 },
+    { name: 'Dashboard', path: '/dashboard', icon: BarChart3 },
     { name: 'Opportunities', path: '/opportunities', icon: Zap },
     { name: 'Profile', path: '/profile', icon: User },
     { name: 'Contact Support', path: '/contact-support', icon: Phone },
