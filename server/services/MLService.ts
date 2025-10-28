@@ -71,9 +71,12 @@ export class MLService {
       );
 
       return response.data;
-    } catch (error) {
-      logger.error('Failed to get ML prediction');
-      throw new Error('Failed to get ML prediction');
+    } catch (error: any) {
+      const errorMsg = error.code === 'ECONNREFUSED' 
+        ? `ML service not available at ${this.mlServiceUrl}`
+        : error.response?.data?.error || error.message || 'Unknown error';
+      logger.error(`Failed to get ML prediction: ${errorMsg}`);
+      throw new Error(`Failed to get ML prediction: ${errorMsg}`);
     }
   }
 
@@ -91,9 +94,12 @@ export class MLService {
       );
 
       return response.data;
-    } catch (error) {
-      logger.error('Failed to get arbitrage opportunity');
-      throw new Error('Failed to get arbitrage opportunity analysis');
+    } catch (error: any) {
+      const errorMsg = error.code === 'ECONNREFUSED' 
+        ? `ML service not available at ${this.mlServiceUrl}`
+        : error.response?.data?.error || error.message || 'Unknown error';
+      logger.error(`Failed to get arbitrage opportunity: ${errorMsg}`);
+      throw new Error(`Failed to get arbitrage opportunity: ${errorMsg}`);
     }
   }
 
@@ -101,8 +107,8 @@ export class MLService {
     try {
       await axios.get(`${this.mlServiceUrl}/health`, { timeout: 5000 });
       return true;
-    } catch (error) {
-      logger.error('ML service health check failed');
+    } catch (error: any) {
+      logger.error(`ML service health check failed: ${error.code || error.message}`);
       return false;
     }
   }

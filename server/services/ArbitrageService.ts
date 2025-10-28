@@ -1,7 +1,8 @@
-import DataService from './DataService';
-import MLService from './MLService';
-import Token, { type IToken } from '../models/Token';
-import Opportunity, { type IOpportunity } from '../models/Opportunity';
+import { DataService } from './DataService';
+import { MLService } from './MLService';
+import Token, { IToken } from '../models/Token';
+import Opportunity, { IOpportunity } from '../models/Opportunity';
+import logger from '../utils/logger';
 import {
   CHAIN_NATIVE_TOKENS,
   SUPPORTED_TOKENS,
@@ -208,18 +209,7 @@ export async function evaluateOpportunity(
   };
 
   if (anomalyFlags.length > 0) {
-    console.warn(
-      `[ArbitrageService] anomaly detected for ${symbol} ${chainFrom}->${chainTo}: ${anomalyFlags.join(', ')}`,
-      {
-        priceFrom,
-        priceTo,
-        chainFromDexPrice,
-        chainToDexPrice,
-        priceDiffPercent,
-        grossProfitUsd,
-        gasCostUsd
-      }
-    );
+    logger.warn(`Anomaly detected for ${symbol} ${chainFrom}->${chainTo}: ${anomalyFlags.join(', ')}`);
   }
 
   if (anomalyFlags.some((flag) => SEVERE_ANOMALIES.has(flag))) {
@@ -243,7 +233,7 @@ export async function evaluateOpportunity(
       });
       score = Math.max(0, Math.min(1, Number(prediction.score ?? 0)));
     } catch (error) {
-      console.warn(`ML scoring failed for ${symbol} ${chainFrom}->${chainTo}:`, (error as Error)?.message || error);
+      logger.warn(`ML scoring failed for ${symbol} ${chainFrom}->${chainTo}`);
       score = 0;
     }
   }

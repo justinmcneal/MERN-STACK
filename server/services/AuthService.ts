@@ -1,4 +1,3 @@
-// services/AuthService.ts
 import crypto from 'crypto';
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
@@ -8,6 +7,7 @@ import { generateAccessToken, generateRefreshToken } from '../utils/generateToke
 import { createError } from '../middleware/errorMiddleware';
 import { EmailService } from './EmailService';
 import { TokenService } from './TokenService';
+import logger from '../utils/logger';
 
 export interface RegisterData {
   name: string;
@@ -44,26 +44,17 @@ export interface RegistrationResponse {
 
 export class AuthService {
   private static readonly MAX_FAILED_ATTEMPTS = 5;
-  private static readonly LOCK_TIME = 15 * 60 * 1000; // 15 minutes
+  private static readonly LOCK_TIME = 15 * 60 * 1000;
   private static readonly PASSWORD_REGEX = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]).{8,}$/;
 
-  /**
-   * Validate password strength
-   */
   static validatePassword(password: string): boolean {
     return this.PASSWORD_REGEX.test(password);
   }
 
-  /**
-   * Generate CSRF token
-   */
   static generateCSRFToken(): string {
     return crypto.randomBytes(32).toString('hex');
   }
 
-  /**
-   * Set authentication cookies with remember me support
-   */
   static setAuthCookies(res: any, refreshToken: string, csrfToken: string, rememberMe: boolean = false): void {
     const cookieOptions = {
       httpOnly: true,
@@ -71,10 +62,9 @@ export class AuthService {
       sameSite: process.env.NODE_ENV === 'production' ? 'strict' : 'lax' as const,
     };
 
-    // Extended expiry for remember me: 30 days vs 7 days
     const refreshTokenMaxAge = rememberMe 
-      ? 30 * 24 * 60 * 60 * 1000 // 30 days
-      : 7 * 24 * 60 * 60 * 1000; // 7 days
+      ? 30 * 24 * 60 * 60 * 1000
+      : 7 * 24 * 60 * 60 * 1000;
 
     res.cookie('refreshToken', refreshToken, {
       ...cookieOptions,
@@ -88,9 +78,6 @@ export class AuthService {
     });
   }
 
-  /**
-   * Clear authentication cookies
-   */
   static clearAuthCookies(res: any): void {
     res.clearCookie('refreshToken', {
       httpOnly: true,
@@ -104,9 +91,6 @@ export class AuthService {
     });
   }
 
-  /**
-   * Register a new user with email verification
-   */
   static async register(data: RegisterData): Promise<RegistrationResponse> {
     const { name, email, password } = data;
 

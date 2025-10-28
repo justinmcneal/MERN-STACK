@@ -1,6 +1,7 @@
-import * as axios from 'axios';
+import axios from 'axios';
 import fs from 'fs';
 import path from 'path';
+import logger from '../utils/logger';
 import {
   SUPPORTED_TOKENS,
   SUPPORTED_CHAINS,
@@ -9,7 +10,7 @@ import {
   type SupportedToken
 } from '../config/tokens';
 
-const MIN_LIQUIDITY_USD = 1000; // Skip illiquid pools that produce noisy quotes
+const MIN_LIQUIDITY_USD = 1000;
 const STABLE_TOKENS = new Set<SupportedToken>();
 const STABLE_PRICE_MIN = 0.8;
 const STABLE_PRICE_MAX = 1.2;
@@ -23,7 +24,7 @@ interface TokenPrice {
 
 interface GasPrice {
   chain: string;
-  gasPrice: number; // in gwei
+  gasPrice: number;
   timestamp: Date;
 }
 
@@ -101,7 +102,7 @@ export class DataService {
         fs.mkdirSync(this.cacheDir, { recursive: true });
       }
     } catch (err) {
-      console.warn('Failed to ensure cache dir:', err);
+      logger.warn('Failed to ensure cache dir');
     }
   }
 
@@ -213,14 +214,13 @@ export class DataService {
   }
 
   async fetchTokenPrices(): Promise<TokenPrice[]> {
-    console.log('💰 Fetching token prices from DexScreener...');
+    logger.info('Fetching token prices from DexScreener');
     
     const timestamp = new Date();
     const priceMap = await this.fetchDexScreenerPrices();
 
-    // Log summary
     const tokensWithPrices = Array.from(priceMap.keys()).length;
-    console.log(`✅ Retrieved prices for ${tokensWithPrices} tokens from DexScreener`);
+    logger.success(`Retrieved prices for ${tokensWithPrices} tokens from DexScreener`);
 
     const results: TokenPrice[] = [];
 
@@ -279,10 +279,6 @@ export class DataService {
     return results;
   }
 
-  /**
-   * Fetch chain-specific DEX prices from DexScreener API
-   * Maps chain names to DexScreener chain IDs and fetches prices for each token
-   */
   async fetchDexPrices(): Promise<DexPrice[]> {
     const chainIdMap: Record<string, string> = {
       ethereum: 'ethereum',
@@ -431,10 +427,9 @@ export class DataService {
 
       const prices = response.data.blockPrices?.[0]?.estimatedPrices;
       if (!prices || prices.length === 0) {
-        throw new Error('No gas prices found in Blocknative response');
+        throw new Error('No prices available');
       }
 
-      // Find price with 70% confidence, fallback to first
       let gasPrice = prices[0].maxFeePerGas;
       const confidentPrice = prices.find(p => p.confidence === 70);
       if (confidentPrice) {
@@ -447,25 +442,27 @@ export class DataService {
         timestamp: new Date()
       };
     } catch (error) {
-      console.error('Error fetching Ethereum gas price from Blocknative:', error);
-      // Fallback to Etherscan gas oracle if API key provided or unauthenticated
+      logger.error('Error fetching Ethereum gas price from Blocknative');
       try {
-        const etherscanKey = process.env.ETHERSCAN_API_KEY;
-        const params: any = { module: 'gastracker', action: 'gasoracle' };
-        if (etherscanKey) params.apikey = etherscanKey;
-        const resp = await (axios as any).get(this.etherscanGasUrl, { params, timeout: 8000 });
-        const result = resp.data?.result;
-        const safeGas = Number(result?.SafeGasPrice || result?.ProposeGasPrice || result?.FastGasPrice) || 0;
-        if (safeGas === 0) throw new Error('Etherscan returned no gas price');
+        const apiKey = process.env.ETHERSCAN_API_KEY;
+        const url = apiKey
+          ? `${this.etherscanGasUrl}?module=gastracker&action=gasoracle&apikey=${apiKey}`
+          : `${this.etherscanGasUrl}?module=gastracker&action=gasoracle`;
+
+        const response = await axios.get(url, { timeout: 10000 });
+        const result = (response.data as any)?.result;
+        if (!result?.FastGasPrice) {
+          throw new Error('Invalid Etherscan response');
+        }
 
         return {
           chain: 'ethereum',
-          gasPrice: safeGas,
+          gasPrice: Number(result.FastGasPrice),
           timestamp: new Date()
         };
       } catch (esErr) {
-        console.error('Etherscan fallback failed:', esErr);
-        throw new Error('Failed to fetch Ethereum gas price');
+        logger.error('Etherscan gas oracle also failed');
+        throw new Error('Failed to fetch Ethereum gas price from all sources');
       }
     }
   }
@@ -483,7 +480,7 @@ export class DataService {
         timestamp: new Date()
       };
     } catch (error) {
-      console.error('Error fetching Polygon gas price:', error);
+      logger.error('Error fetching Polygon gas price');
       throw new Error('Failed to fetch Polygon gas price');
     }
   }
@@ -521,7 +518,7 @@ export class DataService {
 
       return [ethereum, polygon, bsc];
     } catch (error) {
-      console.error('Error fetching gas prices:', error);
+      logger.error('Error fetching gas prices');
       throw new Error('Failed to fetch gas prices');
     }
   }
