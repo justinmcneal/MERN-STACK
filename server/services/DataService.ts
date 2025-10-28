@@ -39,6 +39,16 @@ interface BSCGasResponse {
   standard: number;
 }
 
+interface BscScanGasOracleResponse {
+  status: string;
+  message?: string;
+  result?: {
+    SafeGasPrice?: string;
+    ProposeGasPrice?: string;
+    FastGasPrice?: string;
+  };
+}
+
 interface BlocknativeResponse {
   blockPrices: Array<{
     estimatedPrices: Array<{
@@ -462,25 +472,64 @@ export class DataService {
     }
   }
 
+  private async fetchBscScanGasPrice(): Promise<GasPrice> {
+    const apiKey = process.env.BSCSCAN_API_KEY;
+    const url = apiKey
+      ? `${API_ENDPOINTS.BSCSCAN}?module=gastracker&action=gasoracle&apikey=${apiKey}`
+      : `${API_ENDPOINTS.BSCSCAN}?module=gastracker&action=gasoracle`;
+
+    const response = await axios.get<BscScanGasOracleResponse>(url, {
+      timeout: API_TIMEOUTS.DEFAULT
+    });
+
+    if (response.data.status !== '1' || !response.data.result) {
+      throw new Error('Invalid BscScan gas oracle response');
+    }
+
+    const candidate = response.data.result.ProposeGasPrice
+      ?? response.data.result.FastGasPrice
+      ?? response.data.result.SafeGasPrice;
+
+    const gasPrice = Number(candidate);
+    if (!candidate || Number.isNaN(gasPrice)) {
+      throw new Error('BscScan gas oracle returned non-numeric value');
+    }
+
+    return {
+      chain: 'bsc',
+      gasPrice,
+      timestamp: new Date()
+    };
+  }
+
   async fetchBSCGasPrice(): Promise<GasPrice> {
     try {
-      const response = await axios.get<BSCGasResponse>(
-        API_ENDPOINTS.BSC_GAS,
-        { timeout: API_TIMEOUTS.SHORT }
-      );
+      return await this.fetchBscScanGasPrice();
+    } catch (primaryError) {
+      logger.warn('BscScan gas oracle failed, falling back to legacy BSC endpoint', primaryError);
+      try {
+        const response = await axios.get<BSCGasResponse>(
+          API_ENDPOINTS.BSC_GAS,
+          { timeout: API_TIMEOUTS.SHORT }
+        );
 
-      return {
-        chain: 'bsc',
-        gasPrice: response.data.standard,
-        timestamp: new Date()
-      };
-    } catch (error) {
-      logger.warn('BSC gas API failed, using fallback value (5 gwei)');
-      return {
-        chain: 'bsc',
-        gasPrice: 5,
-        timestamp: new Date()
-      };
+        if (typeof response.data?.standard !== 'number') {
+          throw new Error('Legacy BSC gas endpoint returned invalid data');
+        }
+
+        return {
+          chain: 'bsc',
+          gasPrice: response.data.standard,
+          timestamp: new Date()
+        };
+      } catch (secondaryError) {
+        logger.warn('Legacy BSC gas API failed, using fallback value (5 gwei)', secondaryError);
+        return {
+          chain: 'bsc',
+          gasPrice: 5,
+          timestamp: new Date()
+        };
+      }
     }
   }
 

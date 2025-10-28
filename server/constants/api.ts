@@ -2,6 +2,7 @@ export const API_ENDPOINTS = {
   DEXSCREENER: 'https://api.dexscreener.com/latest/dex',
   POLYGON_GAS: 'https://gasstation.polygon.technology/v2',
   BSC_GAS: 'https://bscgas.info/gas',
+  BSCSCAN: 'https://api.bscscan.com/api',
   BLOCKNATIVE: 'https://api.blocknative.com/gasprices/blockprices',
   ETHERSCAN: 'https://api.etherscan.io/api',
   COINGECKO: 'https://api.coingecko.com/api/v3',

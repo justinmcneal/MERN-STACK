@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-
+import { useAuth } from "../context/AuthContext";
+import { useNotifications } from "../hooks/useNotifications";
 import AboutFooter from "../components/about/AboutFooter";
 import AboutHero from "../components/about/AboutHero";
 import AboutMission from "../components/about/AboutMission";
@@ -8,9 +9,7 @@ import AboutTeam from "../components/about/AboutTeam";
 import AboutTechnology from "../components/about/AboutTechnology";
 import AboutInsideHeader from "../components/aboutInside/AboutInsideHeader";
 import AboutInsideLayout from "../components/aboutInside/AboutInsideLayout";
-import { ABOUT_INSIDE_NOTIFICATIONS } from "../components/aboutInside/constants";
 import Sidebar from "../components/dashboard/Sidebar";
-import { useAuth } from "../context/AuthContext";
 
 const AboutUsInside = () => {
   const navigate = useNavigate();
@@ -20,12 +19,14 @@ const AboutUsInside = () => {
   const [notificationOpen, setNotificationOpen] = useState(false);
   const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
 
+  const { notifications, unreadCount, markAsRead, markAllAsRead, clearAllNotifications } = useNotifications(10, 3600000);
+
   const handleLogout = async () => {
     try {
       await logout();
       navigate("/");
-    } catch (error) {
-      console.error("Logout failed:", error);
+    } catch {
+      /* Error handled by auth context */
     }
   };
 
@@ -73,7 +74,7 @@ const AboutUsInside = () => {
         >
           <AboutInsideHeader
             title="About Us"
-            notifications={ABOUT_INSIDE_NOTIFICATIONS}
+            notifications={notifications}
             notificationOpen={notificationOpen}
             onNotificationToggle={toggleNotifications}
             onNotificationClose={closeNotifications}
@@ -84,6 +85,10 @@ const AboutUsInside = () => {
             onNavigate={handleNavigate}
             onLogout={handleLogout}
             userName={user?.name}
+            unreadCount={unreadCount}
+            onMarkAsRead={markAsRead}
+            onMarkAllAsRead={markAllAsRead}
+            onClearAll={clearAllNotifications}
           />
 
           <main className="flex-1 overflow-y-auto p-4 lg:p-6">

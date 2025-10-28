@@ -24,6 +24,32 @@ const OpportunitiesMainContent: React.FC<OpportunitiesMainContentProps> = ({
   const [minProfit, setMinProfit] = useState(1);
   const [activeView, setActiveView] = useState(TABLE_VIEW_OPTIONS[0]);
 
+  // Filter opportunities based on selected filters
+  const filteredOpportunities = React.useMemo(() => {
+    return opportunities.filter(opp => {
+      // Filter by token
+      if (selectedToken !== 'All Tokens' && opp.token !== selectedToken) {
+        return false;
+      }
+
+      // Filter by chain pair
+      if (selectedChainPair !== 'All Chain Pairs') {
+        const chainPair = `${opp.from} → ${opp.to}`;
+        if (chainPair !== selectedChainPair) {
+          return false;
+        }
+      }
+
+      // Filter by minimum profit
+      const profitValue = parseFloat(opp.estProfit.replace(/[$,]/g, ''));
+      if (profitValue < minProfit) {
+        return false;
+      }
+
+      return true;
+    });
+  }, [opportunities, selectedToken, selectedChainPair, minProfit]);
+
   const handleResetFilters = () => {
     setSelectedToken(tokenOptions[0]);
     setSelectedChainPair(chainOptions[0]);
@@ -49,7 +75,7 @@ const OpportunitiesMainContent: React.FC<OpportunitiesMainContentProps> = ({
       />
 
       <OpportunitiesTable
-        opportunities={opportunities}
+        opportunities={filteredOpportunities}
         activeView={activeView}
         onViewChange={setActiveView}
         viewOptions={TABLE_VIEW_OPTIONS}

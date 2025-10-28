@@ -16,18 +16,20 @@ interface ProfileSecurityProps {
 const ToggleSwitch = ({ 
   enabled, 
   onChange, 
-  disabled 
+  disabled,
+  className = ""
 }: { 
   enabled: boolean; 
   onChange: () => void;
   disabled?: boolean;
+  className?: string;
 }) => (
   <button
     onClick={onChange}
     disabled={disabled}
     className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors disabled:opacity-50 ${
       enabled ? 'bg-cyan-500' : 'bg-slate-600'
-    }`}
+    } ${className}`}
   >
     <span
       className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
@@ -139,7 +141,7 @@ const ProfileSecurity: React.FC<ProfileSecurityProps> = ({
 
         {/* Two-Factor Authentication */}
         <div className="p-4 bg-slate-700/30 border border-slate-600/50 rounded-xl">
-          <div className="flex items-start justify-between mb-3">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between mb-3">
             <div className="flex-1">
               <h3 className="text-sm font-semibold text-slate-200 mb-1">Two-Factor Authentication</h3>
               <p className="text-xs text-slate-400">
@@ -153,6 +155,7 @@ const ProfileSecurity: React.FC<ProfileSecurityProps> = ({
               enabled={status?.enabled || false}
               onChange={handleTwoFactorToggle}
               disabled={isUpdating || is2FAUpdating || isLoading}
+              className="self-start sm:self-auto"
             />
           </div>
           

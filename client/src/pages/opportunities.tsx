@@ -1,61 +1,23 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import DashboardLayout from "../components/dashboard/DashboardLayout";
 import Sidebar from "../components/dashboard/Sidebar";
 import OpportunitiesHeader from "../components/opportunities/OpportunitiesHeader";
 import OpportunitiesMainContent from "../components/opportunities/OpportunitiesMainContent";
 import RangeSliderStyles from "../components/opportunities/RangeSliderStyles";
-import type { NotificationItem, OpportunityItem } from "../components/opportunities/types";
 import { useAuth } from "../context/AuthContext";
+import { usePreferences } from "../hooks/usePreferences";
+import useOpportunities from "../hooks/useOpportunities";
+import { useNotifications } from "../hooks/useNotifications";
+import type { OpportunityItem } from "../components/opportunities/types";
 
-const NOTIFICATIONS: NotificationItem[] = [
-  {
-    type: "price",
-    title: "Price Target Hit",
-    pair: "ETH/XRP",
-    target: "$0.45",
-    current: "$0.4523",
-    time: "now",
-  },
-  {
-    type: "arbitrage",
-    title: "New Arbitrage Alert",
-    details: "BNB on Uniswap → BNB on Sushiswap = +2.8% spread",
-    profit: "$567",
-    gas: "$15",
-    score: 91,
-    time: "now",
-  },
-  {
-    type: "price",
-    title: "Price Target Hit",
-    pair: "ETH/XRP",
-    target: "$0.45",
-    current: "$0.4523",
-    time: "36m ago",
-  },
-  {
-    type: "arbitrage",
-    title: "New Arbitrage Alert",
-    details: "BNB on Uniswap → BNB on Sushiswap = +2.8% spread",
-    profit: "$567",
-    gas: "$15",
-    score: 91,
-    time: "1h ago",
-  },
-];
-
-const OPPORTUNITIES: OpportunityItem[] = [
-  { token: "ETH", from: "Ethereum", to: "Polygon", priceDiff: "+2.5%", estProfit: "$50", roi: "95%", color: "emerald" },
-  { token: "XRP", from: "BSC", to: "Polygon", priceDiff: "+1.8%", estProfit: "$45", roi: "85%", color: "emerald" },
-  { token: "SOL", from: "Ethereum", to: "BSC", priceDiff: "+2.1%", estProfit: "$60", roi: "88%", color: "emerald" },
-  { token: "BNB", from: "BSC", to: "Ethereum", priceDiff: "+3.2%", estProfit: "$120", roi: "91%", color: "emerald" },
-  { token: "MATIC", from: "Polygon", to: "Ethereum", priceDiff: "+2.8%", estProfit: "$20", roi: "87%", color: "emerald" },
-  { token: "DOT", from: "Polkadot", to: "Solana", priceDiff: "+1.4%", estProfit: "$105", roi: "76%", color: "yellow" },
-];
-
-const TOKEN_FILTER_OPTIONS = ["All Tokens", "BTC", "ETH", "BNB", "MATIC", "XRP", "SOL"];
-const CHAIN_FILTER_OPTIONS = ["All Chain Pairs", "Ethereum → Polygon", "BSC → Ethereum", "Polygon → BSC"];
+const capitalizeChain = (chain: string): string => {
+  if (!chain) return 'Unknown';
+  return chain
+    .split(/[-_\s]/)
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(' ');
+};
 
 const OpportunitiesPage: React.FC = () => {
   const navigate = useNavigate();
@@ -65,12 +27,79 @@ const OpportunitiesPage: React.FC = () => {
   const [notificationOpen, setNotificationOpen] = useState(false);
   const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
 
+  const { preferences } = usePreferences();
+  const thresholds = preferences?.alertThresholds;
+
+  const pollInterval = 3600000;
+
+  const { notifications, unreadCount, markAsRead, markAllAsRead, clearAllNotifications } = useNotifications(10, pollInterval);
+
+  const opportunityQuery = useMemo(() => {
+    if (!preferences || !thresholds) {
+      return { status: 'active', sortBy: 'score', sortOrder: 'desc' as const, limit: 100 };
+    }
+
+    return {
+      status: 'active',
+      sortBy: 'score',
+      sortOrder: 'desc' as const,
+      limit: 100,
+      minProfit: thresholds.minProfit,
+      maxGasCost: thresholds.maxGasCost,
+      minROI: thresholds.minROI,
+      minScore: thresholds.minScore
+    };
+  }, [preferences, thresholds]);
+
+  const { opportunities } = useOpportunities({ pollIntervalMs: pollInterval, query: opportunityQuery });
+
+  const mappedOpportunities: OpportunityItem[] = useMemo(() => {
+    if (!opportunities || opportunities.length === 0) return [];
+
+    return opportunities
+      .filter(opp => !opp.flagged && opp.netProfitUsd > 0)
+      .map(opp => {
+        const roi = opp.roi || 0;
+        const color = roi >= 90 ? 'emerald' : roi >= 75 ? 'yellow' : 'orange';
+
+        return {
+          token: opp.tokenSymbol,
+          from: capitalizeChain(opp.chainFrom),
+          to: capitalizeChain(opp.chainTo),
+          priceDiff: `+${opp.priceDiffPercent?.toFixed(1) || '0'}%`,
+          estProfit: `$${opp.netProfitUsd.toFixed(0)}`,
+          roi: `${roi.toFixed(0)}%`,
+          color
+        };
+      });
+  }, [opportunities]);
+
+  const tokenOptions = useMemo(() => {
+    if (!opportunities || opportunities.length === 0) {
+      return ['All Tokens'];
+    }
+
+    const uniqueTokens = new Set(opportunities.map(opp => opp.tokenSymbol));
+    return ['All Tokens', ...Array.from(uniqueTokens).sort()];
+  }, [opportunities]);
+
+  const chainOptions = useMemo(() => {
+    if (!opportunities || opportunities.length === 0) {
+      return ['All Chain Pairs'];
+    }
+
+    const uniquePairs = new Set(
+      opportunities.map(opp => `${capitalizeChain(opp.chainFrom)} → ${capitalizeChain(opp.chainTo)}`)
+    );
+    return ['All Chain Pairs', ...Array.from(uniquePairs).sort()];
+  }, [opportunities]);
+
   const handleLogout = async () => {
     try {
       await logout();
       navigate("/");
-    } catch (error) {
-      console.error("Logout failed:", error);
+    } catch {
+      /* Error handled by auth context */
     }
   };
 
@@ -100,14 +129,12 @@ const OpportunitiesPage: React.FC = () => {
 
   return (
     <DashboardLayout>
-      {/* Sidebar */}
       <Sidebar 
         sidebarOpen={sidebarOpen} 
         setSidebarOpen={setSidebarOpen} 
         activeTab="Opportunities" 
       />
 
-      {/* Main Content */}
       <div
         className={`flex-1 overflow-y-auto transition-all duration-300 ${
           sidebarOpen ? "fixed inset-0 backdrop-blur-5xl bg-black/60 z-40 lg:static lg:bg-transparent lg:backdrop-blur-none" : ""
@@ -118,10 +145,9 @@ const OpportunitiesPage: React.FC = () => {
           }
         }}
       >
-        {/* Header */}
         <OpportunitiesHeader
           title="Opportunities"
-          notifications={NOTIFICATIONS}
+          notifications={notifications}
           notificationOpen={notificationOpen}
           onNotificationToggle={toggleNotifications}
           onNotificationClose={() => setNotificationOpen(false)}
@@ -132,17 +158,19 @@ const OpportunitiesPage: React.FC = () => {
           onNavigate={handleNavigate}
           onLogout={handleLogout}
           userName={user?.name}
+          unreadCount={unreadCount}
+          onMarkAsRead={markAsRead}
+          onMarkAllAsRead={markAllAsRead}
+          onClearAll={clearAllNotifications}
         />
 
-        {/* Main Opportunities Content */}
         <OpportunitiesMainContent
-          opportunities={OPPORTUNITIES}
-          tokenOptions={TOKEN_FILTER_OPTIONS}
-          chainOptions={CHAIN_FILTER_OPTIONS}
+          opportunities={mappedOpportunities}
+          tokenOptions={tokenOptions}
+          chainOptions={chainOptions}
         />
       </div>
 
-      {/* Mobile Sidebar Overlay */}
       {sidebarOpen && (
         <div
           className="fixed inset-0 bg-black/50 z-40 lg:hidden"
@@ -150,7 +178,6 @@ const OpportunitiesPage: React.FC = () => {
         />
       )}
 
-      {/* Range Slider Styles */}
       <RangeSliderStyles />
     </DashboardLayout>
   );

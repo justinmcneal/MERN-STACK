@@ -5,6 +5,8 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 
 export type NotificationItem = {
+  id: string;
+  isRead: boolean;
   type: 'price' | 'arbitrage';
   title: string;
   pair?: string;
@@ -23,10 +25,67 @@ const DashboardHeader: React.FC<{
   onNotificationToggle: () => void;
   profileDropdownOpen: boolean;
   onProfileDropdownToggle: () => void;
+  onNotificationClose?: () => void;
   notifications: NotificationItem[];
-}> = ({ onSidebarToggle, notificationOpen, onNotificationToggle, profileDropdownOpen, onProfileDropdownToggle, notifications }) => {
+  unreadCount?: number;
+  onMarkAsRead?: (alertIds: string[]) => void;
+  onMarkAllAsRead?: () => void;
+  onClearAll?: () => void;
+}> = ({
+  onSidebarToggle,
+  notificationOpen,
+  onNotificationToggle,
+  profileDropdownOpen,
+  onProfileDropdownToggle,
+  onNotificationClose,
+  notifications,
+  unreadCount,
+  onMarkAsRead,
+  onMarkAllAsRead,
+  onClearAll
+}) => {
   const navigate = useNavigate();
   const { user, logout } = useAuth();
+  const displayCount = unreadCount ?? notifications.filter(n => !n.isRead).length;
+
+  const handleNotificationClick = (notificationId: string) => {
+    console.log('[notifications] Dashboard notification clicked', notificationId);
+    if (onMarkAsRead) {
+      console.log('[notifications] Calling onMarkAsRead from Dashboard header');
+      onMarkAsRead([notificationId]);
+    } else {
+      console.error('[notifications] onMarkAsRead handler missing in Dashboard header');
+    }
+  };
+
+  const handleMarkAllAsRead = () => {
+    console.log('[notifications] Dashboard mark-all button clicked');
+    if (onMarkAllAsRead) {
+      console.log('[notifications] Calling onMarkAllAsRead from Dashboard header');
+      onMarkAllAsRead();
+    } else {
+      console.error('[notifications] onMarkAllAsRead handler missing in Dashboard header');
+    }
+  };
+
+  const handleClearAll = () => {
+    console.log('[notifications] Dashboard clear-all button clicked');
+    if (onClearAll) {
+      console.log('[notifications] Calling onClearAll from Dashboard header');
+      onClearAll();
+    } else {
+      console.error('[notifications] onClearAll handler missing in Dashboard header');
+    }
+  };
+
+  const handleViewAll = () => {
+    navigate('/all-notifications');
+    if (onNotificationClose) {
+      onNotificationClose();
+    } else {
+      onNotificationToggle();
+    }
+  };
 
   const handleLogout = async () => {
     try {
@@ -51,7 +110,9 @@ const DashboardHeader: React.FC<{
           <div className="relative">
             <button onClick={onNotificationToggle} className="relative p-2 rounded-lg bg-slate-800/50 border border-slate-700/50 hover:bg-slate-700/50 transition-all">
               <svg className="w-5 h-5 text-yellow-400" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C10.343 2 9 3.343 9 5v1.07C6.164 6.562 4 9.138 4 12v5l-1 1v1h18v-1l-1-1v-5c0-2.862-2.164-5.438-5-5.93V5c0-1.657-1.343-3-3-3zm0 20a3 3 0 003-3H9a3 3 0 003 3z"/></svg>
-              <div className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-[10px] font-bold text-white rounded-full flex items-center justify-center">{notifications.length}</div>
+              {displayCount > 0 && (
+                <div className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-[10px] font-bold text-white rounded-full flex items-center justify-center">{displayCount}</div>
+              )}
             </button>
 
             {notificationOpen && createPortal(
@@ -62,15 +123,26 @@ const DashboardHeader: React.FC<{
                     <span className="font-semibold text-slate-200">Notifications</span>
                   </div>
                   <div className="flex gap-6">
-                    <button className="text-xs text-slate-400 hover:text-slate-200">Mark All Read</button>
-                    <button className="text-xs text-slate-400 hover:text-slate-200">Clear All</button>
+                    <button onClick={handleMarkAllAsRead} className="text-xs text-slate-400 hover:text-slate-200">Mark All Read</button>
+                    <button onClick={handleClearAll} className="text-xs text-slate-400 hover:text-red-400">Clear All</button>
                   </div>
                 </div>
 
                 <div className="max-h-[60vh] overflow-y-auto divide-y divide-slate-800/50">
-                  {notifications.map((n, i) => (
-                    <div key={i} className="flex flex-col px-4 py-3 hover:bg-slate-800/30 transition">
-                      {n.type === 'price' ? (
+                  {notifications.length === 0 ? (
+                    <div className="px-4 py-8 text-center text-slate-400">
+                      No notifications
+                    </div>
+                  ) : (
+                    notifications.map(n => (
+                      <div
+                        key={n.id}
+                        className={`flex flex-col px-4 py-3 hover:bg-slate-800/30 transition cursor-pointer ${
+                          !n.isRead ? 'bg-slate-800/20' : ''
+                        }`}
+                        onClick={() => handleNotificationClick(n.id)}
+                      >
+                        {n.type === 'price' ? (
                         <>
                           <div className="flex items-center justify-between">
                             <span className="text-slate-200 font-medium">{n.title}</span>
@@ -90,10 +162,11 @@ const DashboardHeader: React.FC<{
                         </>
                       )}
                     </div>
-                  ))}
+                  ))
+                  )}
                 </div>
 
-                <button onClick={() => navigate('/all-notifications')} className="w-full py-3 text-center text-sm font-medium bg-gradient-to-r from-cyan-500/20 to-purple-500/20 text-cyan-400 hover:from-cyan-500/30 hover:to-purple-500/30 transition">View All Notifications</button>
+                <button onClick={handleViewAll} className="w-full py-3 text-center text-sm font-medium bg-gradient-to-r from-cyan-500/20 to-purple-500/20 text-cyan-400 hover:from-cyan-500/30 hover:to-purple-500/30 transition">View All Notifications</button>
               </div>, document.body)}
           </div>
 

@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
+import { useNotifications } from "../hooks/useNotifications";
 import FAQLayout from "../components/faq/FAQLayout";
 import FAQSidebar from "../components/faq/FAQSidebar";
 import FAQHeader from "../components/faq/FAQHeader";
@@ -12,7 +13,6 @@ import {
   FAQ_CATEGORIES,
   FAQ_ITEMS,
   FAQ_NAVIGATION,
-  FAQ_NOTIFICATIONS,
 } from "../components/faq/constants";
 
 const FAQPage = () => {
@@ -26,6 +26,8 @@ const FAQPage = () => {
   const [openFAQItems, setOpenFAQItems] = useState<string[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("all");
+
+  const { notifications, unreadCount, markAsRead, markAllAsRead, clearAllNotifications } = useNotifications(10, 3600000);
 
   const categoriesWithCounts = useMemo<FAQCategoryWithCount[]>(() => {
     return FAQ_CATEGORIES.map((category) => {
@@ -69,8 +71,8 @@ const FAQPage = () => {
     try {
       await logout();
       navigate("/");
-    } catch (error) {
-      console.error("Logout failed:", error);
+    } catch {
+      /* Error handled by auth context */
     }
   };
 
@@ -113,10 +115,14 @@ const FAQPage = () => {
           onNotificationToggle={() => setNotificationOpen((prev) => !prev)}
           profileDropdownOpen={profileDropdownOpen}
           onProfileDropdownToggle={() => setProfileDropdownOpen((prev) => !prev)}
-          notifications={FAQ_NOTIFICATIONS}
+          notifications={notifications}
           userName={user?.name ?? null}
           onNavigate={(path) => navigate(path)}
           onLogout={handleLogout}
+          unreadCount={unreadCount}
+          onMarkAsRead={markAsRead}
+          onMarkAllAsRead={markAllAsRead}
+          onClearAll={clearAllNotifications}
         />
 
         <main className="flex-1 overflow-y-auto p-4 lg:p-6">

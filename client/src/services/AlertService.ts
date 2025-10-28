@@ -153,15 +153,35 @@ const AlertService = {
   },
 
   async markAsRead(alertIds: string[]): Promise<void> {
-    await apiClient.post('/alerts/mark-read', { alertIds });
+    console.log('📡 AlertService.markAsRead: Calling API with alertIds:', alertIds);
+    const response = await apiClient.post('/alerts/mark-read', { alertIds });
+    console.log('📡 AlertService.markAsRead: API response:', response.data);
   },
 
   async markAllAsRead(): Promise<void> {
-    await apiClient.post('/alerts/mark-read', { markAll: true });
+    console.log('📡 AlertService.markAllAsRead: Calling API with markAll: true');
+    const response = await apiClient.post('/alerts/mark-read', { markAll: true });
+    console.log('📡 AlertService.markAllAsRead: API response:', response.data);
   },
 
   async deleteAlert(alertId: string): Promise<void> {
     await apiClient.delete(`/alerts/${alertId}`);
+  },
+
+  async clearAllNotifications(): Promise<void> {
+    console.log('📡 AlertService.clearAllNotifications: Calling API with deleteAll: true');
+    const response = await apiClient.delete('/alerts', { 
+      data: { deleteAll: true } 
+    });
+    console.log('📡 AlertService.clearAllNotifications: API response:', response.data);
+  },
+
+  async clearReadNotifications(): Promise<void> {
+    console.log('📡 AlertService.clearReadNotifications: Calling API with deleteRead: true');
+    const response = await apiClient.delete('/alerts', { 
+      data: { deleteRead: true } 
+    });
+    console.log('📡 AlertService.clearReadNotifications: API response:', response.data);
   }
 };
 

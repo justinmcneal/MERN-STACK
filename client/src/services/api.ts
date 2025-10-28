@@ -26,7 +26,7 @@ class ApiClient {
     this.axiosInstance = axios.create({
       baseURL: import.meta.env.VITE_API_URL || 'http://localhost:5001/api',
       withCredentials: true, // Send cookies with requests
-      timeout: 10000, // 10 seconds
+      timeout: 20000, // 10 seconds
       headers: {
         'Content-Type': 'application/json',
       },

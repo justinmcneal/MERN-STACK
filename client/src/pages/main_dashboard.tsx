@@ -7,8 +7,8 @@ import Sidebar from "../components/dashboard/Sidebar";
 import DashboardHeader from "../components/dashboard/DashboardHeader";
 import DashboardMainContent from "../components/dashboard/DashboardMainContent";
 import useOpportunities from "../hooks/useOpportunities";
-import useAlerts from "../hooks/useAlerts";
 import { useCurrencyFormatter, type SupportedCurrency } from "../hooks/useCurrencyFormatter";
+import { useNotifications } from "../hooks/useNotifications";
 
 const DashboardContent = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -33,11 +33,8 @@ const DashboardContent = () => {
   // Polling more frequently than hourly wastes resources since data doesn't update faster
   const pollInterval = 3600000; // 1 hour (3600000ms) for ALL data fetching
 
-  // Memoize alert query to prevent infinite re-renders
-  const alertQuery = useMemo(() => ({ limit: 10 }), []);
-  
-  // Fetch live alerts
-  const { alerts } = useAlerts({ pollIntervalMs: pollInterval, query: alertQuery });
+  // Fetch live notifications shared across dashboard headers
+  const { notifications, unreadCount, markAsRead, markAllAsRead, clearAllNotifications } = useNotifications(10, pollInterval);
 
   // Fetch live opportunities with user preferences
   const opportunityQuery = useMemo(() => {
@@ -121,6 +118,28 @@ const DashboardContent = () => {
     };
   }, [opportunities]);
 
+  const toggleNotifications = () => {
+    setNotificationOpen(prev => {
+      const next = !prev;
+      if (next) {
+        setProfileDropdownOpen(false);
+      }
+      return next;
+    });
+  };
+
+  const toggleProfileDropdown = () => {
+    setProfileDropdownOpen(prev => {
+      const next = !prev;
+      if (next) {
+        setNotificationOpen(false);
+      }
+      return next;
+    });
+  };
+
+  const closeNotifications = () => setNotificationOpen(false);
+
   return (
     <DashboardLayout>
       {/* Sidebar */}
@@ -139,14 +158,15 @@ const DashboardContent = () => {
         <DashboardHeader
           onSidebarToggle={() => setSidebarOpen(!sidebarOpen)}
           notificationOpen={notificationOpen}
-          onNotificationToggle={() => setNotificationOpen(!notificationOpen)}
+          onNotificationToggle={toggleNotifications}
+          onNotificationClose={closeNotifications}
           profileDropdownOpen={profileDropdownOpen}
-          onProfileDropdownToggle={() => setProfileDropdownOpen(!profileDropdownOpen)}
-          notifications={
-            preferences?.notificationSettings?.dashboard 
-              ? (alerts as import('../components/dashboard/DashboardHeader').NotificationItem[])
-              : []
-          }
+          onProfileDropdownToggle={toggleProfileDropdown}
+          notifications={notifications as import('../components/dashboard/DashboardHeader').NotificationItem[]}
+          unreadCount={unreadCount}
+          onMarkAsRead={markAsRead}
+          onMarkAllAsRead={markAllAsRead}
+          onClearAll={clearAllNotifications}
         />
 
         {/* Main Dashboard Content */}
@@ -167,7 +187,7 @@ const DashboardContent = () => {
         {notificationOpen && (
           <div
             className="fixed inset-0 bg-black/40 lg:hidden z-40"
-            onClick={() => setNotificationOpen(false)}
+            onClick={closeNotifications}
           />
         )}
       </div>

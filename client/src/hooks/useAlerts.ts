@@ -40,20 +40,26 @@ export function useAlerts(options?: UseAlertsOptions) {
   }, [JSON.stringify(query)]);
 
   const markAsRead = useCallback(async (alertIds: string[]) => {
+    console.log('🔄 useAlerts.markAsRead called with:', alertIds);
     try {
       await AlertService.markAsRead(alertIds);
+      console.log('✅ AlertService.markAsRead successful');
       await fetchAlerts();
+      console.log('✅ Alerts refetched after markAsRead');
     } catch (err) {
-      console.error('Failed to mark alerts as read:', err);
+      console.error('❌ Failed to mark alerts as read:', err);
     }
   }, [fetchAlerts]);
 
   const markAllAsRead = useCallback(async () => {
+    console.log('🔄 useAlerts.markAllAsRead called');
     try {
       await AlertService.markAllAsRead();
+      console.log('✅ AlertService.markAllAsRead successful');
       await fetchAlerts();
+      console.log('✅ Alerts refetched after markAllAsRead');
     } catch (err) {
-      console.error('Failed to mark all alerts as read:', err);
+      console.error('❌ Failed to mark all alerts as read:', err);
     }
   }, [fetchAlerts]);
 
@@ -63,6 +69,30 @@ export function useAlerts(options?: UseAlertsOptions) {
       await fetchAlerts();
     } catch (err) {
       console.error('Failed to delete alert:', err);
+    }
+  }, [fetchAlerts]);
+
+  const clearAllNotifications = useCallback(async () => {
+    console.log('🔄 useAlerts.clearAllNotifications called');
+    try {
+      await AlertService.clearAllNotifications();
+      console.log('✅ AlertService.clearAllNotifications successful');
+      await fetchAlerts();
+      console.log('✅ Alerts refetched after clearAll');
+    } catch (err) {
+      console.error('❌ Failed to clear all notifications:', err);
+    }
+  }, [fetchAlerts]);
+
+  const clearReadNotifications = useCallback(async () => {
+    console.log('🔄 useAlerts.clearReadNotifications called');
+    try {
+      await AlertService.clearReadNotifications();
+      console.log('✅ AlertService.clearReadNotifications successful');
+      await fetchAlerts();
+      console.log('✅ Alerts refetched after clearRead');
+    } catch (err) {
+      console.error('❌ Failed to clear read notifications:', err);
     }
   }, [fetchAlerts]);
 
@@ -90,7 +120,9 @@ export function useAlerts(options?: UseAlertsOptions) {
     refresh: fetchAlerts,
     markAsRead,
     markAllAsRead,
-    deleteAlert
+    deleteAlert,
+    clearAllNotifications,
+    clearReadNotifications
   };
 }
 
