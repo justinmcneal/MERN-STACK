@@ -11,6 +11,7 @@ import {
   validateCurrency,
   validateRefreshInterval,
   validateArray,
+  validateManualMonitoringMinutes,
 } from '../utils/validationHelpers';
 import {
   buildDefaultPreferences,
@@ -55,6 +56,14 @@ export const updateUserPreferences = asyncHandler(async (req: Request, res: Resp
 
   if (updates.currency) {
     updates.currency = validateCurrency(updates.currency);
+  }
+
+  if (updates.manualMonitoringMinutes !== undefined) {
+    if (updates.manualMonitoringMinutes === null) {
+      updates.manualMonitoringMinutes = null;
+    } else {
+      updates.manualMonitoringMinutes = validateManualMonitoringMinutes(updates.manualMonitoringMinutes);
+    }
   }
 
   const preferences = await UserPreference.findOneAndUpdate(
@@ -122,6 +131,27 @@ export const updateNotificationSettings = asyncHandler(async (req: Request, res:
   );
 
   sendUpdateSuccess(res, preferences, 'Notification settings updated successfully');
+});
+
+export const updateManualMonitoringTime = asyncHandler(async (req: Request, res: Response) => {
+  const userId = req.user!._id;
+  const { manualMonitoringMinutes } = req.body as { manualMonitoringMinutes?: number | null };
+
+  if (manualMonitoringMinutes === undefined) {
+    throw createError('Manual monitoring time is required', 400);
+  }
+
+  const resolvedValue = manualMonitoringMinutes === null
+    ? null
+    : validateManualMonitoringMinutes(manualMonitoringMinutes);
+
+  const preferences = await UserPreference.findOneAndUpdate(
+    { userId },
+    { manualMonitoringMinutes: resolvedValue },
+    { new: true, upsert: true }
+  );
+
+  sendUpdateSuccess(res, preferences, 'Manual monitoring time updated successfully');
 });
 
 export const updateAppearanceSettings = asyncHandler(async (req: Request, res: Response) => {

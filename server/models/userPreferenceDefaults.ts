@@ -29,6 +29,7 @@ export const defaultNotificationSettings = (): NotificationSettings => ({
 
 export const DEFAULT_REFRESH_INTERVAL = 30;
 export const DEFAULT_CURRENCY: PreferenceCurrency = 'USD';
+export const MAX_MANUAL_MONITORING_MINUTES = 1440;
 
 export const buildDefaultPreferences = (
   userId: string,
@@ -41,4 +42,5 @@ export const buildDefaultPreferences = (
   notificationSettings: defaultNotificationSettings(),
   refreshInterval: DEFAULT_REFRESH_INTERVAL,
   currency,
+  manualMonitoringMinutes: null,
 });

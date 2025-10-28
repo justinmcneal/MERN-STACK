@@ -4,6 +4,7 @@ import {
   DEFAULT_CURRENCY,
   DEFAULT_REFRESH_INTERVAL,
   defaultAlertThresholds,
+  MAX_MANUAL_MONITORING_MINUTES,
 } from '../models/userPreferenceDefaults';
 
 export const validateRequired = (value: any, fieldName: string): void => {
@@ -70,6 +71,24 @@ export const validateCurrency = (currency: string): string => {
 
 export const validateRefreshInterval = (interval: number): number => {
   return validateRange(interval, 5, 300, DEFAULT_REFRESH_INTERVAL);
+};
+
+export const validateManualMonitoringMinutes = (value: unknown): number => {
+  const parsed = typeof value === 'string' ? Number(value) : Number(value);
+
+  if (!Number.isFinite(parsed)) {
+    throw createError('Manual monitoring time must be a number', 400);
+  }
+
+  if (parsed <= 0) {
+    throw createError('Manual monitoring time must be greater than zero minutes', 400);
+  }
+
+  if (parsed > MAX_MANUAL_MONITORING_MINUTES) {
+    throw createError(`Manual monitoring time cannot exceed ${MAX_MANUAL_MONITORING_MINUTES} minutes (24 hours)`, 400);
+  }
+
+  return Math.round(parsed);
 };
 
 export const validateEmailFormat = (email: string): string => {

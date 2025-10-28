@@ -1,5 +1,5 @@
 import React from 'react';
-import { User, LogOut } from 'lucide-react';
+import { User, LogOut, Clock } from 'lucide-react';
 import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
@@ -31,6 +31,9 @@ const DashboardHeader: React.FC<{
   onMarkAsRead?: (alertIds: string[]) => void;
   onMarkAllAsRead?: () => void;
   onClearAll?: () => void;
+  onManualMonitoringClick?: () => void;
+  manualMonitoringMinutes?: number | null;
+  manualMonitoringRequired?: boolean;
 }> = ({
   onSidebarToggle,
   notificationOpen,
@@ -42,11 +45,17 @@ const DashboardHeader: React.FC<{
   unreadCount,
   onMarkAsRead,
   onMarkAllAsRead,
-  onClearAll
+  onClearAll,
+  onManualMonitoringClick,
+  manualMonitoringMinutes,
+  manualMonitoringRequired = false
 }) => {
   const navigate = useNavigate();
   const { user, logout } = useAuth();
   const displayCount = unreadCount ?? notifications.filter(n => !n.isRead).length;
+  const manualMonitoringDisplay = manualMonitoringMinutes && manualMonitoringMinutes > 0
+    ? `${manualMonitoringMinutes} min`
+    : 'Set required';
 
   const handleNotificationClick = (notificationId: string) => {
     console.log('[notifications] Dashboard notification clicked', notificationId);
@@ -96,6 +105,12 @@ const DashboardHeader: React.FC<{
     }
   };
 
+  const handleManualMonitoringButtonClick = () => {
+    if (onManualMonitoringClick) {
+      onManualMonitoringClick();
+    }
+  };
+
   return (
     <header className="bg-slate-900/50 backdrop-blur border-b border-slate-800/50 p-4 lg:p-6 relative z-30">
       <div className="flex items-center justify-between">
@@ -107,6 +122,25 @@ const DashboardHeader: React.FC<{
         </div>
 
         <div className="flex items-center gap-3">
+          <button
+            onClick={handleManualMonitoringButtonClick}
+            className={`relative flex items-center gap-3 rounded-xl border px-3 py-2 text-sm font-medium transition ${
+              manualMonitoringRequired
+                ? 'border-red-500/60 bg-red-500/10 text-red-200 hover:bg-red-500/20'
+                : 'border-slate-700/50 bg-slate-800/50 text-slate-200 hover:bg-slate-700/50'
+            }`}
+          >
+            <Clock className={`h-4 w-4 ${manualMonitoringRequired ? 'text-red-300' : 'text-cyan-300'}`} />
+            <div className="hidden flex-col leading-tight text-left sm:flex">
+              <span className="text-xs uppercase tracking-wide text-slate-400">Monitoring</span>
+              <span className="text-sm font-semibold">{manualMonitoringDisplay}</span>
+            </div>
+            <span className="sm:hidden text-sm font-semibold">{manualMonitoringDisplay}</span>
+            {manualMonitoringRequired && (
+              <span className="absolute -top-1 -right-1 h-2 w-2 rounded-full bg-red-400 shadow-md shadow-red-500/60" />
+            )}
+          </button>
+
           <div className="relative">
             <button onClick={onNotificationToggle} className="relative p-2 rounded-lg bg-slate-800/50 border border-slate-700/50 hover:bg-slate-700/50 transition-all">
               <svg className="w-5 h-5 text-yellow-400" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C10.343 2 9 3.343 9 5v1.07C6.164 6.562 4 9.138 4 12v5l-1 1v1h18v-1l-1-1v-5c0-2.862-2.164-5.438-5-5.93V5c0-1.657-1.343-3-3-3zm0 20a3 3 0 003-3H9a3 3 0 003 3z"/></svg>

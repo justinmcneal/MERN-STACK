@@ -22,6 +22,7 @@ export interface IUserPreference extends Document {
   notificationSettings: NotificationSettings;
   refreshInterval: number;
   currency: PreferenceCurrency;
+  manualMonitoringMinutes: number | null;
 }
 
 const userPreferenceSchema: Schema<IUserPreference> = new mongoose.Schema(
@@ -80,6 +81,12 @@ const userPreferenceSchema: Schema<IUserPreference> = new mongoose.Schema(
       type: String,
       enum: PREFERENCE_CURRENCIES,
       default: DEFAULT_CURRENCY
+    },
+    manualMonitoringMinutes: {
+      type: Number,
+      min: 0,
+      max: 1440,
+      default: null
     }
   },
   { 

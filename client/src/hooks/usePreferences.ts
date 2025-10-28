@@ -163,11 +163,33 @@ export const usePreferences = (options?: UsePreferencesOptions) => {
       setIsUpdating(true);
       setErrors({});
       
-  const updatedPreferences = await ProfileService.updateAppearanceSettings(currency);
+      const updatedPreferences = await ProfileService.updateAppearanceSettings(currency);
       setPreferences(updatedPreferences);
       return { success: true };
     } catch (error: unknown) {
       const errorMessage = extractErrorMessage(error, 'Failed to update appearance settings');
+      setErrors({ general: errorMessage });
+      return { success: false, error: errorMessage };
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
+  // Update manual monitoring time
+  const updateManualMonitoringTime = async (manualMonitoringMinutes: number | null) => {
+    if (!enabled) {
+      return { success: false, error: 'Preferences are not available in the current context' };
+    }
+
+    try {
+      setIsUpdating(true);
+      setErrors({});
+
+      const updatedPreferences = await ProfileService.updateManualMonitoringTime(manualMonitoringMinutes);
+      setPreferences(updatedPreferences);
+      return { success: true };
+    } catch (error: unknown) {
+      const errorMessage = extractErrorMessage(error, 'Failed to update manual monitoring time');
       setErrors({ general: errorMessage });
       return { success: false, error: errorMessage };
     } finally {
@@ -258,6 +280,7 @@ export const usePreferences = (options?: UsePreferencesOptions) => {
     updateAlertThresholds,
     updateNotificationSettings,
     updateAppearanceSettings,
+    updateManualMonitoringTime,
     resetPreferences,
     validatePreferences,
     setErrors

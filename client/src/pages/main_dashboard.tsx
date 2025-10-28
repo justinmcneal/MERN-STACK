@@ -1,10 +1,11 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { usePreferences } from "../hooks/usePreferences";
 import { TokenProvider } from "../context/TokenContext";
 import useTokenContext from "../context/useTokenContext";
 import DashboardLayout from "../components/dashboard/DashboardLayout";
 import Sidebar from "../components/dashboard/Sidebar";
 import DashboardHeader from "../components/dashboard/DashboardHeader";
+import ManualMonitoringModal from "../components/dashboard/ManualMonitoringModal";
 import DashboardMainContent from "../components/dashboard/DashboardMainContent";
 import useOpportunities from "../hooks/useOpportunities";
 import { useCurrencyFormatter, type SupportedCurrency } from "../hooks/useCurrencyFormatter";
@@ -14,6 +15,11 @@ const DashboardContent = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
   const [notificationOpen, setNotificationOpen] = useState(false);
+  const [manualMonitoringModalOpen, setManualMonitoringModalOpen] = useState(false);
+  const [manualMonitoringInput, setManualMonitoringInput] = useState("");
+  const [manualMonitoringError, setManualMonitoringError] = useState<string | null>(null);
+  const [isSavingManualMonitoring, setIsSavingManualMonitoring] = useState(false);
+  const hasPromptedManualMonitoring = useRef(false);
 
   // Get token data for unique count
   const { tokens } = useTokenContext();
@@ -23,10 +29,12 @@ const DashboardContent = () => {
   }, [tokens]);
 
   // Get user preferences from settings
-  const { preferences } = usePreferences();
+  const { preferences, updateManualMonitoringTime } = usePreferences();
   const currencyPreference = (preferences?.currency ?? 'USD') as SupportedCurrency;
   const { formatCurrency, convertFromUsd } = useCurrencyFormatter(currencyPreference);
   const thresholds = preferences?.alertThresholds;
+  const manualMonitoringMinutes = preferences?.manualMonitoringMinutes ?? null;
+  const manualMonitoringSet = manualMonitoringMinutes !== null && manualMonitoringMinutes > 0;
 
   // ALL polling intervals aligned with server hourly updates (cron jobs run every hour)
   // Server fetches fresh data from external APIs (DexScreener) every hour
@@ -118,6 +126,79 @@ const DashboardContent = () => {
     };
   }, [opportunities]);
 
+  useEffect(() => {
+    if (!preferences) {
+      return;
+    }
+
+    const currentValue = preferences.manualMonitoringMinutes ?? null;
+
+    if (!hasPromptedManualMonitoring.current) {
+      setManualMonitoringInput(currentValue && currentValue > 0 ? String(currentValue) : "");
+      if (!currentValue || currentValue <= 0) {
+        setManualMonitoringModalOpen(true);
+      }
+      hasPromptedManualMonitoring.current = true;
+      return;
+    }
+
+    if (currentValue && currentValue > 0) {
+      setManualMonitoringInput(String(currentValue));
+    }
+  }, [preferences]);
+
+  const handleManualMonitoringChange = (value: string) => {
+    setManualMonitoringInput(value);
+    if (manualMonitoringError) {
+      setManualMonitoringError(null);
+    }
+  };
+
+  const handleManualMonitoringSubmit = async () => {
+    const parsed = Number(manualMonitoringInput);
+
+    if (!Number.isFinite(parsed)) {
+      setManualMonitoringError('Please enter a valid number of minutes.');
+      return;
+    }
+
+    if (parsed <= 0) {
+      setManualMonitoringError('Monitoring time must be greater than 0 minutes.');
+      return;
+    }
+
+    if (parsed > 1440) {
+      setManualMonitoringError('Monitoring time cannot exceed 1440 minutes (24 hours).');
+      return;
+    }
+
+    try {
+      setIsSavingManualMonitoring(true);
+      const rounded = Math.round(parsed);
+      const result = await updateManualMonitoringTime(rounded);
+
+      if (!result.success) {
+        setManualMonitoringError(result.error ?? 'Failed to save manual monitoring time.');
+        return;
+      }
+
+      setManualMonitoringInput(String(rounded));
+      setManualMonitoringError(null);
+      setManualMonitoringModalOpen(false);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Failed to save manual monitoring time.';
+      setManualMonitoringError(message);
+    } finally {
+      setIsSavingManualMonitoring(false);
+    }
+  };
+
+  const openManualMonitoringModal = () => {
+    setManualMonitoringInput(manualMonitoringSet && manualMonitoringMinutes ? String(manualMonitoringMinutes) : "");
+    setManualMonitoringError(null);
+    setManualMonitoringModalOpen(true);
+  };
+
   const toggleNotifications = () => {
     setNotificationOpen(prev => {
       const next = !prev;
@@ -185,6 +266,9 @@ const DashboardContent = () => {
           onMarkAsRead={markAsRead}
           onMarkAllAsRead={markAllAsRead}
           onClearAll={clearAllNotifications}
+          onManualMonitoringClick={openManualMonitoringModal}
+          manualMonitoringMinutes={manualMonitoringMinutes}
+          manualMonitoringRequired={!manualMonitoringSet}
         />
 
         {/* Main Dashboard Content */}
@@ -199,6 +283,22 @@ const DashboardContent = () => {
           currencyPreference={currencyPreference}
           formatCurrency={formatCurrency}
           convertFromUsd={convertFromUsd}
+        />
+
+        <ManualMonitoringModal
+          isOpen={manualMonitoringModalOpen}
+          value={manualMonitoringInput}
+          onChange={handleManualMonitoringChange}
+          onClose={() => {
+            if (manualMonitoringSet) {
+              setManualMonitoringModalOpen(false);
+              setManualMonitoringError(null);
+            }
+          }}
+          onSubmit={handleManualMonitoringSubmit}
+          isSubmitting={isSavingManualMonitoring}
+          error={manualMonitoringError}
+          canDismiss={manualMonitoringSet}
         />
 
         {/* Notification Overlay */}
