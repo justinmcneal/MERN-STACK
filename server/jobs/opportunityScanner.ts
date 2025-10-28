@@ -27,11 +27,7 @@ class OpportunityScanner {
     this.startScheduledScans();
   }
 
-  /**
-   * Start the scheduled opportunity scanning
-   */
   public startScheduledScans(): void {
-    // Run every hour
     cron.schedule('0 * * * *', async () => {
       if (!this.isRunning) {
         await this.scanAllOpportunities();
@@ -41,9 +37,6 @@ class OpportunityScanner {
     console.log('🔄 Opportunity scanner started - running every hour');
   }
 
-  /**
-   * Scan for arbitrage opportunities across all supported tokens and chains
-   */
   public async scanAllOpportunities(): Promise<ScanResult> {
     if (this.isRunning) {
       console.log('⚠️  Scan already in progress, skipping...');

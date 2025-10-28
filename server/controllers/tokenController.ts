@@ -5,17 +5,37 @@ import TokenHistory from '../models/TokenHistory';
 import DataService from '../services/DataService';
 import { getTokenName, TOKEN_CONTRACTS } from '../config/tokens';
 import logger from '../utils/logger';
+import { createError } from '../middleware/errorMiddleware';
+import { sendPaginatedSuccess, sendSuccess } from '../utils/responseHelpers';
 
-// GET /api/tokens - Get all tokens
+type TimestampReadableDocument = {
+  get: (path: string) => unknown;
+} | null;
+
+const determineUpsertEffect = (doc: TimestampReadableDocument): 'created' | 'updated' => {
+  if (!doc) {
+    return 'updated';
+  }
+
+  const createdAt = doc.get('createdAt') as Date | undefined;
+  const updatedAt = doc.get('updatedAt') as Date | undefined;
+
+  if (!createdAt || !updatedAt) {
+    return 'updated';
+  }
+
+  return Math.abs(updatedAt.getTime() - createdAt.getTime()) < 1000 ? 'created' : 'updated';
+};
+
 export const getTokens = asyncHandler(async (req: Request, res: Response) => {
   const { symbol, chain, limit = 50, skip = 0, fields } = req.query;
 
-  let query: any = {};
-  
+  const query: Record<string, any> = {};
+
   if (symbol) {
     query.symbol = new RegExp(symbol as string, 'i');
   }
-  
+
   if (chain) {
     query.chain = chain as string;
   }
@@ -33,7 +53,7 @@ export const getTokens = asyncHandler(async (req: Request, res: Response) => {
     'decimals',
     'contractAddress',
     'updatedAt',
-    'createdAt'
+    'createdAt',
   ]);
 
   let projection: string | undefined;
@@ -47,27 +67,24 @@ export const getTokens = asyncHandler(async (req: Request, res: Response) => {
     }
   }
 
+  const numericLimit = Math.min(Math.max(Number(limit) || 50, 1), 250);
+  const numericSkip = Math.max(Number(skip) || 0, 0);
+
   let tokenQuery = Token.find(query);
   if (projection) {
     tokenQuery = tokenQuery.select(projection);
   }
 
   const tokens = await tokenQuery
-    .limit(Number(limit))
-    .skip(Number(skip))
+    .limit(numericLimit)
+    .skip(numericSkip)
     .sort({ symbol: 1, chain: 1 });
 
   const total = await Token.countDocuments(query);
 
-  res.json({
-    success: true,
-    count: tokens.length,
-    total,
-    data: tokens
-  });
+  sendPaginatedSuccess(res, tokens, total);
 });
 
-// GET /api/tokens/:symbol - Get token by symbol
 export const getTokenBySymbol = asyncHandler(async (req: Request, res: Response) => {
   const { symbol } = req.params;
 
@@ -76,18 +93,12 @@ export const getTokenBySymbol = asyncHandler(async (req: Request, res: Response)
   }).sort({ chain: 1 });
 
   if (tokens.length === 0) {
-    res.status(404);
-    throw new Error('Token not found');
+    throw createError('Token not found', 404);
   }
 
-  res.json({
-    success: true,
-    count: tokens.length,
-    data: tokens
-  });
+  sendSuccess(res, tokens, undefined, { count: tokens.length });
 });
 
-// GET /api/tokens/:symbol/:chain - Get specific token on specific chain
 export const getTokenBySymbolAndChain = asyncHandler(async (req: Request, res: Response) => {
   const { symbol, chain } = req.params;
 
@@ -97,24 +108,18 @@ export const getTokenBySymbolAndChain = asyncHandler(async (req: Request, res: R
   });
 
   if (!token) {
-    res.status(404);
-    throw new Error('Token not found on specified chain');
+    throw createError('Token not found on specified chain', 404);
   }
 
-  res.json({
-    success: true,
-    data: token
-  });
+  sendSuccess(res, token);
 });
 
-// POST /api/tokens/refresh - Refresh token prices from DexScreener API
 export const refreshTokenPrices = asyncHandler(async (req: Request, res: Response) => {
   const dataService = DataService.getInstance();
-  
+
   try {
-    // Fetch latest prices from DexScreener
     const priceData = await dataService.fetchTokenPrices();
-    
+
     let updatedCount = 0;
     let createdCount = 0;
     let dexUpdatedCount = 0;
@@ -122,39 +127,37 @@ export const refreshTokenPrices = asyncHandler(async (req: Request, res: Respons
     const historyBatch: Array<{ symbol: string; chain: string; price: number; collectedAt: Date; source: string }> = [];
 
     if (!priceData || priceData.length === 0) {
-      res.json({
-        success: true,
-        message: 'No price data available from DexScreener.',
+      sendSuccess(res, undefined, 'No price data available from DexScreener.', {
         updated: 0,
         created: 0,
         dexUpdated: 0,
-        timestamp: new Date()
+        timestamp: new Date(),
       });
       return;
     }
 
-    // Update/create tokens only for chains where the token has a contract mapping
     const supportedChains = dataService.getSupportedChains();
 
     for (const priceInfo of priceData) {
       const tokenContracts = TOKEN_CONTRACTS[priceInfo.symbol as keyof typeof TOKEN_CONTRACTS] || {};
+
       for (const chain of supportedChains) {
-        // Skip chains where this token has no contract mapping
         if (!Object.prototype.hasOwnProperty.call(tokenContracts, chain)) {
           continue;
         }
-        // Use atomic upsert to avoid race conditions and reduce DB calls
+
         const chainPrice = priceInfo.chainPrices?.[chain];
         if (chainPrice === undefined || chainPrice === null) {
           continue;
         }
+
         const update = {
           symbol: priceInfo.symbol,
-          chain: chain,
+          chain,
           currentPrice: chainPrice,
           lastUpdated: priceInfo.timestamp,
-          name: getTokenName(priceInfo.symbol)
-        } as any;
+          name: getTokenName(priceInfo.symbol),
+        };
 
         const result = await Token.findOneAndUpdate(
           { symbol: priceInfo.symbol, chain },
@@ -162,17 +165,11 @@ export const refreshTokenPrices = asyncHandler(async (req: Request, res: Respons
           { upsert: true, new: true, setDefaultsOnInsert: true }
         ).exec();
 
-        // If the document existed prior to this operation, count as updated, else created
-        // We can infer creation if the createdAt timestamp is very recent or if the returned doc has no previous updatedAt.
-        // Mongoose does not return a flag for upsert creation here, so we'll approximate by checking timestamps.
-        if (result) {
-          // If createdAt is within 5 seconds of lastUpdated, assume it was newly created by upsert
-          const createdAt = (result as any).createdAt as Date | undefined;
-          if (createdAt && Math.abs(createdAt.getTime() - new Date().getTime()) < 5000) {
-            createdCount++;
-          } else {
-            updatedCount++;
-          }
+  const effect = determineUpsertEffect(result as TimestampReadableDocument);
+        if (effect === 'created') {
+          createdCount++;
+        } else {
+          updatedCount++;
         }
 
         historyBatch.push({
@@ -180,7 +177,7 @@ export const refreshTokenPrices = asyncHandler(async (req: Request, res: Respons
           chain,
           price: chainPrice,
           collectedAt: snapshotTime,
-          source: 'dexscreener'
+          source: 'dexscreener',
         });
       }
     }
@@ -195,64 +192,52 @@ export const refreshTokenPrices = asyncHandler(async (req: Request, res: Respons
               dexPrice: dexPrice.price,
               dexName: dexPrice.dexName,
               liquidity: dexPrice.liquidity,
-              lastUpdated: dexPrice.timestamp ?? new Date()
-            }
+              lastUpdated: dexPrice.timestamp ?? new Date(),
+            },
           },
           { upsert: true, new: true }
         ).exec();
         dexUpdatedCount++;
       }
     } catch (dexErr: any) {
-      logger.error('Error refreshing DEX prices during manual refresh', dexErr);
+      logger.warn('Error refreshing DEX prices during manual refresh', dexErr);
     }
 
     if (historyBatch.length > 0) {
       try {
         await TokenHistory.insertMany(historyBatch, { ordered: false });
       } catch (historyErr: any) {
-        logger.error('Error recording token history during manual refresh', historyErr);
+        logger.warn('Error recording token history during manual refresh', historyErr);
       }
     }
 
-    res.json({
-      success: true,
-      message: 'Token prices refreshed successfully',
+    sendSuccess(res, undefined, 'Token prices refreshed successfully', {
       updated: updatedCount,
       created: createdCount,
       dexUpdated: dexUpdatedCount,
-      timestamp: new Date()
+      timestamp: new Date(),
     });
-    return;
   } catch (error: any) {
-    res.status(500);
-    throw new Error(`Failed to refresh token prices: ${error.message}`);
+    logger.error('Failed to refresh token prices', error);
+    throw createError(`Failed to refresh token prices: ${error.message}`, 500);
   }
 });
 
-// GET /api/tokens/supported - Get supported tokens list
 export const getSupportedTokens = asyncHandler(async (req: Request, res: Response) => {
   const dataService = DataService.getInstance();
   const supportedTokens = dataService.getSupportedTokens();
-  
-  res.json({
-    success: true,
-    data: supportedTokens
-  });
+
+  sendSuccess(res, supportedTokens);
 });
 
-// GET /api/tokens/chains - Get supported chains list
 export const getSupportedChains = asyncHandler(async (req: Request, res: Response) => {
   const dataService = DataService.getInstance();
   const supportedChains = dataService.getSupportedChains();
-  
-  res.json({
-    success: true,
-    data: supportedChains
-  });
+
+  sendSuccess(res, supportedChains);
 });
 
-// GET /api/tokens/:symbol/:chain/history?tf=24h
-export const getTokenHistory = async (req: Request, res: Response) => {
+export const getTokenHistory = asyncHandler(async (req: Request, res: Response) => {
   const { symbol, chain } = req.params;
   const { tf = '7d' } = req.query;
 
@@ -265,7 +250,7 @@ export const getTokenHistory = async (req: Request, res: Response) => {
     '7d': 7 * 24 * 60 * 60 * 1000,
     '30d': 30 * 24 * 60 * 60 * 1000,
     '90d': 90 * 24 * 60 * 60 * 1000,
-    'all': 0
+    all: 0,
   };
 
   const targetPoints: Record<string, number> = {
@@ -274,7 +259,7 @@ export const getTokenHistory = async (req: Request, res: Response) => {
     '7d': 168,
     '30d': 240,
     '90d': 360,
-    'all': 480
+    all: 480,
   };
 
   const normalizedSymbol = symbol.toUpperCase();
@@ -284,7 +269,7 @@ export const getTokenHistory = async (req: Request, res: Response) => {
 
   const query: Record<string, any> = {
     symbol: normalizedSymbol,
-    chain: normalizedChain
+    chain: normalizedChain,
   };
 
   if (lookbackMs > 0) {
@@ -326,46 +311,38 @@ export const getTokenHistory = async (req: Request, res: Response) => {
 
     if (sampled.length === 0) {
       res.set('Cache-Control', 'public, max-age=60');
-      res.status(200).json({
-        success: false,
-        symbol: normalizedSymbol,
-        chain: normalizedChain,
-        timeframe: timeframe,
-        count: 0,
-        data: [],
-        message: 'No historical price data recorded yet for this token on the selected chain.'
-      });
+      sendSuccess(
+        res,
+        [],
+        'No historical price data recorded yet for this token on the selected chain.',
+        {
+          symbol: normalizedSymbol,
+          chain: normalizedChain,
+          timeframe,
+          count: 0,
+          latest: null,
+        }
+      );
       return;
     }
 
     const payload = sampled.map((entry: HistoryPoint) => ({
       price: entry.price,
       source: entry.source ?? 'dexscreener',
-      collectedAt: entry.collectedAt
+      collectedAt: entry.collectedAt,
     }));
 
     res.set('Cache-Control', 'public, max-age=120');
-    res.status(200).json({
-      success: true,
+    sendSuccess(res, payload, payload.length < desiredPoints ? 'Limited historical samples available for this range.' : undefined, {
       symbol: normalizedSymbol,
       chain: normalizedChain,
-      timeframe: timeframe,
+      timeframe,
       count: payload.length,
-      data: payload,
       latest: payload[payload.length - 1]?.price ?? null,
-      message: payload.length < desiredPoints ? 'Limited historical samples available for this range.' : undefined
     });
   } catch (error: any) {
     logger.error('Error retrieving token history', error);
-    res.status(500).json({
-      success: false,
-      symbol: normalizedSymbol,
-      chain: normalizedChain,
-      timeframe: timeframe,
-      count: 0,
-      data: [],
-      message: 'Failed to retrieve historical data.'
-    });
+    throw createError('Failed to retrieve historical data.', 500);
   }
-};
+});
 

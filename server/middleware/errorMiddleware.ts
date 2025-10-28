@@ -6,10 +6,14 @@ export interface AppError extends Error {
   isOperational?: boolean;
 }
 
-export const createError = (message: string, statusCode: number = 500): AppError => {
+export const createError = (
+  message: string,
+  statusCode: number = 500,
+  isOperational: boolean = true
+): AppError => {
   const error: AppError = new Error(message);
   error.statusCode = statusCode;
-  error.isOperational = true;
+  error.isOperational = isOperational;
   return error;
 };
 
@@ -27,20 +31,27 @@ export const errorHandler = (
   const statusCode = error.statusCode || 500;
   const message = error.message || 'Internal Server Error';
 
-  if (process.env.NODE_ENV === 'development') {
-    logger.error('Error occurred', {
-      message: error.message,
-      stack: error.stack,
-      statusCode,
-      url: req.originalUrl,
-      method: req.method,
-    });
+  const shouldLogStack = process.env.NODE_ENV !== 'production';
+
+  const logPayload = {
+    message: error.message,
+    statusCode,
+    url: req.originalUrl,
+    method: req.method,
+    ...(shouldLogStack && { stack: error.stack }),
+  };
+
+  if (!error.isOperational || statusCode >= 500) {
+    logger.error('Unhandled error encountered', logPayload);
+  } else {
+    logger.warn('Operational error encountered', logPayload);
   }
 
   res.status(statusCode).json({
+    success: false,
     error: {
       message,
-      ...(process.env.NODE_ENV === 'development' && { stack: error.stack }),
+      ...(shouldLogStack && { stack: error.stack }),
     },
   });
 };

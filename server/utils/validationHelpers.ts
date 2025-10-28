@@ -1,4 +1,10 @@
 import { createError } from '../middleware/errorMiddleware';
+import {
+  PREFERENCE_CURRENCIES,
+  DEFAULT_CURRENCY,
+  DEFAULT_REFRESH_INTERVAL,
+  defaultAlertThresholds,
+} from '../models/userPreferenceDefaults';
 
 export const validateRequired = (value: any, fieldName: string): void => {
   if (!value) {
@@ -25,6 +31,7 @@ export const validateRange = (value: number, min: number, max: number, defaultVa
 
 export const validateAlertThresholds = (thresholds: any): any => {
   const validated = { ...thresholds };
+  const defaults = defaultAlertThresholds();
 
   if (validated.minProfit !== undefined) {
     validated.minProfit = validatePositiveNumber(validated.minProfit, 'minProfit');
@@ -35,11 +42,11 @@ export const validateAlertThresholds = (thresholds: any): any => {
   }
 
   if (validated.minROI !== undefined) {
-    validated.minROI = validateRange(validated.minROI, 0, 50, 0);
+    validated.minROI = validateRange(validated.minROI, 0, 50, defaults.minROI);
   }
 
   if (validated.minScore !== undefined) {
-    validated.minScore = validateRange(validated.minScore, 0, 1, 0.7);
+    validated.minScore = validateRange(validated.minScore, 0, 1, defaults.minScore);
   }
 
   return validated;
@@ -50,20 +57,19 @@ export const validateTokenList = (tokens: string[], supportedTokens: string[]): 
     .map((token: string) => token.toUpperCase())
     .filter((token: string) => supportedTokens.includes(token));
 
-  if (validTokens.length === 0) {
-    validTokens.push('ETH');
+  if (validTokens.length === 0 && supportedTokens.length > 0) {
+    validTokens.push(supportedTokens[0]);
   }
 
   return validTokens;
 };
 
 export const validateCurrency = (currency: string): string => {
-  const validCurrencies = ['USD', 'EUR', 'GBP', 'JPY', 'PHP'];
-  return validCurrencies.includes(currency) ? currency : 'USD';
+  return (PREFERENCE_CURRENCIES as readonly string[]).includes(currency) ? currency : DEFAULT_CURRENCY;
 };
 
 export const validateRefreshInterval = (interval: number): number => {
-  return validateRange(interval, 5, 300, 30);
+  return validateRange(interval, 5, 300, DEFAULT_REFRESH_INTERVAL);
 };
 
 export const validateEmailFormat = (email: string): string => {

@@ -2,16 +2,13 @@
 import { useState, useEffect } from "react";
 
 interface ProfilePreferencesProps {
-  tokensTracked: Record<string, boolean>;
   dashboardPopup: boolean;
   emailNotifications: boolean;
   profitThreshold: number;
   minProfit: number;
   maxGasCost: number;
   minScore: number;
-  availableTokens?: string[];
   onUpdate?: (data: { 
-    tokensTracked?: Record<string, boolean>;
     dashboardPopup?: boolean;
     emailNotifications?: boolean;
     profitThreshold?: number;
@@ -22,33 +19,6 @@ interface ProfilePreferencesProps {
   isUpdating?: boolean;
   className?: string;
 }
-
-const TokenCheckbox = ({ 
-  token, 
-  checked, 
-  onChange, 
-  disabled 
-}: { 
-  token: string; 
-  checked: boolean; 
-  onChange: () => void;
-  disabled?: boolean;
-}) => (
-  <label className="flex items-center gap-2 cursor-pointer">
-    <input
-      type="checkbox"
-      checked={checked}
-      onChange={onChange}
-      disabled={disabled}
-      className="w-4 h-4 rounded bg-slate-700 border-slate-600 text-cyan-500 focus:ring-2 focus:ring-cyan-400/50 disabled:opacity-50"
-    />
-    <span className={`px-3 py-1 rounded-lg text-xs font-medium ${
-      checked ? 'bg-cyan-500/20 text-cyan-400 border border-cyan-500/30' : 'bg-slate-700/50 text-slate-400 border border-slate-600/50'
-    }`}>
-      {token}
-    </span>
-  </label>
-);
 
 const ToggleSwitch = ({ 
   enabled, 
@@ -75,19 +45,16 @@ const ToggleSwitch = ({
 );
 
 const ProfilePreferences: React.FC<ProfilePreferencesProps> = ({
-  tokensTracked,
   dashboardPopup,
   emailNotifications,
   profitThreshold,
   minProfit,
   maxGasCost,
   minScore,
-  availableTokens = [],
   onUpdate,
   isUpdating = false,
   className = ""
 }) => {
-  const [localTokensTracked, setLocalTokensTracked] = useState(tokensTracked);
   const [localDashboardPopup, setLocalDashboardPopup] = useState(dashboardPopup);
   const [localEmailNotifications, setLocalEmailNotifications] = useState(emailNotifications);
   const [localProfitThreshold, setLocalProfitThreshold] = useState(profitThreshold);
@@ -100,14 +67,13 @@ const ProfilePreferences: React.FC<ProfilePreferencesProps> = ({
 
   // Update local state when props change
   useEffect(() => {
-    setLocalTokensTracked(tokensTracked);
     setLocalDashboardPopup(dashboardPopup);
     setLocalEmailNotifications(emailNotifications);
     setLocalProfitThreshold(profitThreshold);
     setLocalMinProfit(minProfit);
     setLocalMaxGasCost(maxGasCost);
     setLocalMinScore(minScore);
-  }, [tokensTracked, dashboardPopup, emailNotifications, profitThreshold, minProfit, maxGasCost, minScore]);
+  }, [dashboardPopup, emailNotifications, profitThreshold, minProfit, maxGasCost, minScore]);
 
   const validateProfitThreshold = (value: number): boolean => {
     if (value < 0 || value > 50) {
@@ -134,17 +100,6 @@ const ProfilePreferences: React.FC<ProfilePreferencesProps> = ({
     }
     setMaxGasCostError('');
     return true;
-  };
-
-  const handleTokenToggle = (token: string) => {
-    const newTokensTracked = {
-      ...localTokensTracked,
-      [token]: !localTokensTracked[token]
-    };
-    setLocalTokensTracked(newTokensTracked);
-    
-    // Update pending changes immediately
-    onUpdate?.({ tokensTracked: newTokensTracked });
   };
 
   const handleDashboardToggle = () => {
@@ -211,35 +166,6 @@ const ProfilePreferences: React.FC<ProfilePreferencesProps> = ({
       </div>
 
       <div className="space-y-6">
-        {/* Tokens Tracked */}
-        <div>
-          <label className="block text-sm text-slate-400 mb-2">Tokens Tracked</label>
-          <p className="text-xs text-slate-500 mb-3">Select which tokens to monitor for arbitrage opportunities.</p>
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-            {availableTokens.length > 0 ? (
-              availableTokens.map((token) => (
-                <TokenCheckbox
-                  key={token}
-                  token={token}
-                  checked={localTokensTracked[token] || false}
-                  onChange={() => handleTokenToggle(token)}
-                  disabled={isUpdating}
-                />
-              ))
-            ) : (
-              Object.entries(localTokensTracked).map(([token, checked]) => (
-                <TokenCheckbox
-                  key={token}
-                  token={token}
-                  checked={checked}
-                  onChange={() => handleTokenToggle(token)}
-                  disabled={isUpdating}
-                />
-              ))
-            )}
-          </div>
-        </div>
-
         {/* Notification Preferences */}
         <div>
           <div className="flex items-center gap-2 mb-2">

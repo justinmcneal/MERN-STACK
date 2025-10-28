@@ -9,8 +9,9 @@ import {
   type SupportedChain,
   type SupportedToken
 } from '../config/tokens';
+import { API_ENDPOINTS, API_TIMEOUTS } from '../constants/api';
+import { TRADE_CONSTANTS } from '../constants/trading';
 
-const MIN_LIQUIDITY_USD = 1000;
 const STABLE_TOKENS = new Set<SupportedToken>();
 const STABLE_PRICE_MIN = 0.8;
 const STABLE_PRICE_MAX = 1.2;
@@ -80,12 +81,7 @@ interface DexScreenerResponse {
 
 export class DataService {
   private static instance: DataService;
-  private readonly dexScreenerBaseUrl = 'https://api.dexscreener.com/latest/dex';
-  private readonly polygonGasUrl = 'https://gasstation.polygon.technology/v2';
-  private readonly bscGasUrl = 'https://bscgas.info/gas';
-  private readonly blocknativeUrl = 'https://api.blocknative.com/gasprices/blockprices';
   private readonly cacheDir = path.resolve(__dirname, '..', '.cache');
-  private readonly etherscanGasUrl = 'https://api.etherscan.io/api';
 
   private constructor() {}
 
@@ -117,9 +113,9 @@ export class DataService {
       await new Promise(resolve => setTimeout(resolve, 300));
 
       const response = await (axios as any).get(
-        `${this.dexScreenerBaseUrl}/tokens/${normalizedAddress}`,
+        `${API_ENDPOINTS.DEXSCREENER}/tokens/${normalizedAddress}`,
         { 
-          timeout: 10000,
+          timeout: API_TIMEOUTS.DEFAULT,
           headers: {
             'User-Agent': 'ArbiTrader-Pro/1.0'
           }
@@ -150,8 +146,8 @@ export class DataService {
         return null;
       }
 
-      if (!Number.isFinite(best.liquidityUsd) || (best.liquidityUsd ?? 0) < MIN_LIQUIDITY_USD) {
-        logger.warn(`DexScreener skipping ${normalizedAddress} on ${chain}: liquidity below ${MIN_LIQUIDITY_USD}`);
+      if (!Number.isFinite(best.liquidityUsd) || (best.liquidityUsd ?? 0) < TRADE_CONSTANTS.MIN_LIQUIDITY_USD) {
+        logger.warn(`DexScreener skipping ${normalizedAddress} on ${chain}: liquidity below ${TRADE_CONSTANTS.MIN_LIQUIDITY_USD}`);
         return null;
       }
 
@@ -331,8 +327,8 @@ export class DataService {
     chain: string
   ): Promise<DexPrice | null> {
     try {
-      const url = `${this.dexScreenerBaseUrl}/tokens/${tokenAddress}`;
-      const response = await axios.get<DexScreenerResponse>(url, { timeout: 10000 });
+      const url = `${API_ENDPOINTS.DEXSCREENER}/tokens/${tokenAddress}`;
+      const response = await axios.get<DexScreenerResponse>(url, { timeout: API_TIMEOUTS.DEFAULT });
 
       if (!response.data?.pairs || response.data.pairs.length === 0) {
         logger.warn(`No DEX pairs found for ${symbol} (${tokenAddress}) on ${chain}`);
@@ -358,7 +354,7 @@ export class DataService {
       const priceUsd = parseFloat(bestPair.priceUsd);
       const liquidityUsd = bestPair.liquidity?.usd ?? 0;
 
-      if (!Number.isFinite(liquidityUsd) || liquidityUsd < MIN_LIQUIDITY_USD) {
+      if (!Number.isFinite(liquidityUsd) || liquidityUsd < TRADE_CONSTANTS.MIN_LIQUIDITY_USD) {
         logger.warn(`Dex price skipped for ${symbol} on ${chain}: liquidity ${liquidityUsd}`);
         return null;
       }
@@ -402,8 +398,8 @@ export class DataService {
       }
 
       const response = await axios.get<BlocknativeResponse>(
-        `${this.blocknativeUrl}?chainid=1`,
-        { headers, timeout: 10000 }
+        `${API_ENDPOINTS.BLOCKNATIVE}?chainid=1`,
+        { headers, timeout: API_TIMEOUTS.DEFAULT }
       );
 
       const prices = response.data.blockPrices?.[0]?.estimatedPrices;
@@ -427,10 +423,10 @@ export class DataService {
       try {
         const apiKey = process.env.ETHERSCAN_API_KEY;
         const url = apiKey
-          ? `${this.etherscanGasUrl}?module=gastracker&action=gasoracle&apikey=${apiKey}`
-          : `${this.etherscanGasUrl}?module=gastracker&action=gasoracle`;
+          ? `${API_ENDPOINTS.ETHERSCAN}?module=gastracker&action=gasoracle&apikey=${apiKey}`
+          : `${API_ENDPOINTS.ETHERSCAN}?module=gastracker&action=gasoracle`;
 
-        const response = await axios.get(url, { timeout: 10000 });
+        const response = await axios.get(url, { timeout: API_TIMEOUTS.DEFAULT });
         const result = (response.data as any)?.result;
         if (!result?.FastGasPrice) {
           throw new Error('Invalid Etherscan response');
@@ -451,8 +447,8 @@ export class DataService {
   async fetchPolygonGasPrice(): Promise<GasPrice> {
     try {
       const response = await axios.get<PolygonGasResponse>(
-        this.polygonGasUrl,
-        { timeout: 10000 }
+        API_ENDPOINTS.POLYGON_GAS,
+        { timeout: API_TIMEOUTS.DEFAULT }
       );
 
       return {
@@ -469,8 +465,8 @@ export class DataService {
   async fetchBSCGasPrice(): Promise<GasPrice> {
     try {
       const response = await axios.get<BSCGasResponse>(
-        this.bscGasUrl,
-        { timeout: 5000 }
+        API_ENDPOINTS.BSC_GAS,
+        { timeout: API_TIMEOUTS.SHORT }
       );
 
       return {

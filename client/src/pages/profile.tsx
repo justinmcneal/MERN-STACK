@@ -42,7 +42,6 @@ const ProfilePage = () => {
   const [originalState, setOriginalState] = useState({
     profile: { name: '', email: '', profilePicture: null as string | null, avatar: 0 },
     preferences: {
-      tokensTracked: [] as string[],
       dashboardPopup: false,
       emailNotifications: false,
       profitThreshold: 1,
@@ -55,7 +54,6 @@ const ProfilePage = () => {
   const [localName, setLocalName] = useState('');
 
   // Local state for form data
-  const [localTokensTracked, setLocalTokensTracked] = useState<Record<string, boolean>>({});
   const [localDashboardPopup, setLocalDashboardPopup] = useState(false);
   const [localEmailNotifications, setLocalEmailNotifications] = useState(false);
   const [localProfitThreshold, setLocalProfitThreshold] = useState(1);
@@ -65,17 +63,10 @@ const ProfilePage = () => {
   const [localTwoFactorAuth, setLocalTwoFactorAuth] = useState(false);
   const [selectedAvatar, setSelectedAvatar] = useState(0);
   const [localProfilePicture, setLocalProfilePicture] = useState<string | null>(null);
-  const [availableTokens, setAvailableTokens] = useState<string[]>([]);
   
   // Update local state when preferences change
   useEffect(() => {
     if (preferences) {
-      const tokensTracked = preferences.tokensTracked.reduce((acc, token) => {
-        acc[token] = true;
-        return acc;
-      }, {} as Record<string, boolean>);
-      
-      setLocalTokensTracked(tokensTracked);
       setLocalDashboardPopup(preferences.notificationSettings.dashboard);
       setLocalEmailNotifications(preferences.notificationSettings.email);
       setLocalProfitThreshold(preferences.alertThresholds.minROI);
@@ -96,7 +87,6 @@ const ProfilePage = () => {
           avatar: profile?.user.avatar || 0
         },
         preferences: {
-          tokensTracked: [...preferences.tokensTracked],
           dashboardPopup: preferences.notificationSettings.dashboard,
           emailNotifications: preferences.notificationSettings.email,
           profitThreshold: preferences.alertThresholds.minROI,
@@ -115,49 +105,12 @@ const ProfilePage = () => {
     }
   }, [profile]);
 
-  // Fetch available tokens on component mount
-  useEffect(() => {
-    const fetchAvailableTokens = async () => {
-      try {
-        // Use the default supported tokens for now
-        // In a real app, you'd fetch this from the API
-  const defaultTokens = ['ETH', 'XRP', 'SOL', 'BNB', 'MATIC'];
-        setAvailableTokens(defaultTokens);
-        
-        // Initialize localTokensTracked with all available tokens
-        setLocalTokensTracked(prev => {
-          if (Object.keys(prev).length > 0) {
-            return prev;
-          }
-
-          const initialTokensTracked = defaultTokens.reduce((acc, token) => {
-            acc[token] = false; // Start with all unchecked
-            return acc;
-          }, {} as Record<string, boolean>);
-
-          return initialTokensTracked;
-        });
-      } catch (error) {
-        console.error('Failed to fetch available tokens:', error);
-      }
-    };
-
-    fetchAvailableTokens();
-  }, []);
-
   // Function to check if current state differs from original state
   const hasActualChanges = useMemo(() => {
     const trimmedLocalName = localName.trim();
     const profileChanged = trimmedLocalName !== originalState.profile.name;
     const profilePictureChanged = localProfilePicture !== originalState.profile.profilePicture;
     const avatarChanged = selectedAvatar !== originalState.profile.avatar;
-
-    const localTokensSelected = Object.entries(localTokensTracked)
-      .filter(([, selected]) => selected)
-      .map(([token]) => token)
-      .sort();
-    const originalTokensSelected = [...originalState.preferences.tokensTracked].sort();
-    const tokensChanged = JSON.stringify(localTokensSelected) !== JSON.stringify(originalTokensSelected);
 
     const dashboardChanged = localDashboardPopup !== originalState.preferences.dashboardPopup;
     const emailChanged = localEmailNotifications !== originalState.preferences.emailNotifications;
@@ -166,8 +119,8 @@ const ProfilePage = () => {
     const maxGasCostChanged = localMaxGasCost !== originalState.preferences.maxGasCost;
     const minScoreChanged = localMinScore !== originalState.preferences.minScore;
 
-    return profileChanged || profilePictureChanged || avatarChanged || tokensChanged || dashboardChanged || emailChanged || profitChanged || minProfitChanged || maxGasCostChanged || minScoreChanged;
-  }, [localName, localProfilePicture, selectedAvatar, localTokensTracked, localDashboardPopup, localEmailNotifications, localProfitThreshold, localMinProfit, localMaxGasCost, localMinScore, originalState]);
+    return profileChanged || profilePictureChanged || avatarChanged || dashboardChanged || emailChanged || profitChanged || minProfitChanged || maxGasCostChanged || minScoreChanged;
+  }, [localName, localProfilePicture, selectedAvatar, localDashboardPopup, localEmailNotifications, localProfitThreshold, localMinProfit, localMaxGasCost, localMinScore, originalState]);
 
   // Handle profile updates (store locally, don't save immediately)
   const handleProfileUpdate = (data: { name?: string; email?: string; avatar?: number; profilePicture?: string }) => {
@@ -193,7 +146,6 @@ const ProfilePage = () => {
 
   // Handle preferences updates (store locally, don't save immediately)
   const handlePreferencesUpdate = (data: { 
-    tokensTracked?: Record<string, boolean>;
     dashboardPopup?: boolean;
     emailNotifications?: boolean;
     profitThreshold?: number;
@@ -202,10 +154,6 @@ const ProfilePage = () => {
     minScore?: number;
     twoFactorAuth?: boolean;
   }) => {
-    if (data.tokensTracked) {
-      setLocalTokensTracked(data.tokensTracked);
-    }
-
     if (data.dashboardPopup !== undefined) {
       setLocalDashboardPopup(data.dashboardPopup);
     }
@@ -257,12 +205,6 @@ const ProfilePage = () => {
         profileData.avatar = selectedAvatar;
       }
 
-      const localTokensSelected = Object.entries(localTokensTracked)
-        .filter(([, selected]) => selected)
-        .map(([token]) => token);
-      const originalTokensSelected = [...originalState.preferences.tokensTracked];
-      const tokensChanged = JSON.stringify(localTokensSelected.sort()) !== JSON.stringify(originalTokensSelected.sort());
-
       const dashboardChanged = localDashboardPopup !== originalState.preferences.dashboardPopup;
       const emailChanged = localEmailNotifications !== originalState.preferences.emailNotifications;
       const profitChanged = localProfitThreshold !== originalState.preferences.profitThreshold;
@@ -277,12 +219,8 @@ const ProfilePage = () => {
       }
 
       // Save preferences changes (check if any threshold changed)
-      if (tokensChanged || dashboardChanged || emailChanged || profitChanged || minProfitChanged || maxGasCostChanged || minScoreChanged) {
+      if (dashboardChanged || emailChanged || profitChanged || minProfitChanged || maxGasCostChanged || minScoreChanged) {
   const preferencesData: UpdatePreferencesData = {};
-
-        if (tokensChanged) {
-          preferencesData.tokensTracked = localTokensSelected;
-        }
 
         if (dashboardChanged || emailChanged) {
           preferencesData.notificationSettings = {
@@ -313,7 +251,6 @@ const ProfilePage = () => {
           avatar: profileData.avatar !== undefined ? profileData.avatar : prev.profile.avatar
         },
         preferences: {
-          tokensTracked: tokensChanged ? [...localTokensSelected] : [...prev.preferences.tokensTracked],
           dashboardPopup: localDashboardPopup,
           emailNotifications: localEmailNotifications,
           profitThreshold: localProfitThreshold,
@@ -369,10 +306,6 @@ const ProfilePage = () => {
   }
 
   // Convert preferences data to component format
-  const tokensTracked = availableTokens.reduce((acc, token) => {
-    acc[token] = localTokensTracked[token] || false;
-    return acc;
-  }, {} as Record<string, boolean>);
   const dashboardPopup = localDashboardPopup;
   const emailNotifications = localEmailNotifications;
   const profitThreshold = localProfitThreshold;
@@ -420,14 +353,12 @@ const ProfilePage = () => {
 
               {/* Preferences */}
               <ProfilePreferences
-                tokensTracked={tokensTracked}
                 dashboardPopup={dashboardPopup}
                 emailNotifications={emailNotifications}
                 profitThreshold={profitThreshold}
                 minProfit={localMinProfit}
                 maxGasCost={localMaxGasCost}
                 minScore={localMinScore}
-                availableTokens={availableTokens}
                 onUpdate={handlePreferencesUpdate}
                 isUpdating={preferencesUpdating}
               />

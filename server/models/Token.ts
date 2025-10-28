@@ -1,15 +1,13 @@
-// models/Token.ts
 import mongoose, { Document, Schema, Model } from 'mongoose';
 
-// Interface for Token document
 export interface IToken extends Document {
   _id: string;
   symbol: string;
   chain: string;
   currentPrice: number;
-  dexPrice?: number; // Chain-specific DEX price
-  dexName?: string; // Name of the DEX (e.g., 'uniswap-v3', 'pancakeswap-v3')
-  liquidity?: number; // Liquidity in USD on the DEX
+  dexPrice?: number;
+  dexName?: string;
+  liquidity?: number;
   lastUpdated: Date;
   name?: string;
   decimals?: number;
@@ -65,10 +63,7 @@ const tokenSchema: Schema<IToken> = new mongoose.Schema(
   }
 );
 
-// Compound index for symbol + chain uniqueness
 tokenSchema.index({ symbol: 1, chain: 1 }, { unique: true });
-
-// Index for efficient price queries
 tokenSchema.index({ lastUpdated: -1 });
 
 

@@ -111,7 +111,13 @@ export class EmailService {
     priorityLevel: string,
     ticketId: string
   ): Promise<void> {
-    const supportEmail = process.env.SUPPORT_EMAIL!;
+    const supportEmail = process.env.SUPPORT_EMAIL || process.env.EMAIL_FROM || process.env.EMAIL_USER;
+    
+    if (!supportEmail) {
+      logger.error('SUPPORT_EMAIL, EMAIL_FROM, or EMAIL_USER not configured');
+      throw new Error('Support email not configured');
+    }
+
     const html = supportTicketNotificationTemplate(fullName, email, phoneNumber, subject, message, priorityLevel, ticketId);
 
     await this.sendEmail({

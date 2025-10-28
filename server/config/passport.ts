@@ -1,4 +1,3 @@
-// config/passport.ts
 import passport from "passport";
 import { Strategy as GoogleStrategy } from "passport-google-oauth20";
 
@@ -21,7 +20,6 @@ passport.use(
     },
     async (accessToken: string, refreshToken: string, profile: GoogleProfile, done: (error: any, user?: GoogleUser) => void) => {
       try {
-        // Extract just name & email
         const user: GoogleUser = {
           name: profile.displayName,
           email: profile.emails?.[0]?.value || '',
@@ -34,8 +32,8 @@ passport.use(
   )
 );
 
-// Serialize & deserialize (keeps session user small)
 passport.serializeUser((user: any, done: (error: any, user: any) => void) => done(null, user));
 passport.deserializeUser((obj: any, done: (error: any, user: any) => void) => done(null, obj));
 
 export default passport;
+

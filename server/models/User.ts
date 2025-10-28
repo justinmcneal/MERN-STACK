@@ -1,8 +1,5 @@
-// models/User.ts
 import mongoose, { Document, Schema, Model } from 'mongoose';
 import bcrypt from 'bcryptjs';
-
-// Interface for User document
 export interface IUser extends Document {
   _id: string;
   name: string;
@@ -41,30 +38,22 @@ const userSchema: Schema<IUser> = new mongoose.Schema(
     emailVerificationExpires: { type: Date, default: null },
     passwordResetToken: { type: String, default: null },
     passwordResetExpires: { type: Date, default: null },
-    // Two-Factor Authentication fields
     twoFactorEnabled: { type: Boolean, default: false },
     twoFactorSecret: { type: String, default: null },
     twoFactorBackupCodes: [{ type: String }],
     twoFactorVerifiedAt: { type: Date, default: null },
-    // Profile picture
     profilePicture: { type: String, default: null },
-    // Avatar selection
     avatar: { type: Number, default: 0 },
   },
   { timestamps: true }
 );
-
-// Instance method to check if account is locked
 userSchema.methods.isLocked = function (): boolean {
   return !!(this.lockUntil && this.lockUntil > Date.now());
 };
-
-// Hash password before save (only if modified)
+const HASH_PREFIXES = ['$2a$', '$2b$', '$2y$'];
 userSchema.pre<IUser>('save', async function (next) {
   if (!this.isModified('password')) return next();
-
-  // Skip re-hashing if password is already a bcrypt hash
-  if (this.password.startsWith('$2a$') || this.password.startsWith('$2b$') || this.password.startsWith('$2y$')) {
+  if (HASH_PREFIXES.some((prefix) => this.password.startsWith(prefix))) {
     return next();
   }
 
@@ -72,12 +61,9 @@ userSchema.pre<IUser>('save', async function (next) {
   this.password = await bcrypt.hash(this.password, salt);
   next();
 });
-
-// Instance method to compare passwords
 userSchema.methods.matchPassword = async function (enteredPassword: string): Promise<boolean> {
   return await bcrypt.compare(enteredPassword, this.password);
 };
-
 
 const User: Model<IUser> = mongoose.model<IUser>('User', userSchema);
 export default User;

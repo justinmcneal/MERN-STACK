@@ -9,20 +9,7 @@ import {
   type SupportedChain,
   type SupportedToken
 } from '../config/tokens';
-
-const DEFAULT_TRADE_SIZE_USD = 1000;
-
-const OUTBOUND_GAS_UNITS: Record<SupportedChain, number> = {
-  ethereum: 450000,
-  polygon: 320000,
-  bsc: 360000
-};
-
-const INBOUND_GAS_UNITS: Record<SupportedChain, number> = {
-  ethereum: 220000,
-  polygon: 160000,
-  bsc: 200000
-};
+import { TRADE_CONSTANTS, GAS_UNITS, ANOMALY_THRESHOLDS, SEVERE_ANOMALY_FLAGS } from '../constants/trading';
 
 const dataService = DataService.getInstance();
 const mlService = MLService.getInstance();
@@ -34,13 +21,6 @@ export interface ArbitrageContext {
   gasPriceMap: Map<SupportedChain, number>;
   nativePriceMap: Map<SupportedChain, number>;
 }
-
-const SEVERE_ANOMALIES = new Set<string>([
-  'spread-outlier',
-  'gas-vs-profit-outlier',
-  'from-dex-cex-divergence',
-  'to-dex-cex-divergence'
-]);
 
 export interface OpportunityDiagnostics {
   priceDiffPercent: number;
@@ -150,7 +130,7 @@ export async function evaluateOpportunity(
   const priceDiffPerTokenUsd = priceTo - priceFrom;
   const priceDiffPercent = priceFrom > 0 ? (priceDiffPerTokenUsd / priceFrom) * 100 : 0;
 
-  const tradeUsdAmount = options?.tradeAmountUsd ?? DEFAULT_TRADE_SIZE_USD;
+  const tradeUsdAmount = options?.tradeAmountUsd ?? TRADE_CONSTANTS.DEFAULT_TRADE_SIZE_USD;
   if (tradeUsdAmount <= 0) {
     return null;
   }
@@ -160,8 +140,8 @@ export async function evaluateOpportunity(
     return null;
   }
 
-  const outboundGasUnits = OUTBOUND_GAS_UNITS[chainFrom] ?? 300000;
-  const inboundGasUnits = INBOUND_GAS_UNITS[chainTo] ?? 200000;
+  const outboundGasUnits = GAS_UNITS[chainFrom]?.outbound ?? 300000;
+  const inboundGasUnits = GAS_UNITS[chainTo]?.inbound ?? 200000;
 
   const gasCostFromUsd = dataService.estimateGasCostUsd(chainFrom, gasPriceFrom, nativePriceFrom, outboundGasUnits);
   const gasCostToUsd = dataService.estimateGasCostUsd(chainTo, gasPriceTo, nativePriceTo, inboundGasUnits);
@@ -212,7 +192,7 @@ export async function evaluateOpportunity(
     logger.warn(`Anomaly detected for ${symbol} ${chainFrom}->${chainTo}: ${anomalyFlags.join(', ')}`);
   }
 
-  if (anomalyFlags.some((flag) => SEVERE_ANOMALIES.has(flag))) {
+  if (anomalyFlags.some((flag) => SEVERE_ANOMALY_FLAGS.has(flag))) {
     return null;
   }
 
