@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { usePreferences } from "../hooks/usePreferences";
 import { TokenProvider } from "../context/TokenContext";
 import useTokenContext from "../context/useTokenContext";
@@ -140,6 +140,20 @@ const DashboardContent = () => {
 
   const closeNotifications = () => setNotificationOpen(false);
 
+  useEffect(() => {
+    if (sidebarOpen) {
+      setNotificationOpen(false);
+      setProfileDropdownOpen(false);
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+    }
+
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [sidebarOpen]);
+
   return (
     <DashboardLayout>
       {/* Sidebar */}
@@ -152,7 +166,11 @@ const DashboardContent = () => {
       {/* Main Content */}
       <div
         className={`flex-1 overflow-y-auto transition-all duration-300 ${sidebarOpen ? "fixed inset-0 backdrop-blur-5xl bg-black/60 z-40 lg:static lg:backdrop-blur-5xl lg:bg-black/60" : ""}`}
-        onClick={() => setSidebarOpen(false)}
+        onClick={() => {
+          if (sidebarOpen) {
+            setSidebarOpen(false);
+          }
+        }}
       >
         {/* Header */}
         <DashboardHeader

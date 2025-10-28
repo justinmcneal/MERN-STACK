@@ -3,38 +3,66 @@ import { createPortal } from "react-dom";
 import { User, LogOut } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
+import type { NotificationItem } from "../dashboard/DashboardHeader";
 
 interface SettingsHeaderProps {
   sidebarOpen: boolean;
   onSidebarToggle: () => void;
   notificationOpen: boolean;
   onNotificationToggle: () => void;
+  onNotificationClose?: () => void;
   profileDropdownOpen: boolean;
   onProfileDropdownToggle: () => void;
-  notifications: Array<{
-    type: string;
-    title: string;
-    pair?: string;
-    target?: string;
-    current?: string;
-    details?: string;
-    profit?: string;
-    gas?: string;
-    score?: number;
-    time: string;
-  }>;
+  notifications: (NotificationItem & { id: string; isRead: boolean })[];
+  unreadCount?: number;
+  onMarkAsRead?: (ids: string[]) => void;
+  onMarkAllAsRead?: () => void;
+  onClearAll?: () => void;
 }
 
 const SettingsHeader: React.FC<SettingsHeaderProps> = ({
   onSidebarToggle,
   notificationOpen,
   onNotificationToggle,
+  onNotificationClose,
   profileDropdownOpen,
   onProfileDropdownToggle,
-  notifications
+  notifications,
+  unreadCount,
+  onMarkAsRead,
+  onMarkAllAsRead,
+  onClearAll
 }) => {
   const navigate = useNavigate();
   const { user, logout } = useAuth();
+  const displayCount = unreadCount ?? notifications.filter(n => !n.isRead).length;
+
+  const handleNotificationClick = (notificationId: string) => {
+    if (onMarkAsRead) {
+      onMarkAsRead([notificationId]);
+    }
+  };
+
+  const handleMarkAllAsRead = () => {
+    if (onMarkAllAsRead) {
+      onMarkAllAsRead();
+    }
+  };
+
+  const handleClearAll = () => {
+    if (onClearAll) {
+      onClearAll();
+    }
+  };
+
+  const handleViewAll = () => {
+    navigate("/all-notifications");
+    if (onNotificationClose) {
+      onNotificationClose();
+    } else {
+      onNotificationToggle();
+    }
+  };
 
   const handleLogout = async () => {
     try {
@@ -75,9 +103,11 @@ const SettingsHeader: React.FC<SettingsHeaderProps> = ({
               >
                 <path d="M12 2C10.343 2 9 3.343 9 5v1.07C6.164 6.562 4 9.138 4 12v5l-1 1v1h18v-1l-1-1v-5c0-2.862-2.164-5.438-5-5.93V5c0-1.657-1.343-3-3-3zm0 20a3 3 0 003-3H9a3 3 0 003 3z" />
               </svg>
-              <div className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-[10px] font-bold text-white rounded-full flex items-center justify-center">
-                {notifications.length}
-              </div>
+              {displayCount > 0 && (
+                <div className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-[10px] font-bold text-white rounded-full flex items-center justify-center">
+                  {displayCount}
+                </div>
+              )}
             </button>
 
             {/* Notification Dropdown */} 
@@ -95,41 +125,49 @@ const SettingsHeader: React.FC<SettingsHeaderProps> = ({
                       <span className="font-semibold text-slate-200">Notifications</span>
                     </div>
                     <div className="flex gap-6">
-                      <button className="text-xs text-slate-400 hover:text-slate-200">Mark All Read</button>
-                      <button className="text-xs text-slate-400 hover:text-slate-200">Clear All</button>
+                      <button onClick={handleMarkAllAsRead} className="text-xs text-slate-400 hover:text-slate-200">Mark All Read</button>
+                      <button onClick={handleClearAll} className="text-xs text-slate-400 hover:text-red-400">Clear All</button>
                     </div>
                   </div>
 
                   {/* List */}
                   <div className="max-h-[60vh] overflow-y-auto divide-y divide-slate-800/60">
-                    {notifications.map((n, i) => (
-                      <div key={i} className="flex flex-col px-4 py-3 hover:bg-slate-800/40 transition">
-                        {n.type === "price" ? (
-                          <>
-                            <div className="flex items-center justify-between">
-                              <span className="text-slate-200 font-medium">{n.title}</span>
-                              <span className="text-xs text-cyan-400">{n.time}</span>
-                            </div>
-                            <p className="text-sm text-slate-300 mt-1">{n.pair} reached your target of {n.target}</p>
-                            <p className="text-xs text-slate-400">Alert set: {n.target} • Current: {n.current}</p>
-                          </>
-                        ) : (
-                          <>
-                            <div className="flex items-center justify-between">
-                              <span className="text-slate-200 font-medium">{n.title}</span>
-                              <span className="text-xs text-cyan-400">{n.time}</span>
-                            </div>
-                            <p className="text-sm text-emerald-300 mt-1">{n.details}</p>
-                            <p className="text-xs text-slate-400">Est. Profit: {n.profit} • Gas: {n.gas} • Score: {n.score}</p>
-                          </>
-                        )}
-                      </div>
-                    ))}
+                    {notifications.length === 0 ? (
+                      <div className="px-4 py-8 text-center text-slate-400">No notifications</div>
+                    ) : (
+                      notifications.map((n) => (
+                        <div
+                          key={n.id}
+                          className={`flex flex-col px-4 py-3 hover:bg-slate-800/40 transition cursor-pointer ${!n.isRead ? "bg-slate-800/20" : ""}`}
+                          onClick={() => handleNotificationClick(n.id)}
+                        >
+                          {n.type === "price" ? (
+                            <>
+                              <div className="flex items-center justify-between">
+                                <span className="text-slate-200 font-medium">{n.title}</span>
+                                <span className="text-xs text-cyan-400">{n.time}</span>
+                              </div>
+                              <p className="text-sm text-slate-300 mt-1">{n.pair} reached your target of {n.target}</p>
+                              <p className="text-xs text-slate-400">Alert set: {n.target} • Current: {n.current}</p>
+                            </>
+                          ) : (
+                            <>
+                              <div className="flex items-center justify-between">
+                                <span className="text-slate-200 font-medium">{n.title}</span>
+                                <span className="text-xs text-cyan-400">{n.time}</span>
+                              </div>
+                              <p className="text-sm text-emerald-300 mt-1">{n.details}</p>
+                              <p className="text-xs text-slate-400">Est. Profit: {n.profit} • Gas: {n.gas} • Score: {n.score}</p>
+                            </>
+                          )}
+                        </div>
+                      ))
+                    )}
                   </div>
 
                   {/* Footer */}
                   <button
-                    onClick={() => navigate("/all-notifications")}
+                    onClick={handleViewAll}
                     className="w-full py-3 text-center text-sm font-medium bg-gradient-to-r from-cyan-500/20 to-purple-500/20 text-cyan-300 hover:from-cyan-500/30 hover:to-purple-500/30 transition"
                   >
                     View All Notifications

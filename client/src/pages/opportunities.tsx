@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import DashboardLayout from "../components/dashboard/DashboardLayout";
 import Sidebar from "../components/dashboard/Sidebar";
@@ -126,6 +126,20 @@ const OpportunitiesPage: React.FC = () => {
       return next;
     });
   };
+
+  useEffect(() => {
+    if (sidebarOpen) {
+      setNotificationOpen(false);
+      setProfileDropdownOpen(false);
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+    }
+
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [sidebarOpen]);
 
   return (
     <DashboardLayout>
