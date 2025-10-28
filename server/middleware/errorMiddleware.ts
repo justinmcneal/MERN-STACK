@@ -1,5 +1,5 @@
-// middleware/errorMiddleware.ts
 import { Request, Response, NextFunction } from 'express';
+import logger from '../utils/logger';
 
 export interface AppError extends Error {
   statusCode?: number;
@@ -27,9 +27,8 @@ export const errorHandler = (
   const statusCode = error.statusCode || 500;
   const message = error.message || 'Internal Server Error';
 
-  // Log error in development
   if (process.env.NODE_ENV === 'development') {
-    console.error('Error:', {
+    logger.error('Error occurred', {
       message: error.message,
       stack: error.stack,
       statusCode,

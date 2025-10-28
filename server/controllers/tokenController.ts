@@ -4,6 +4,7 @@ import Token from '../models/Token';
 import TokenHistory from '../models/TokenHistory';
 import DataService from '../services/DataService';
 import { getTokenName, TOKEN_CONTRACTS } from '../config/tokens';
+import logger from '../utils/logger';
 
 // GET /api/tokens - Get all tokens
 export const getTokens = asyncHandler(async (req: Request, res: Response) => {
@@ -202,14 +203,14 @@ export const refreshTokenPrices = asyncHandler(async (req: Request, res: Respons
         dexUpdatedCount++;
       }
     } catch (dexErr: any) {
-      console.error('Error refreshing DEX prices during manual refresh:', dexErr?.message || dexErr);
+      logger.error('Error refreshing DEX prices during manual refresh', dexErr);
     }
 
     if (historyBatch.length > 0) {
       try {
         await TokenHistory.insertMany(historyBatch, { ordered: false });
       } catch (historyErr: any) {
-        console.error('Error recording token history during manual refresh:', historyErr?.message || historyErr);
+        logger.error('Error recording token history during manual refresh', historyErr);
       }
     }
 
@@ -355,7 +356,7 @@ export const getTokenHistory = async (req: Request, res: Response) => {
       message: payload.length < desiredPoints ? 'Limited historical samples available for this range.' : undefined
     });
   } catch (error: any) {
-    console.error('Error retrieving token history:', error);
+    logger.error('Error retrieving token history', error);
     res.status(500).json({
       success: false,
       symbol: normalizedSymbol,
