@@ -76,7 +76,7 @@ const FeaturesSection = () => {
             </svg>
           }
         >
-          Customizable notifications via Telegram, Discord, email, and webhooks. Set complex conditions and receive instant alerts for high-value opportunities.
+          Customizable notifications delivered through email alerts and in-app dashboards. Set complex conditions and receive instant updates for high-value opportunities.
         </FeatureCard>
       </div>
     </section>

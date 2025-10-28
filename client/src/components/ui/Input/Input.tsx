@@ -69,7 +69,7 @@ const Input: React.FC<InputProps> = ({
           <button
             type="button"
             onClick={togglePasswordVisibility}
-            className="absolute right-3 top-1/2 -translate-y-1/2 text-black hover:text-gray-700 transition-colors focus:outline-none focus:text-gray-800"
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-black hover:text-slate-700 transition-colors focus:outline-none focus:text-slate-800"
             aria-label={showPassword ? 'Hide password' : 'Show password'}
             tabIndex={-1}
           >

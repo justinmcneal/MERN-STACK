@@ -1,4 +1,15 @@
+import { Link } from "react-router-dom";
+import { useAuth } from "../../../context/AuthContext";
+
 const Footer = () => {
+  const { isAuthenticated } = useAuth();
+
+  const quickLinks = [
+    { label: "FAQ", to: isAuthenticated ? "/faq" : "/logIn" },
+    { label: "About Us", to: isAuthenticated ? "/about-us" : "/about" },
+    { label: "Support", to: isAuthenticated ? "/contact-support" : "/logIn" }
+  ];
+
   return (
     <footer className="relative z-10 border-t border-slate-800/50 mt-20">
       <div className="max-w-7xl mx-auto px-6 lg:px-8 py-16">
@@ -24,9 +35,13 @@ const Footer = () => {
           <div>
             <h5 className="text-cyan-200 font-semibold mb-4">Quick Links</h5>
             <ul className="space-y-2 text-slate-400">
-              <li><a href="#" className="hover:text-white transition-colors">FAQ</a></li>
-              <li><a href="#" className="hover:text-white transition-colors">About Us</a></li>
-              <li><a href="#" className="hover:text-white transition-colors">Support</a></li>
+              {quickLinks.map(({ label, to }) => (
+                <li key={label}>
+                  <Link to={to} className="hover:text-white transition-colors">
+                    {label}
+                  </Link>
+                </li>
+              ))}
             </ul>
           </div>
           
@@ -42,9 +57,9 @@ const Footer = () => {
           <div>
             <h5 className="text-cyan-200 font-semibold mb-4">Contact</h5>
             <ul className="space-y-2 text-slate-400">
-              <li><a href="#" className="hover:text-white transition-colors">Twitter</a></li>
-              <li><a href="#" className="hover:text-white transition-colors">Telegram</a></li>
-              <li><a href="#" className="hover:text-white transition-colors">Discord</a></li>
+              <li>
+                <a href="mailto:support@arbitragepro.com" className="hover:text-white transition-colors">support@arbitragepro.com</a>
+              </li>
             </ul>
           </div>
         </div>

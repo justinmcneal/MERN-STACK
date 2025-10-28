@@ -68,14 +68,6 @@ const userPreferenceSchema: Schema<IUserPreference> = new mongoose.Schema(
       dashboard: { 
         type: Boolean, 
         default: notificationDefaults.dashboard 
-      },
-      telegram: { 
-        type: Boolean, 
-        default: notificationDefaults.telegram 
-      },
-      discord: { 
-        type: Boolean, 
-        default: notificationDefaults.discord 
       }
     },
     refreshInterval: { 

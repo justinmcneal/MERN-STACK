@@ -13,8 +13,6 @@ export interface AlertThresholds {
 export interface NotificationSettings {
   email: boolean;
   dashboard: boolean;
-  telegram: boolean;
-  discord: boolean;
 }
 
 export const defaultAlertThresholds = (): AlertThresholds => ({
@@ -27,8 +25,6 @@ export const defaultAlertThresholds = (): AlertThresholds => ({
 export const defaultNotificationSettings = (): NotificationSettings => ({
   email: true,
   dashboard: true,
-  telegram: false,
-  discord: false,
 });
 
 export const DEFAULT_REFRESH_INTERVAL = 30;

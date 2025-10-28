@@ -127,9 +127,9 @@ const ChartComponent: React.FC<ChartComponentProps> = ({ formatCurrency, currenc
   }, [baseToken, timeframe, pointsCount]);
 
   // Chart drawing params - optimized for card container
-  const width = 800;
-  const height = 200;
-  const padding = 20;
+  const width = 1200;
+  const height = 320;
+  const padding = 24;
   const innerW = width - padding * 2;
   const innerH = height - padding * 2;
 
@@ -219,7 +219,7 @@ const ChartComponent: React.FC<ChartComponentProps> = ({ formatCurrency, currenc
         </div>
       </div>
 
-      <div className="relative w-full mb-4 h-[280px]">
+  <div className="relative w-full mb-4 h-[360px]">
         <svg className="w-full h-full" viewBox={`0 0 ${width} ${height}`} preserveAspectRatio="xMidYMid meet">
           <defs>
             <linearGradient id={`areaGrad-${baseToken?.symbol || 'g'}`} x1="0%" y1="0%" x2="0%" y2="100%">

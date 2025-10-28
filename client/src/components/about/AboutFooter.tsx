@@ -1,4 +1,15 @@
+import { Link } from "react-router-dom";
+import { useAuth } from "../../context/AuthContext";
+
 const AboutFooter = () => {
+  const { isAuthenticated } = useAuth();
+
+  const quickLinks = [
+    { label: "FAQ", to: isAuthenticated ? "/faq" : "/logIn" },
+    { label: "About Us", to: isAuthenticated ? "/about-us" : "/about" },
+  ];
+
+
   return (
     <footer className="relative z-10 border-t border-slate-800/50 mt-20">
       <div className="max-w-7xl mx-auto px-6 lg:px-8 py-8">
@@ -19,45 +30,23 @@ const AboutFooter = () => {
             <p className="text-slate-400 mb-6 max-w-md">
               Professional-grade monitoring platform powered by AI and real-time multi-chain data insights.
             </p>
-            <div className="flex gap-4">
-              <a
-                href="#"
-                className="w-10 h-10 bg-slate-800 hover:bg-slate-700 rounded-lg flex items-center justify-center transition-colors"
-              >
-                <span className="text-slate-300">𝕏</span>
-              </a>
-              <a
-                href="#"
-                className="w-10 h-10 bg-slate-800 hover:bg-slate-700 rounded-lg flex items-center justify-center transition-colors"
-              >
-                <span className="text-slate-300">TG</span>
-              </a>
-              <a
-                href="#"
-                className="w-10 h-10 bg-slate-800 hover:bg-slate-700 rounded-lg flex items-center justify-center transition-colors"
-              >
-                <span className="text-slate-300">DC</span>
-              </a>
+            <div className="mt-4">
+              <h5 className="text-cyan-200 font-semibold mb-2">Talk to Our Team</h5>
+              <p className="text-sm text-slate-400">
+                Email <a href="mailto:support@arbitragepro.com" className="text-cyan-300 hover:text-cyan-200 transition-colors">support@arbitragepro.com</a> for direct assistance from an analyst.
+              </p>
             </div>
           </div>
           <div>
             <h5 className="text-cyan-200 font-semibold mb-4">Quick Links</h5>
             <ul className="space-y-2 text-slate-400">
-              <li>
-                <a href="#" className="hover:text-white transition-colors">
-                  FAQ
-                </a>
-              </li>
-              <li>
-                <a href="#" className="hover:text-white transition-colors">
-                  About Us
-                </a>
-              </li>
-              <li>
-                <a href="#" className="hover:text-white transition-colors">
-                  Support
-                </a>
-              </li>
+              {quickLinks.map(({ label, to }) => (
+                <li key={label}>
+                  <Link to={to} className="hover:text-white transition-colors">
+                    {label}
+                  </Link>
+                </li>
+              ))}
             </ul>
           </div>
           <div>
@@ -84,18 +73,9 @@ const AboutFooter = () => {
             <h5 className="text-cyan-200 font-semibold mb-4">Contact</h5>
             <ul className="space-y-2 text-slate-400">
               <li>
-                <a href="#" className="hover:text-white transition-colors">
-                  Twitter
-                </a>
-              </li>
-              <li>
-                <a href="#" className="hover:text-white transition-colors">
-                  Telegram
-                </a>
-              </li>
-              <li>
-                <a href="#" className="hover:text-white transition-colors">
-                  Discord
+                <span className="block text-slate-500 text-xs uppercase tracking-wide">Email</span>
+                <a href="mailto:support@arbitragepro.com" className="hover:text-white transition-colors">
+                  support@arbitragepro.com
                 </a>
               </li>
             </ul>

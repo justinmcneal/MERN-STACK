@@ -103,8 +103,6 @@ export interface UserPreference {
   notificationSettings: {
     email: boolean;
     dashboard: boolean;
-    telegram?: boolean;
-    discord?: boolean;
   };
   refreshInterval: number;
   currency: CurrencyCode;

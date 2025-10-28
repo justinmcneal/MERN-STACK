@@ -9,14 +9,14 @@ const Sidebar: React.FC<{
 }> = ({ sidebarOpen, setSidebarOpen, activeTab }) => {
   const navigate = useNavigate();
 
-  const navigation = [
-    { name: 'Dashboard', icon: <BarChart3 className="w-5 h-5 text-white" /> },
-    { name: 'Opportunities', icon: <Zap className="w-5 h-5 text-white" />, path: '/opportunities' },
-    { name: 'Profile', icon: <User className="w-5 h-5 text-white" />, path: '/profile' },
-    { name: 'Contact Support', icon: <Phone className="w-5 h-5 text-white" />, path: '/contact-support' },
-    { name: 'FAQ', icon: <HelpCircle className="w-5 h-5 text-white" />, path: '/faq' },
-    { name: 'About Us', icon: <Info className="w-5 h-5 text-white" />, path: '/about-us' },
-    { name: 'Settings', icon: <Settings className="w-5 h-5 text-white" />, path: '/settings' }
+  const navigation: Array<{ name: string; path: string; icon: typeof BarChart3 }> = [
+    { name: 'Dashboard', path: '/', icon: BarChart3 },
+    { name: 'Opportunities', path: '/opportunities', icon: Zap },
+    { name: 'Profile', path: '/profile', icon: User },
+    { name: 'Contact Support', path: '/contact-support', icon: Phone },
+    { name: 'FAQ', path: '/faq', icon: HelpCircle },
+    { name: 'About Us', path: '/about-us', icon: Info },
+    { name: 'Settings', path: '/settings', icon: Settings }
   ];
 
   return (
@@ -52,20 +52,26 @@ const Sidebar: React.FC<{
       <div className="p-4">
         <div className="text-xs text-slate-400 uppercase tracking-wider mb-4">Main Navigation</div>
         <nav className="space-y-2">
-          {navigation.map(item => (
+          {navigation.map(item => {
+            const isActive = activeTab === item.name;
+            const Icon = item.icon;
+            return (
             <button
               key={item.name}
-              onClick={() => { if (item.path) navigate(item.path); setSidebarOpen(false); }}
+              onClick={() => { navigate(item.path); setSidebarOpen(false); }}
               className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 ${
-                activeTab === item.name
+                isActive
                   ? 'bg-gradient-to-r from-cyan-500/20 to-purple-500/20 text-cyan-400 border border-cyan-500/30'
                   : 'text-slate-400 hover:text-slate-300 hover:bg-slate-800/50'
               }`}
             >
-              <span className="text-lg">{item.icon}</span>
+              <span className="text-lg">
+                <Icon className={`w-5 h-5 ${isActive ? 'text-cyan-300' : 'text-slate-300'}`} />
+              </span>
               <span className="font-medium">{item.name}</span>
             </button>
-          ))}
+            );
+          })}
         </nav>
       </div>
     </div>
