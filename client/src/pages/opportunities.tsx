@@ -7,7 +7,7 @@ import OpportunitiesMainContent from "../components/opportunities/OpportunitiesM
 import RangeSliderStyles from "../components/opportunities/RangeSliderStyles";
 import { useAuth } from "../context/AuthContext";
 import { usePreferences } from "../hooks/usePreferences";
-import { useCurrencyFormatter } from "../hooks/useCurrencyFormatter";
+import { useCurrencyFormatter, type SupportedCurrency } from "../hooks/useCurrencyFormatter";
 import useOpportunities from "../hooks/useOpportunities";
 import { useNotifications } from "../hooks/useNotifications";
 import type { OpportunityItem } from "../components/opportunities/types";
@@ -29,7 +29,8 @@ const OpportunitiesPage: React.FC = () => {
   const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
 
   const { preferences } = usePreferences();
-  const { formatCurrency } = useCurrencyFormatter();
+  const currencyPreference = (preferences?.currency ?? 'USD') as SupportedCurrency;
+  const { formatCurrency } = useCurrencyFormatter(currencyPreference);
   const thresholds = preferences?.alertThresholds;
 
   const pollInterval = 3600000;

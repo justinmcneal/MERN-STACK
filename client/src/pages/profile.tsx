@@ -14,7 +14,7 @@ import type { UpdatePreferencesData } from "../services/profileService";
 const ProfilePage = () => {
     const [activeTab] = useState("Profile");
     const [sidebarOpen] = useState(false);
-    const [notificationOpen] = useState(false);
+    const [notificationOpen, setNotificationOpen] = useState(false);
     const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
     
   // Use hooks for API data
@@ -37,6 +37,18 @@ const ProfilePage = () => {
   // Fetch live alerts for notifications
   const alertQuery = useMemo(() => ({ limit: 10 }), []);
   const { alerts } = useAlerts({ pollIntervalMs: 60000, query: alertQuery });
+
+  const toggleNotifications = () => {
+    setNotificationOpen(prev => {
+      const next = !prev;
+      if (next) {
+        setProfileDropdownOpen(false);
+      }
+      return next;
+    });
+  };
+
+  const closeNotifications = () => setNotificationOpen(false);
 
   // Original state for comparison
   const [originalState, setOriginalState] = useState({
@@ -331,6 +343,8 @@ const ProfilePage = () => {
           {/* Header */}
           <ProfileHeader
             notificationOpen={notificationOpen}
+            onNotificationToggle={toggleNotifications}
+            onNotificationClose={closeNotifications}
             profileDropdownOpen={profileDropdownOpen}
             setProfileDropdownOpen={setProfileDropdownOpen}
             notifications={alerts}
