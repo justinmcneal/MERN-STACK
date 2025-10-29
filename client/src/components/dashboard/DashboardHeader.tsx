@@ -1,8 +1,9 @@
 import React from 'react';
-import { User, LogOut, Clock } from 'lucide-react';
+import { User, LogOut, Clock, Download } from 'lucide-react';
 import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
+import { downloadArbitrageDataCSV } from '../../utils/exportData';
 
 export type NotificationItem = {
   id: string;
@@ -111,6 +112,14 @@ const DashboardHeader: React.FC<{
     }
   };
 
+  const handleExportData = () => {
+    try {
+      downloadArbitrageDataCSV();
+    } catch (error) {
+      console.error('Export failed:', error);
+    }
+  };
+
   return (
     <header className="bg-slate-900/50 backdrop-blur border-b border-slate-800/50 p-4 lg:p-6 relative z-30">
       <div className="flex items-center justify-between">
@@ -122,6 +131,15 @@ const DashboardHeader: React.FC<{
         </div>
 
         <div className="flex items-center gap-3">
+          <button
+            onClick={handleExportData}
+            className="flex items-center gap-2 rounded-xl border border-slate-700/50 bg-slate-800/50 px-3 py-2 text-sm font-medium text-slate-200 hover:bg-slate-700/50 transition"
+            title="Export Data as CSV"
+          >
+            <Download className="h-4 w-4 text-emerald-400" />
+            <span className="hidden sm:inline">Export</span>
+          </button>
+
           <button
             onClick={handleManualMonitoringButtonClick}
             className={`relative flex items-center gap-3 rounded-xl border px-3 py-2 text-sm font-medium transition ${
