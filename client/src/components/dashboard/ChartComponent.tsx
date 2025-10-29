@@ -117,9 +117,11 @@ const ChartComponent: React.FC<ChartComponentProps> = ({ formatCurrency, currenc
         setHistoryNotice(null);
       } else {
         setSeriesByChain({});
-        setHistoryNotice(
-          notice || 'Historical price data is not available yet. Real-time pricing will continue to refresh normally.'
-        );
+        // Provide specific message for 1h timeframe
+        const timeframeMessage = timeframe === '1h' 
+          ? 'Hourly historical data is still being collected. Please try the 24h or 7d view, or check back later.'
+          : 'Historical price data is not available yet. Real-time pricing will continue to refresh normally.';
+        setHistoryNotice(notice || timeframeMessage);
       }
     };
     fetchHistory();

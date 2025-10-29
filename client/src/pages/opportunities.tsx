@@ -59,7 +59,14 @@ const OpportunitiesPage: React.FC = () => {
     if (!opportunities || opportunities.length === 0) return [];
 
     return opportunities
-      .filter(opp => !opp.flagged && opp.netProfitUsd > 0)
+      .filter(opp => {
+        // Only filter out explicitly flagged opportunities and those with negative profit
+        // Keep opportunities with 0 profit as they might still be informative
+        if (opp.flagged === true) return false;
+        // Allow small positive and zero profits (some might round to 0)
+        if (opp.netProfitUsd < -0.01) return false;
+        return true;
+      })
       .map(opp => {
         const roi = opp.roi || 0;
         const color = roi >= 90 ? 'emerald' : roi >= 75 ? 'yellow' : 'orange';

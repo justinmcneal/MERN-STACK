@@ -76,11 +76,12 @@ const DashboardContent = () => {
       return { bestOpportunity: null, topToken: null };
     }
 
-    const safeOpportunities = opportunities.filter(opp => !opp.flagged);
+    // Only filter out explicitly flagged opportunities
+    const safeOpportunities = opportunities.filter(opp => opp.flagged !== true);
     const opportunitiesForStats = safeOpportunities.length > 0 ? safeOpportunities : opportunities;
 
-    // Best opportunity (highest net profit that's actually profitable)
-    const profitableOpps = opportunitiesForStats.filter(opp => opp.netProfitUsd > 0);
+    // Best opportunity (highest net profit - allow zero and small values)
+    const profitableOpps = opportunitiesForStats.filter(opp => opp.netProfitUsd >= -0.01);
     const bestOpp = profitableOpps.length > 0 
       ? [...profitableOpps].sort((a, b) => b.netProfitUsd - a.netProfitUsd)[0]
       : null;

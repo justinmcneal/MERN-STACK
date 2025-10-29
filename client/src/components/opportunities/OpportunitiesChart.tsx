@@ -170,7 +170,11 @@ const OpportunitiesChart: React.FC<OpportunitiesChartProps> = ({
         setHistoryNotice(null);
       } else {
         setSeriesByChain({});
-        setHistoryNotice(notice || 'Historical price data is not available yet.');
+        // Provide specific message for 1h timeframe
+        const timeframeMessage = selectedTimeframe === '1h' 
+          ? 'Hourly historical data is still being collected. Please try the 24h or 7d view, or check back later.'
+          : 'Historical price data is not available yet.';
+        setHistoryNotice(notice || timeframeMessage);
       }
     };
     fetchHistory();
