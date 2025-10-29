@@ -54,7 +54,7 @@ const ChartComponent: React.FC<ChartComponentProps> = ({ formatCurrency, currenc
       }
 
       const chains = ['polygon', 'ethereum', 'bsc'];
-      const tfParam = timeframe === '1h' ? '24h' : timeframe === '24h' ? '24h' : '7d';
+      const tfParam = timeframe === '1h' ? '1h' : timeframe === '24h' ? '24h' : '7d';
       const results: Record<string, number[]> = {};
       let hasData = false;
       let notice: string | null = null;

@@ -7,6 +7,7 @@ import OpportunitiesMainContent from "../components/opportunities/OpportunitiesM
 import RangeSliderStyles from "../components/opportunities/RangeSliderStyles";
 import { useAuth } from "../context/AuthContext";
 import { usePreferences } from "../hooks/usePreferences";
+import { useCurrencyFormatter } from "../hooks/useCurrencyFormatter";
 import useOpportunities from "../hooks/useOpportunities";
 import { useNotifications } from "../hooks/useNotifications";
 import type { OpportunityItem } from "../components/opportunities/types";
@@ -28,6 +29,7 @@ const OpportunitiesPage: React.FC = () => {
   const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
 
   const { preferences } = usePreferences();
+  const { formatCurrency } = useCurrencyFormatter();
   const thresholds = preferences?.alertThresholds;
 
   const pollInterval = 3600000;
@@ -67,12 +69,12 @@ const OpportunitiesPage: React.FC = () => {
           from: capitalizeChain(opp.chainFrom),
           to: capitalizeChain(opp.chainTo),
           priceDiff: `+${opp.priceDiffPercent?.toFixed(1) || '0'}%`,
-          estProfit: `$${opp.netProfitUsd.toFixed(0)}`,
+          estProfit: formatCurrency(opp.netProfitUsd, { minimumFractionDigits: 0, maximumFractionDigits: 0 }),
           roi: `${roi.toFixed(0)}%`,
           color
         };
       });
-  }, [opportunities]);
+  }, [opportunities, formatCurrency]);
 
   const tokenOptions = useMemo(() => {
     if (!opportunities || opportunities.length === 0) {

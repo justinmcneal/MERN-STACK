@@ -107,7 +107,7 @@ const OpportunitiesChart: React.FC<OpportunitiesChartProps> = ({
       }
 
       const chains = ['polygon', 'ethereum', 'bsc'];
-      const tfParam = selectedTimeframe === '1h' ? '24h' : selectedTimeframe === '24h' ? '24h' : '7d';
+      const tfParam = selectedTimeframe === '1h' ? '1h' : selectedTimeframe === '24h' ? '24h' : '7d';
       const results: Record<string, number[]> = {};
       let hasData = false;
       let notice: string | null = null;

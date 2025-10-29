@@ -5,6 +5,7 @@ import {
   passwordResetEmailTemplate,
   supportTicketConfirmationTemplate,
   supportTicketNotificationTemplate,
+  opportunityAlertEmailTemplate,
 } from '../templates/emails';
 
 export interface EmailOptions {
@@ -124,6 +125,36 @@ export class EmailService {
       to: supportEmail,
       subject: `[${priorityLevel.toUpperCase()}] New Support Ticket - ${ticketId}`,
       html,
+    });
+  }
+
+  static async sendOpportunityAlert(
+    email: string,
+    name: string,
+    tokenSymbol: string,
+    chainFrom: string,
+    chainTo: string,
+    netProfit: number,
+    roi: number,
+    priceFrom?: number,
+    priceTo?: number
+  ): Promise<void> {
+    const { html, text } = opportunityAlertEmailTemplate(
+      name,
+      tokenSymbol,
+      chainFrom,
+      chainTo,
+      netProfit,
+      roi,
+      priceFrom,
+      priceTo
+    );
+
+    await this.sendEmail({
+      to: email,
+      subject: `🔔 New ${tokenSymbol} Arbitrage Opportunity: $${netProfit.toFixed(2)} Profit`,
+      html,
+      text,
     });
   }
 }

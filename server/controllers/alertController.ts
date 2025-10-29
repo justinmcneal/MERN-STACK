@@ -6,6 +6,7 @@ import { createError } from '../middleware/errorMiddleware';
 import { sendSuccess, sendPaginatedSuccess, sendDeleteSuccess, sendCreatedSuccess } from '../utils/responseHelpers';
 import { buildSortObject, parsePaginationParams } from '../utils/queryHelpers';
 import { validateRequired } from '../utils/validationHelpers';
+import { EmailService } from '../services/EmailService';
 
 export const getUserAlerts = asyncHandler(async (req: Request, res: Response) => {
   const userId = req.user!._id;
@@ -253,4 +254,34 @@ export const createOpportunityAlert = asyncHandler(async (req: Request, res: Res
   });
 
   sendCreatedSuccess(res, alert, 'Opportunity alert created successfully');
+});
+
+export const sendTestEmailNotification = asyncHandler(async (req: Request, res: Response) => {
+  const user = req.user!;
+
+  if (!user.email || !user.name) {
+    throw createError('User email or name not available', 400);
+  }
+
+  // Send a test opportunity email
+  try {
+    await EmailService.sendOpportunityAlert(
+      user.email,
+      user.name,
+      'USDC',
+      'Ethereum',
+      'Polygon',
+      125.50,
+      92.3,
+      1.0002,
+      1.0015
+    );
+
+    sendSuccess(res, { 
+      email: user.email,
+      timestamp: new Date()
+    }, 'Test email notification sent successfully');
+  } catch (error: any) {
+    throw createError(`Failed to send test email: ${error.message}`, 500);
+  }
 });

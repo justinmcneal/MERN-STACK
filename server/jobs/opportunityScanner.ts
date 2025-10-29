@@ -1,6 +1,7 @@
 import cron from 'node-cron';
-import { Opportunity, Token, UserPreference } from '../models';
+import { Opportunity, Token, UserPreference, User } from '../models';
 import { dataService, webSocketService } from '../services';
+import { EmailService } from '../services/EmailService';
 import { TOKEN_CONTRACTS, type SupportedChain, type SupportedToken } from '../config/tokens';
 import { Alert } from '../models';
 import {
@@ -246,6 +247,7 @@ class OpportunityScanner {
 
           const message = `New arbitrage opportunity: ${(opportunity.tokenId as any)?.symbol} ${opportunity.chainFrom} → ${opportunity.chainTo}. Net profit: $${netProfit.toFixed(2)} (${opportunity.roi?.toFixed(1)}% ROI)`;
           
+          // Create in-app alert
           await Alert.create({
             userId: preference.userId,
             opportunityId: opportunity._id,
@@ -261,11 +263,50 @@ class OpportunityScanner {
               roi: opportunity.roi,
             }
           });
+
+          // Send email notification if enabled
+          if (preference.notificationSettings?.email) {
+            try {
+              const user = await User.findById(preference.userId);
+              if (user?.email && user?.name) {
+                await EmailService.sendOpportunityAlert(
+                  user.email,
+                  user.name,
+                  (opportunity.tokenId as any)?.symbol || opportunity.tokenSymbol,
+                  this.formatChainName(opportunity.chainFrom),
+                  this.formatChainName(opportunity.chainTo),
+                  netProfit,
+                  opportunity.roi || 0,
+                  opportunity.priceFrom,
+                  opportunity.priceTo
+                );
+                console.log(`📧 Sent opportunity email to ${user.email}`);
+              }
+            } catch (emailError) {
+              console.error('Failed to send opportunity email:', emailError);
+              // Continue processing other alerts even if email fails
+            }
+          }
         }
       }
     } catch (error) {
       console.error('Error creating opportunity alerts:', error);
     }
+  }
+
+  /**
+   * Format chain name for display
+   */
+  private formatChainName(chain: string): string {
+    const chainMap: Record<string, string> = {
+      'polygon': 'Polygon',
+      'ethereum': 'Ethereum',
+      'bsc': 'BSC',
+      'arbitrum': 'Arbitrum',
+      'optimism': 'Optimism',
+      'avalanche': 'Avalanche'
+    };
+    return chainMap[chain.toLowerCase()] || chain.charAt(0).toUpperCase() + chain.slice(1);
   }
 
   /**
