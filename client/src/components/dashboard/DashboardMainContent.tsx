@@ -3,18 +3,10 @@ import StatCardsWrapper from './StatCards';
 import PriceTableSection from './PriceTableSection';
 import ArbitrageTable from './ArbitrageTable';
 import ChartComponent from './ChartComponent';
-import PreferencesInfoBanner from './PreferencesInfoBanner';
 import type { SupportedCurrency, CurrencyFormatterFn, UsdConverterFn } from '../../hooks/useCurrencyFormatter';
 import type { OpportunityDto } from '../../services/OpportunityService';
 
 interface DashboardMainContentProps {
-  uniqueTokensInDb: number;
-  thresholds: {
-    minProfit: number;
-    maxGasCost: number;
-    minROI?: number;
-    minScore?: number;
-  } | undefined;
   stats: {
     bestOpportunity: {
       tokenSymbol: string;
@@ -39,8 +31,6 @@ interface DashboardMainContentProps {
 }
 
 const DashboardMainContent: React.FC<DashboardMainContentProps> = ({
-  uniqueTokensInDb,
-  thresholds,
   stats,
   opportunities,
   opportunitiesLoading,
@@ -57,15 +47,6 @@ const DashboardMainContent: React.FC<DashboardMainContentProps> = ({
 
   return (
     <main className="flex-1 overflow-y-auto p-4 lg:p-6">
-      {/* User Preferences Info Banner */}
-      {thresholds && (
-        <PreferencesInfoBanner
-          thresholds={thresholds}
-          uniqueTokensInDb={uniqueTokensInDb}
-          formatCurrency={formatCurrency}
-        />
-      )}
-      
       {/* Stat Cards */}
       <StatCardsWrapper 
         bestOpportunity={stats.bestOpportunity}

@@ -55,11 +55,7 @@ const ProfilePage = () => {
     profile: { name: '', email: '', profilePicture: null as string | null, avatar: 0 },
     preferences: {
       dashboardPopup: false,
-      emailNotifications: false,
-      profitThreshold: 1,
-      minProfit: 10,
-      maxGasCost: 50,
-      minScore: 60
+      emailNotifications: false
     }
   });
 
@@ -68,10 +64,6 @@ const ProfilePage = () => {
   // Local state for form data
   const [localDashboardPopup, setLocalDashboardPopup] = useState(false);
   const [localEmailNotifications, setLocalEmailNotifications] = useState(false);
-  const [localProfitThreshold, setLocalProfitThreshold] = useState(1);
-  const [localMinProfit, setLocalMinProfit] = useState(10);
-  const [localMaxGasCost, setLocalMaxGasCost] = useState(50);
-  const [localMinScore, setLocalMinScore] = useState(60);
   const [localTwoFactorAuth, setLocalTwoFactorAuth] = useState(false);
   const [selectedAvatar, setSelectedAvatar] = useState(0);
   const [localProfilePicture, setLocalProfilePicture] = useState<string | null>(null);
@@ -81,11 +73,6 @@ const ProfilePage = () => {
     if (preferences) {
       setLocalDashboardPopup(preferences.notificationSettings.dashboard);
       setLocalEmailNotifications(preferences.notificationSettings.email);
-      setLocalProfitThreshold(preferences.alertThresholds.minROI);
-      setLocalMinProfit(preferences.alertThresholds.minProfit);
-      setLocalMaxGasCost(preferences.alertThresholds.maxGasCost);
-      // Convert minScore from 0-1 (backend) to 0-100 (UI)
-      setLocalMinScore(preferences.alertThresholds.minScore * 100);
       setLocalName(profile?.user.name || '');
       setLocalProfilePicture(profile?.user.profilePicture || null);
       setSelectedAvatar(profile?.user.avatar || 0);
@@ -100,12 +87,7 @@ const ProfilePage = () => {
         },
         preferences: {
           dashboardPopup: preferences.notificationSettings.dashboard,
-          emailNotifications: preferences.notificationSettings.email,
-          profitThreshold: preferences.alertThresholds.minROI,
-          minProfit: preferences.alertThresholds.minProfit,
-          maxGasCost: preferences.alertThresholds.maxGasCost,
-          // Store as 0-100 for UI comparison
-          minScore: preferences.alertThresholds.minScore * 100
+          emailNotifications: preferences.notificationSettings.email
         }
       });
     }
@@ -126,13 +108,9 @@ const ProfilePage = () => {
 
     const dashboardChanged = localDashboardPopup !== originalState.preferences.dashboardPopup;
     const emailChanged = localEmailNotifications !== originalState.preferences.emailNotifications;
-    const profitChanged = localProfitThreshold !== originalState.preferences.profitThreshold;
-    const minProfitChanged = localMinProfit !== originalState.preferences.minProfit;
-    const maxGasCostChanged = localMaxGasCost !== originalState.preferences.maxGasCost;
-    const minScoreChanged = localMinScore !== originalState.preferences.minScore;
 
-    return profileChanged || profilePictureChanged || avatarChanged || dashboardChanged || emailChanged || profitChanged || minProfitChanged || maxGasCostChanged || minScoreChanged;
-  }, [localName, localProfilePicture, selectedAvatar, localDashboardPopup, localEmailNotifications, localProfitThreshold, localMinProfit, localMaxGasCost, localMinScore, originalState]);
+    return profileChanged || profilePictureChanged || avatarChanged || dashboardChanged || emailChanged;
+  }, [localName, localProfilePicture, selectedAvatar, localDashboardPopup, localEmailNotifications, originalState]);
 
   // Handle profile updates (store locally, don't save immediately)
   const handleProfileUpdate = (data: { name?: string; email?: string; avatar?: number; profilePicture?: string }) => {
@@ -160,10 +138,6 @@ const ProfilePage = () => {
   const handlePreferencesUpdate = (data: { 
     dashboardPopup?: boolean;
     emailNotifications?: boolean;
-    profitThreshold?: number;
-    minProfit?: number;
-    maxGasCost?: number;
-    minScore?: number;
     twoFactorAuth?: boolean;
   }) => {
     if (data.dashboardPopup !== undefined) {
@@ -172,22 +146,6 @@ const ProfilePage = () => {
 
     if (data.emailNotifications !== undefined) {
       setLocalEmailNotifications(data.emailNotifications);
-    }
-
-    if (data.profitThreshold !== undefined) {
-      setLocalProfitThreshold(data.profitThreshold);
-    }
-
-    if (data.minProfit !== undefined) {
-      setLocalMinProfit(data.minProfit);
-    }
-
-    if (data.maxGasCost !== undefined) {
-      setLocalMaxGasCost(data.maxGasCost);
-    }
-
-    if (data.minScore !== undefined) {
-      setLocalMinScore(data.minScore);
     }
 
     if (data.twoFactorAuth !== undefined) {
@@ -219,10 +177,6 @@ const ProfilePage = () => {
 
       const dashboardChanged = localDashboardPopup !== originalState.preferences.dashboardPopup;
       const emailChanged = localEmailNotifications !== originalState.preferences.emailNotifications;
-      const profitChanged = localProfitThreshold !== originalState.preferences.profitThreshold;
-      const minProfitChanged = localMinProfit !== originalState.preferences.minProfit;
-      const maxGasCostChanged = localMaxGasCost !== originalState.preferences.maxGasCost;
-      const minScoreChanged = localMinScore !== originalState.preferences.minScore;
 
       // Save profile changes
       if (profileData.name || profileData.profilePicture !== undefined || profileData.avatar !== undefined) {
@@ -230,26 +184,14 @@ const ProfilePage = () => {
         await updateProfile(profileData);
       }
 
-      // Save preferences changes (check if any threshold changed)
-      if (dashboardChanged || emailChanged || profitChanged || minProfitChanged || maxGasCostChanged || minScoreChanged) {
-  const preferencesData: UpdatePreferencesData = {};
-
-        if (dashboardChanged || emailChanged) {
-          preferencesData.notificationSettings = {
+      // Save preferences changes (check if any notification setting changed)
+      if (dashboardChanged || emailChanged) {
+        const preferencesData: UpdatePreferencesData = {
+          notificationSettings: {
             dashboard: localDashboardPopup,
             email: localEmailNotifications
-          };
-        }
-
-        if (profitChanged || minProfitChanged || maxGasCostChanged || minScoreChanged) {
-          preferencesData.alertThresholds = {
-            minROI: localProfitThreshold,
-            minProfit: localMinProfit,
-            maxGasCost: localMaxGasCost,
-            // Convert minScore from 0-100 (UI) to 0-1 (backend)
-            minScore: localMinScore / 100
-          };
-        }
+          }
+        };
 
         await updatePreferences(preferencesData);
       }
@@ -264,11 +206,7 @@ const ProfilePage = () => {
         },
         preferences: {
           dashboardPopup: localDashboardPopup,
-          emailNotifications: localEmailNotifications,
-          profitThreshold: localProfitThreshold,
-          minProfit: localMinProfit,
-          maxGasCost: localMaxGasCost,
-          minScore: localMinScore
+          emailNotifications: localEmailNotifications
         }
       }));
 
@@ -320,7 +258,6 @@ const ProfilePage = () => {
   // Convert preferences data to component format
   const dashboardPopup = localDashboardPopup;
   const emailNotifications = localEmailNotifications;
-  const profitThreshold = localProfitThreshold;
   const twoFactorAuth = localTwoFactorAuth;
 
   return (
@@ -369,10 +306,6 @@ const ProfilePage = () => {
               <ProfilePreferences
                 dashboardPopup={dashboardPopup}
                 emailNotifications={emailNotifications}
-                profitThreshold={profitThreshold}
-                minProfit={localMinProfit}
-                maxGasCost={localMaxGasCost}
-                minScore={localMinScore}
                 onUpdate={handlePreferencesUpdate}
                 isUpdating={preferencesUpdating}
               />

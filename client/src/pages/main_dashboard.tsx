@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { usePreferences } from "../hooks/usePreferences";
 import { TokenProvider } from "../context/TokenContext";
-import useTokenContext from "../context/useTokenContext";
 import DashboardLayout from "../components/dashboard/DashboardLayout";
 import Sidebar from "../components/dashboard/Sidebar";
 import DashboardHeader from "../components/dashboard/DashboardHeader";
@@ -22,12 +21,6 @@ const DashboardContent = () => {
   const hasPromptedManualMonitoring = useRef(false);
 
   // Get token data for unique count
-  const { tokens } = useTokenContext();
-  const uniqueTokensInDb = useMemo(() => {
-    if (!tokens || tokens.length === 0) return 0;
-    return new Set(tokens.map((t: {symbol: string}) => t.symbol.toUpperCase())).size;
-  }, [tokens]);
-
   // Get user preferences from settings
   const { preferences, updateManualMonitoringTime } = usePreferences();
   const currencyPreference = (preferences?.currency ?? 'USD') as SupportedCurrency;
@@ -274,8 +267,6 @@ const DashboardContent = () => {
 
         {/* Main Dashboard Content */}
         <DashboardMainContent
-          uniqueTokensInDb={uniqueTokensInDb}
-          thresholds={thresholds}
           stats={stats}
           opportunities={opportunities}
           opportunitiesLoading={opportunitiesLoading}
