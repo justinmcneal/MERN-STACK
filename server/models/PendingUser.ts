@@ -1,4 +1,3 @@
-// models/PendingUser.ts
 import mongoose, { Document, Schema, Model } from 'mongoose';
 
 export interface IPendingUser extends Document {

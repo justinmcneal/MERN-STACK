@@ -16,6 +16,10 @@ const HeroSection = () => {
     navigate("/logIn");
   };
 
+  const handleWatchDemo = () => {
+    window.open('https://www.youtube.com/watch?v=sXVpMZHFkDI', '_blank');
+  };
+
   return (
     <section className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-12 sm:pt-16 lg:pt-20 pb-16 sm:pb-24 lg:pb-32">
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 sm:gap-12 lg:gap-16 items-center">
@@ -52,7 +56,9 @@ const HeroSection = () => {
                 <span className="hidden sm:inline">START MONITORING NOW</span>
                 <span className="sm:hidden">START NOW</span>
               </button>
-              <button className="inline-flex items-center justify-center gap-2 px-6 sm:px-8 py-3 sm:py-4 rounded-xl border border-slate-600 hover:border-cyan-400 text-slate-300 hover:text-white font-semibold transition-all duration-300 text-sm sm:text-base lg:text-lg">
+              <button className="inline-flex items-center justify-center gap-2 px-6 sm:px-8 py-3 sm:py-4 rounded-xl border border-slate-600 hover:border-cyan-400 text-slate-300 hover:text-white font-semibold transition-all duration-300 text-sm sm:text-base lg:text-lg"
+                onClick={handleWatchDemo}
+              >
                 <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.828 14.828a4 4 0 01-5.656 0M9 10h1.586a1 1 0 01.707.293l2.414 2.414a1 1 0 00.707.293H15M9 10V9a2 2 0 012-2h2a2 2 0 012 2v1.586a1 1 0 01-.293.707L12 14" />
                 </svg>

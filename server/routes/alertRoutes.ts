@@ -12,7 +12,8 @@ import {
   getAlertTypes,
   getAlertPriorities,
   cleanupOldAlerts,
-  createOpportunityAlert
+  createOpportunityAlert,
+  sendTestEmailNotification
 } from '../controllers/alertController';
 
 const router = Router();
@@ -26,6 +27,7 @@ router.get('/priorities', getAlertPriorities);
 router.get('/:id', getAlertById);
 router.post('/mark-read', markAlertsAsRead);
 router.post('/test', createTestAlert);
+router.post('/test-email', sendTestEmailNotification);
 router.post('/cleanup', cleanupOldAlerts);
 router.post('/create-opportunity-alert', createOpportunityAlert);
 router.delete('/', deleteAlerts);

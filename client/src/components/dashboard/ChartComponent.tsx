@@ -54,7 +54,7 @@ const ChartComponent: React.FC<ChartComponentProps> = ({ formatCurrency, currenc
       }
 
       const chains = ['polygon', 'ethereum', 'bsc'];
-      const tfParam = timeframe === '1h' ? '24h' : timeframe === '24h' ? '24h' : '7d';
+      const tfParam = timeframe === '1h' ? '1h' : timeframe === '24h' ? '24h' : '7d';
       const results: Record<string, number[]> = {};
       let hasData = false;
       let notice: string | null = null;
@@ -117,9 +117,11 @@ const ChartComponent: React.FC<ChartComponentProps> = ({ formatCurrency, currenc
         setHistoryNotice(null);
       } else {
         setSeriesByChain({});
-        setHistoryNotice(
-          notice || 'Historical price data is not available yet. Real-time pricing will continue to refresh normally.'
-        );
+        // Provide specific message for 1h timeframe
+        const timeframeMessage = timeframe === '1h' 
+          ? 'Hourly historical data is still being collected. Please try the 24h or 7d view, or check back later.'
+          : 'Historical price data is not available yet. Real-time pricing will continue to refresh normally.';
+        setHistoryNotice(notice || timeframeMessage);
       }
     };
     fetchHistory();
@@ -127,9 +129,9 @@ const ChartComponent: React.FC<ChartComponentProps> = ({ formatCurrency, currenc
   }, [baseToken, timeframe, pointsCount]);
 
   // Chart drawing params - optimized for card container
-  const width = 800;
-  const height = 200;
-  const padding = 20;
+  const width = 1200;
+  const height = 320;
+  const padding = 24;
   const innerW = width - padding * 2;
   const innerH = height - padding * 2;
 
@@ -219,7 +221,7 @@ const ChartComponent: React.FC<ChartComponentProps> = ({ formatCurrency, currenc
         </div>
       </div>
 
-      <div className="relative w-full mb-4 h-[280px]">
+  <div className="relative w-full mb-4 h-[360px]">
         <svg className="w-full h-full" viewBox={`0 0 ${width} ${height}`} preserveAspectRatio="xMidYMid meet">
           <defs>
             <linearGradient id={`areaGrad-${baseToken?.symbol || 'g'}`} x1="0%" y1="0%" x2="0%" y2="100%">

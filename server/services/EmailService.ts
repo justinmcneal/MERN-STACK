@@ -5,6 +5,7 @@ import {
   passwordResetEmailTemplate,
   supportTicketConfirmationTemplate,
   supportTicketNotificationTemplate,
+  opportunityAlertEmailTemplate,
 } from '../templates/emails';
 
 export interface EmailOptions {
@@ -111,13 +112,49 @@ export class EmailService {
     priorityLevel: string,
     ticketId: string
   ): Promise<void> {
-    const supportEmail = process.env.SUPPORT_EMAIL!;
+    const supportEmail = process.env.SUPPORT_EMAIL || process.env.EMAIL_FROM || process.env.EMAIL_USER;
+    
+    if (!supportEmail) {
+      logger.error('SUPPORT_EMAIL, EMAIL_FROM, or EMAIL_USER not configured');
+      throw new Error('Support email not configured');
+    }
+
     const html = supportTicketNotificationTemplate(fullName, email, phoneNumber, subject, message, priorityLevel, ticketId);
 
     await this.sendEmail({
       to: supportEmail,
       subject: `[${priorityLevel.toUpperCase()}] New Support Ticket - ${ticketId}`,
       html,
+    });
+  }
+
+  static async sendOpportunityAlert(
+    email: string,
+    name: string,
+    tokenSymbol: string,
+    chainFrom: string,
+    chainTo: string,
+    netProfit: number,
+    roi: number,
+    priceFrom?: number,
+    priceTo?: number
+  ): Promise<void> {
+    const { html, text } = opportunityAlertEmailTemplate(
+      name,
+      tokenSymbol,
+      chainFrom,
+      chainTo,
+      netProfit,
+      roi,
+      priceFrom,
+      priceTo
+    );
+
+    await this.sendEmail({
+      to: email,
+      subject: `🔔 New ${tokenSymbol} Arbitrage Opportunity: $${netProfit.toFixed(2)} Profit`,
+      html,
+      text,
     });
   }
 }

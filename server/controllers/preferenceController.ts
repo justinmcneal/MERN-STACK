@@ -2,17 +2,23 @@ import { Request, Response } from 'express';
 import asyncHandler from 'express-async-handler';
 import UserPreference from '../models/UserPreference';
 import DataService from '../services/DataService';
-import { SUPPORTED_TOKENS, getTokenName } from '../config/tokens';
+import { getTokenName } from '../config/tokens';
 import { createError } from '../middleware/errorMiddleware';
 import { sendSuccess, sendUpdateSuccess } from '../utils/responseHelpers';
-import { 
-  validateAlertThresholds, 
-  validateTokenList, 
-  validateCurrency, 
-  validateRefreshInterval, 
-  validateRequired, 
-  validateArray 
+import {
+  validateAlertThresholds,
+  validateTokenList,
+  validateCurrency,
+  validateRefreshInterval,
+  validateArray,
+  validateManualMonitoringMinutes,
 } from '../utils/validationHelpers';
+import {
+  buildDefaultPreferences,
+  PREFERENCE_CURRENCIES,
+  PreferenceCurrency,
+  DEFAULT_CURRENCY,
+} from '../models/userPreferenceDefaults';
 
 export const getUserPreferences = asyncHandler(async (req: Request, res: Response) => {
   const userId = req.user!._id;
@@ -20,24 +26,7 @@ export const getUserPreferences = asyncHandler(async (req: Request, res: Respons
   let preferences = await UserPreference.findOne({ userId });
 
   if (!preferences) {
-    preferences = await UserPreference.create({
-      userId,
-      tokensTracked: [...SUPPORTED_TOKENS],
-      alertThresholds: {
-        minProfit: 10,
-        maxGasCost: 50,
-        minROI: 1,
-        minScore: 0.7
-      },
-      notificationSettings: {
-        email: true,
-        dashboard: true,
-        telegram: false,
-        discord: false
-      },
-      refreshInterval: 30,
-      currency: 'USD'
-    });
+    preferences = await UserPreference.create(buildDefaultPreferences(userId));
   }
 
   sendSuccess(res, preferences);
@@ -67,6 +56,14 @@ export const updateUserPreferences = asyncHandler(async (req: Request, res: Resp
 
   if (updates.currency) {
     updates.currency = validateCurrency(updates.currency);
+  }
+
+  if (updates.manualMonitoringMinutes !== undefined) {
+    if (updates.manualMonitoringMinutes === null) {
+      updates.manualMonitoringMinutes = null;
+    } else {
+      updates.manualMonitoringMinutes = validateManualMonitoringMinutes(updates.manualMonitoringMinutes);
+    }
   }
 
   const preferences = await UserPreference.findOneAndUpdate(
@@ -136,13 +133,34 @@ export const updateNotificationSettings = asyncHandler(async (req: Request, res:
   sendUpdateSuccess(res, preferences, 'Notification settings updated successfully');
 });
 
+export const updateManualMonitoringTime = asyncHandler(async (req: Request, res: Response) => {
+  const userId = req.user!._id;
+  const { manualMonitoringMinutes } = req.body as { manualMonitoringMinutes?: number | null };
+
+  if (manualMonitoringMinutes === undefined) {
+    throw createError('Manual monitoring time is required', 400);
+  }
+
+  const resolvedValue = manualMonitoringMinutes === null
+    ? null
+    : validateManualMonitoringMinutes(manualMonitoringMinutes);
+
+  const preferences = await UserPreference.findOneAndUpdate(
+    { userId },
+    { manualMonitoringMinutes: resolvedValue },
+    { new: true, upsert: true }
+  );
+
+  sendUpdateSuccess(res, preferences, 'Manual monitoring time updated successfully');
+});
+
 export const updateAppearanceSettings = asyncHandler(async (req: Request, res: Response) => {
   const userId = req.user!._id;
   const { currency } = req.body as {
-    currency?: 'USD' | 'EUR' | 'GBP' | 'JPY' | 'PHP';
+    currency?: PreferenceCurrency;
   };
 
-  const isValidCurrency = currency && ['USD', 'EUR', 'GBP', 'JPY', 'PHP'].includes(currency);
+  const isValidCurrency = currency && PREFERENCE_CURRENCIES.includes(currency);
 
   if (!isValidCurrency) {
     throw createError('No valid updates provided', 400);
@@ -150,29 +168,12 @@ export const updateAppearanceSettings = asyncHandler(async (req: Request, res: R
 
   let preferences = await UserPreference.findOne({ userId });
 
+  const resolvedCurrency = currency ?? DEFAULT_CURRENCY;
+
   if (!preferences) {
-    preferences = new UserPreference({
-      userId,
-      tokensTracked: [...SUPPORTED_TOKENS],
-      alertThresholds: {
-        minProfit: 10,
-        maxGasCost: 50,
-        minROI: 1,
-        minScore: 0.7
-      },
-      notificationSettings: {
-        email: true,
-        dashboard: true,
-        telegram: false,
-        discord: false
-      },
-      refreshInterval: 30,
-      currency: isValidCurrency ? currency : 'USD'
-    });
+    preferences = new UserPreference(buildDefaultPreferences(userId, resolvedCurrency));
   } else {
-    if (isValidCurrency) {
-      preferences.currency = currency!;
-    }
+    preferences.currency = resolvedCurrency;
   }
 
   await preferences.save();
@@ -180,56 +181,25 @@ export const updateAppearanceSettings = asyncHandler(async (req: Request, res: R
   sendUpdateSuccess(res, preferences, 'Appearance settings updated successfully');
 });
 
-// POST /api/preferences/reset - Reset preferences to defaults
 export const resetPreferences = asyncHandler(async (req: Request, res: Response) => {
   const userId = req.user!._id;
-
-  const defaultPreferences = {
-    userId,
-    tokensTracked: [...SUPPORTED_TOKENS],
-    alertThresholds: {
-      minProfit: 10,
-      maxGasCost: 50,
-      minROI: 1, // More realistic default: 1% instead of 5%
-      minScore: 0.7
-    },
-    notificationSettings: {
-      email: true,
-      dashboard: true,
-      telegram: false,
-      discord: false
-    },
-    refreshInterval: 30,
-    currency: 'USD'
-  };
-
   const preferences = await UserPreference.findOneAndUpdate(
     { userId },
-    defaultPreferences,
+    buildDefaultPreferences(userId),
     { new: true, upsert: true }
   );
 
-  res.json({
-    success: true,
-    message: 'Preferences reset to defaults',
-    data: preferences
-  });
+  sendSuccess(res, preferences, 'Preferences reset to defaults');
 });
 
-// GET /api/preferences/supported-tokens - Get list of supported tokens
 export const getSupportedTokensForPreferences = asyncHandler(async (req: Request, res: Response) => {
   const dataService = DataService.getInstance();
   const supportedTokens = dataService.getSupportedTokens();
   
-  const tokensWithNames = supportedTokens.map(symbol => ({
+  const tokensWithNames = supportedTokens.map((symbol) => ({
     symbol,
-    name: getTokenName(symbol)
+    name: getTokenName(symbol),
   }));
 
-  res.json({
-    success: true,
-    data: tokensWithNames
-  });
+  sendSuccess(res, tokensWithNames);
 });
-
-// Helper function now imported from shared config

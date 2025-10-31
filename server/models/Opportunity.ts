@@ -1,7 +1,4 @@
-// models/Opportunity.ts
 import mongoose, { Document, Schema, Model, Types } from 'mongoose';
-
-// Interface for Opportunity document
 export interface IOpportunity extends Document {
   _id: string;
   tokenId: Types.ObjectId;
@@ -17,7 +14,7 @@ export interface IOpportunity extends Document {
   score: number;
   timestamp: Date;
   status: 'active' | 'expired' | 'executed';
-  volume?: number; // assumed trade size in USD
+  volume?: number;
   roi?: number;
   netProfit?: number;
   anomalyFlags?: string[];
@@ -114,14 +111,10 @@ const opportunitySchema: Schema<IOpportunity> = new mongoose.Schema(
   }
 );
 
-// Compound indexes for efficient queries
 opportunitySchema.index({ tokenId: 1, chainFrom: 1, chainTo: 1 });
 opportunitySchema.index({ score: -1, timestamp: -1 });
 opportunitySchema.index({ status: 1, timestamp: -1 });
 opportunitySchema.index({ estimatedProfit: -1 });
-
-
-// Pre-save middleware to calculate derived fields
 opportunitySchema.pre('save', function(next) {
   if (this.isModified('priceFrom') || this.isModified('priceTo')) {
     const from = this.priceFrom ?? null;

@@ -14,7 +14,7 @@ import type { UpdatePreferencesData } from "../services/profileService";
 const ProfilePage = () => {
     const [activeTab] = useState("Profile");
     const [sidebarOpen] = useState(false);
-    const [notificationOpen] = useState(false);
+    const [notificationOpen, setNotificationOpen] = useState(false);
     const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
     
   // Use hooks for API data
@@ -38,51 +38,41 @@ const ProfilePage = () => {
   const alertQuery = useMemo(() => ({ limit: 10 }), []);
   const { alerts } = useAlerts({ pollIntervalMs: 60000, query: alertQuery });
 
+  const toggleNotifications = () => {
+    setNotificationOpen(prev => {
+      const next = !prev;
+      if (next) {
+        setProfileDropdownOpen(false);
+      }
+      return next;
+    });
+  };
+
+  const closeNotifications = () => setNotificationOpen(false);
+
   // Original state for comparison
   const [originalState, setOriginalState] = useState({
     profile: { name: '', email: '', profilePicture: null as string | null, avatar: 0 },
     preferences: {
-      tokensTracked: [] as string[],
       dashboardPopup: false,
-      emailNotifications: false,
-      profitThreshold: 1,
-      minProfit: 10,
-      maxGasCost: 50,
-      minScore: 60
+      emailNotifications: false
     }
   });
 
   const [localName, setLocalName] = useState('');
 
   // Local state for form data
-  const [localTokensTracked, setLocalTokensTracked] = useState<Record<string, boolean>>({});
   const [localDashboardPopup, setLocalDashboardPopup] = useState(false);
   const [localEmailNotifications, setLocalEmailNotifications] = useState(false);
-  const [localProfitThreshold, setLocalProfitThreshold] = useState(1);
-  const [localMinProfit, setLocalMinProfit] = useState(10);
-  const [localMaxGasCost, setLocalMaxGasCost] = useState(50);
-  const [localMinScore, setLocalMinScore] = useState(60);
   const [localTwoFactorAuth, setLocalTwoFactorAuth] = useState(false);
   const [selectedAvatar, setSelectedAvatar] = useState(0);
   const [localProfilePicture, setLocalProfilePicture] = useState<string | null>(null);
-  const [availableTokens, setAvailableTokens] = useState<string[]>([]);
   
   // Update local state when preferences change
   useEffect(() => {
     if (preferences) {
-      const tokensTracked = preferences.tokensTracked.reduce((acc, token) => {
-        acc[token] = true;
-        return acc;
-      }, {} as Record<string, boolean>);
-      
-      setLocalTokensTracked(tokensTracked);
       setLocalDashboardPopup(preferences.notificationSettings.dashboard);
       setLocalEmailNotifications(preferences.notificationSettings.email);
-      setLocalProfitThreshold(preferences.alertThresholds.minROI);
-      setLocalMinProfit(preferences.alertThresholds.minProfit);
-      setLocalMaxGasCost(preferences.alertThresholds.maxGasCost);
-      // Convert minScore from 0-1 (backend) to 0-100 (UI)
-      setLocalMinScore(preferences.alertThresholds.minScore * 100);
       setLocalName(profile?.user.name || '');
       setLocalProfilePicture(profile?.user.profilePicture || null);
       setSelectedAvatar(profile?.user.avatar || 0);
@@ -96,14 +86,8 @@ const ProfilePage = () => {
           avatar: profile?.user.avatar || 0
         },
         preferences: {
-          tokensTracked: [...preferences.tokensTracked],
           dashboardPopup: preferences.notificationSettings.dashboard,
-          emailNotifications: preferences.notificationSettings.email,
-          profitThreshold: preferences.alertThresholds.minROI,
-          minProfit: preferences.alertThresholds.minProfit,
-          maxGasCost: preferences.alertThresholds.maxGasCost,
-          // Store as 0-100 for UI comparison
-          minScore: preferences.alertThresholds.minScore * 100
+          emailNotifications: preferences.notificationSettings.email
         }
       });
     }
@@ -115,36 +99,6 @@ const ProfilePage = () => {
     }
   }, [profile]);
 
-  // Fetch available tokens on component mount
-  useEffect(() => {
-    const fetchAvailableTokens = async () => {
-      try {
-        // Use the default supported tokens for now
-        // In a real app, you'd fetch this from the API
-  const defaultTokens = ['ETH', 'XRP', 'SOL', 'BNB', 'MATIC'];
-        setAvailableTokens(defaultTokens);
-        
-        // Initialize localTokensTracked with all available tokens
-        setLocalTokensTracked(prev => {
-          if (Object.keys(prev).length > 0) {
-            return prev;
-          }
-
-          const initialTokensTracked = defaultTokens.reduce((acc, token) => {
-            acc[token] = false; // Start with all unchecked
-            return acc;
-          }, {} as Record<string, boolean>);
-
-          return initialTokensTracked;
-        });
-      } catch (error) {
-        console.error('Failed to fetch available tokens:', error);
-      }
-    };
-
-    fetchAvailableTokens();
-  }, []);
-
   // Function to check if current state differs from original state
   const hasActualChanges = useMemo(() => {
     const trimmedLocalName = localName.trim();
@@ -152,22 +106,11 @@ const ProfilePage = () => {
     const profilePictureChanged = localProfilePicture !== originalState.profile.profilePicture;
     const avatarChanged = selectedAvatar !== originalState.profile.avatar;
 
-    const localTokensSelected = Object.entries(localTokensTracked)
-      .filter(([, selected]) => selected)
-      .map(([token]) => token)
-      .sort();
-    const originalTokensSelected = [...originalState.preferences.tokensTracked].sort();
-    const tokensChanged = JSON.stringify(localTokensSelected) !== JSON.stringify(originalTokensSelected);
-
     const dashboardChanged = localDashboardPopup !== originalState.preferences.dashboardPopup;
     const emailChanged = localEmailNotifications !== originalState.preferences.emailNotifications;
-    const profitChanged = localProfitThreshold !== originalState.preferences.profitThreshold;
-    const minProfitChanged = localMinProfit !== originalState.preferences.minProfit;
-    const maxGasCostChanged = localMaxGasCost !== originalState.preferences.maxGasCost;
-    const minScoreChanged = localMinScore !== originalState.preferences.minScore;
 
-    return profileChanged || profilePictureChanged || avatarChanged || tokensChanged || dashboardChanged || emailChanged || profitChanged || minProfitChanged || maxGasCostChanged || minScoreChanged;
-  }, [localName, localProfilePicture, selectedAvatar, localTokensTracked, localDashboardPopup, localEmailNotifications, localProfitThreshold, localMinProfit, localMaxGasCost, localMinScore, originalState]);
+    return profileChanged || profilePictureChanged || avatarChanged || dashboardChanged || emailChanged;
+  }, [localName, localProfilePicture, selectedAvatar, localDashboardPopup, localEmailNotifications, originalState]);
 
   // Handle profile updates (store locally, don't save immediately)
   const handleProfileUpdate = (data: { name?: string; email?: string; avatar?: number; profilePicture?: string }) => {
@@ -193,41 +136,16 @@ const ProfilePage = () => {
 
   // Handle preferences updates (store locally, don't save immediately)
   const handlePreferencesUpdate = (data: { 
-    tokensTracked?: Record<string, boolean>;
     dashboardPopup?: boolean;
     emailNotifications?: boolean;
-    profitThreshold?: number;
-    minProfit?: number;
-    maxGasCost?: number;
-    minScore?: number;
     twoFactorAuth?: boolean;
   }) => {
-    if (data.tokensTracked) {
-      setLocalTokensTracked(data.tokensTracked);
-    }
-
     if (data.dashboardPopup !== undefined) {
       setLocalDashboardPopup(data.dashboardPopup);
     }
 
     if (data.emailNotifications !== undefined) {
       setLocalEmailNotifications(data.emailNotifications);
-    }
-
-    if (data.profitThreshold !== undefined) {
-      setLocalProfitThreshold(data.profitThreshold);
-    }
-
-    if (data.minProfit !== undefined) {
-      setLocalMinProfit(data.minProfit);
-    }
-
-    if (data.maxGasCost !== undefined) {
-      setLocalMaxGasCost(data.maxGasCost);
-    }
-
-    if (data.minScore !== undefined) {
-      setLocalMinScore(data.minScore);
     }
 
     if (data.twoFactorAuth !== undefined) {
@@ -257,18 +175,8 @@ const ProfilePage = () => {
         profileData.avatar = selectedAvatar;
       }
 
-      const localTokensSelected = Object.entries(localTokensTracked)
-        .filter(([, selected]) => selected)
-        .map(([token]) => token);
-      const originalTokensSelected = [...originalState.preferences.tokensTracked];
-      const tokensChanged = JSON.stringify(localTokensSelected.sort()) !== JSON.stringify(originalTokensSelected.sort());
-
       const dashboardChanged = localDashboardPopup !== originalState.preferences.dashboardPopup;
       const emailChanged = localEmailNotifications !== originalState.preferences.emailNotifications;
-      const profitChanged = localProfitThreshold !== originalState.preferences.profitThreshold;
-      const minProfitChanged = localMinProfit !== originalState.preferences.minProfit;
-      const maxGasCostChanged = localMaxGasCost !== originalState.preferences.maxGasCost;
-      const minScoreChanged = localMinScore !== originalState.preferences.minScore;
 
       // Save profile changes
       if (profileData.name || profileData.profilePicture !== undefined || profileData.avatar !== undefined) {
@@ -276,30 +184,14 @@ const ProfilePage = () => {
         await updateProfile(profileData);
       }
 
-      // Save preferences changes (check if any threshold changed)
-      if (tokensChanged || dashboardChanged || emailChanged || profitChanged || minProfitChanged || maxGasCostChanged || minScoreChanged) {
-  const preferencesData: UpdatePreferencesData = {};
-
-        if (tokensChanged) {
-          preferencesData.tokensTracked = localTokensSelected;
-        }
-
-        if (dashboardChanged || emailChanged) {
-          preferencesData.notificationSettings = {
+      // Save preferences changes (check if any notification setting changed)
+      if (dashboardChanged || emailChanged) {
+        const preferencesData: UpdatePreferencesData = {
+          notificationSettings: {
             dashboard: localDashboardPopup,
             email: localEmailNotifications
-          };
-        }
-
-        if (profitChanged || minProfitChanged || maxGasCostChanged || minScoreChanged) {
-          preferencesData.alertThresholds = {
-            minROI: localProfitThreshold,
-            minProfit: localMinProfit,
-            maxGasCost: localMaxGasCost,
-            // Convert minScore from 0-100 (UI) to 0-1 (backend)
-            minScore: localMinScore / 100
-          };
-        }
+          }
+        };
 
         await updatePreferences(preferencesData);
       }
@@ -313,13 +205,8 @@ const ProfilePage = () => {
           avatar: profileData.avatar !== undefined ? profileData.avatar : prev.profile.avatar
         },
         preferences: {
-          tokensTracked: tokensChanged ? [...localTokensSelected] : [...prev.preferences.tokensTracked],
           dashboardPopup: localDashboardPopup,
-          emailNotifications: localEmailNotifications,
-          profitThreshold: localProfitThreshold,
-          minProfit: localMinProfit,
-          maxGasCost: localMaxGasCost,
-          minScore: localMinScore
+          emailNotifications: localEmailNotifications
         }
       }));
 
@@ -369,13 +256,8 @@ const ProfilePage = () => {
   }
 
   // Convert preferences data to component format
-  const tokensTracked = availableTokens.reduce((acc, token) => {
-    acc[token] = localTokensTracked[token] || false;
-    return acc;
-  }, {} as Record<string, boolean>);
   const dashboardPopup = localDashboardPopup;
   const emailNotifications = localEmailNotifications;
-  const profitThreshold = localProfitThreshold;
   const twoFactorAuth = localTwoFactorAuth;
 
   return (
@@ -383,7 +265,7 @@ const ProfilePage = () => {
       {/* Background */}
       <div className="fixed inset-0 bg-[radial-gradient(ellipse_at_top_left,_var(--tw-gradient-stops))] from-cyan-900/10 via-slate-950 to-purple-900/10"></div>
       
-      <div className="relative z-50 flex h-screen">
+      <div className="relative flex h-screen">
         {/* Sidebar */}
         <ProfileSidebar 
           activeTab={activeTab}
@@ -398,6 +280,8 @@ const ProfilePage = () => {
           {/* Header */}
           <ProfileHeader
             notificationOpen={notificationOpen}
+            onNotificationToggle={toggleNotifications}
+            onNotificationClose={closeNotifications}
             profileDropdownOpen={profileDropdownOpen}
             setProfileDropdownOpen={setProfileDropdownOpen}
             notifications={alerts}
@@ -420,48 +304,43 @@ const ProfilePage = () => {
 
               {/* Preferences */}
               <ProfilePreferences
-                tokensTracked={tokensTracked}
                 dashboardPopup={dashboardPopup}
                 emailNotifications={emailNotifications}
-                profitThreshold={profitThreshold}
-                minProfit={localMinProfit}
-                maxGasCost={localMaxGasCost}
-                minScore={localMinScore}
-                availableTokens={availableTokens}
                 onUpdate={handlePreferencesUpdate}
                 isUpdating={preferencesUpdating}
               />
             </div>
 
-            {/* Security */}
-            <ProfileSecurity
-              twoFactorAuth={twoFactorAuth}
-              onUpdate={handlePreferencesUpdate}
-              isUpdating={preferencesUpdating}
-              className="mt-8"
-            />
+            <div className="mt-8 space-y-6">
+              {/* Security */}
+              <ProfileSecurity
+                twoFactorAuth={twoFactorAuth}
+                onUpdate={handlePreferencesUpdate}
+                isUpdating={preferencesUpdating}
+              />
 
-            {/* Save Button */}
-            <div className="mt-8 bg-slate-800/50 backdrop-blur border border-slate-700/50 rounded-2xl p-6">
-              <div className="flex flex-col items-center gap-4">
-                <button
-                  onClick={handleSaveChanges}
-                  disabled={!hasActualChanges || profileUpdating || preferencesUpdating}
-                  className={`w-full sm:w-auto inline-flex items-center justify-center gap-3 px-8 py-4 rounded-xl font-semibold shadow-lg transition-all duration-300 ${
-                    !hasActualChanges || profileUpdating || preferencesUpdating
-                      ? 'bg-slate-600 text-slate-400 cursor-default opacity-50'
-                      : 'bg-gradient-to-r from-cyan-500 to-purple-600 hover:from-cyan-400 hover:to-purple-500 text-white hover:shadow-cyan-500/25 transform hover:scale-105 cursor-pointer'
-                  }`}
-                >
-                  <Save className="w-5 h-5" />
-                  {profileUpdating || preferencesUpdating ? 'Saving...' : 'Save All Changes'}
-                </button>
-                <p className="text-sm text-slate-400 text-center">
-                  {hasActualChanges 
-                    ? 'You have unsaved changes' 
-                    : 'No changes detected'
-                  }
-                </p>
+              {/* Save Button */}
+              <div className="bg-slate-800/50 backdrop-blur border border-slate-700/50 rounded-2xl p-6">
+                <div className="flex flex-col items-center gap-4">
+                  <button
+                    onClick={handleSaveChanges}
+                    disabled={!hasActualChanges || profileUpdating || preferencesUpdating}
+                    className={`w-full sm:w-auto inline-flex items-center justify-center gap-3 px-8 py-4 rounded-xl font-semibold shadow-lg transition-all duration-300 ${
+                      !hasActualChanges || profileUpdating || preferencesUpdating
+                        ? 'bg-slate-600 text-slate-400 cursor-default opacity-50'
+                        : 'bg-gradient-to-r from-cyan-500 to-purple-600 hover:from-cyan-400 hover:to-purple-500 text-white hover:shadow-cyan-500/25 transform hover:scale-105 cursor-pointer'
+                    }`}
+                  >
+                    <Save className="w-5 h-5" />
+                    {profileUpdating || preferencesUpdating ? 'Saving...' : 'Save All Changes'}
+                  </button>
+                  <p className="text-sm text-slate-400 text-center">
+                    {hasActualChanges 
+                      ? 'You have unsaved changes' 
+                      : 'No changes detected'
+                    }
+                  </p>
+                </div>
               </div>
             </div>
           </main>

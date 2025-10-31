@@ -1,12 +1,13 @@
-import { LogOut, User } from "lucide-react";
+import { LogOut, User, Download } from "lucide-react";
 import { createPortal } from "react-dom";
 import type { NotificationItem } from "./types";
+import { downloadArbitrageDataCSV } from "../../utils/exportData";
 
 const isBrowser = typeof window !== "undefined" && typeof document !== "undefined";
 
 type OpportunitiesHeaderProps = {
   title: string;
-  notifications: NotificationItem[];
+  notifications: (NotificationItem & { id: string, isRead: boolean })[];
   notificationOpen: boolean;
   onNotificationToggle: () => void;
   onNotificationClose: () => void;
@@ -17,6 +18,10 @@ type OpportunitiesHeaderProps = {
   onNavigate: (path: string) => void;
   onLogout: () => Promise<void> | void;
   userName?: string | null;
+  unreadCount?: number;
+  onMarkAsRead?: (alertIds: string[]) => void;
+  onMarkAllAsRead?: () => void;
+  onClearAll?: () => void;
 };
 
 const OpportunitiesHeader: React.FC<OpportunitiesHeaderProps> = ({
@@ -32,15 +37,58 @@ const OpportunitiesHeader: React.FC<OpportunitiesHeaderProps> = ({
   onNavigate,
   onLogout,
   userName,
+  unreadCount,
+  onMarkAsRead,
+  onMarkAllAsRead,
+  onClearAll,
 }) => {
   const displayName = userName || "User";
   const userInitial = displayName.charAt(0).toUpperCase();
+  const displayCount = unreadCount ?? notifications.filter(n => !n.isRead).length;
+
+  const handleNotificationClick = (notificationId: string) => {
+    console.log('🔔 Notification clicked, ID:', notificationId);
+    if (onMarkAsRead) {
+      console.log('📨 Calling onMarkAsRead function');
+      onMarkAsRead([notificationId]);
+    } else {
+      console.error('❌ onMarkAsRead function not provided!');
+    }
+  };
+
+  const handleMarkAllAsRead = () => {
+    console.log('🔔 Mark All Read button clicked');
+    if (onMarkAllAsRead) {
+      console.log('📨 Calling onMarkAllAsRead function');
+      onMarkAllAsRead();
+    } else {
+      console.error('❌ onMarkAllAsRead function not provided!');
+    }
+  };
+
+  const handleClearAll = () => {
+    console.log('🗑️ Clear All button clicked');
+    if (onClearAll) {
+      console.log('📨 Calling onClearAll function');
+      onClearAll();
+    } else {
+      console.error('❌ onClearAll function not provided!');
+    }
+  };
 
   const handleLogout = async () => {
     try {
       await onLogout();
     } finally {
       onProfileDropdownClose();
+    }
+  };
+
+  const handleExportData = () => {
+    try {
+      downloadArbitrageDataCSV();
+    } catch (error) {
+      console.error('Export failed:', error);
     }
   };
 
@@ -60,6 +108,15 @@ const OpportunitiesHeader: React.FC<OpportunitiesHeaderProps> = ({
         </div>
 
         <div className="flex items-center gap-3">
+          <button
+            onClick={handleExportData}
+            className="flex items-center gap-2 rounded-xl border border-slate-700/50 bg-slate-800/50 px-3 py-2 text-sm font-medium text-slate-200 hover:bg-slate-700/50 transition"
+            title="Export Data as CSV"
+          >
+            <Download className="h-4 w-4 text-emerald-400" />
+            <span className="hidden sm:inline">Export</span>
+          </button>
+
           <div className="relative">
             <button
               onClick={onNotificationToggle}
@@ -68,9 +125,11 @@ const OpportunitiesHeader: React.FC<OpportunitiesHeaderProps> = ({
               <svg className="w-5 h-5 text-yellow-400" fill="currentColor" viewBox="0 0 24 24">
                 <path d="M12 2C10.343 2 9 3.343 9 5v1.07C6.164 6.562 4 9.138 4 12v5l-1 1v1h18v-1l-1-1v-5c0-2.862-2.164-5.438-5-5.93V5c0-1.657-1.343-3-3-3zm0 20a3 3 0 003-3H9a3 3 0 003 3z" />
               </svg>
-              <div className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-[10px] font-bold text-white rounded-full flex items-center justify-center">
-                {notifications.length}
-              </div>
+              {displayCount > 0 && (
+                <div className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-[10px] font-bold text-white rounded-full flex items-center justify-center">
+                  {displayCount}
+                </div>
+              )}
             </button>
 
             {notificationOpen && isBrowser &&
@@ -84,20 +143,41 @@ const OpportunitiesHeader: React.FC<OpportunitiesHeaderProps> = ({
                       <span className="font-semibold text-slate-200">Notifications</span>
                     </div>
                     <div className="flex gap-6">
-                      <button className="text-xs text-slate-400 hover:text-slate-200">Mark All Read</button>
-                      <button className="text-xs text-slate-400 hover:text-slate-200">Clear All</button>
+                      <button 
+                        onClick={handleMarkAllAsRead}
+                        className="text-xs text-slate-400 hover:text-slate-200"
+                      >
+                        Mark All Read
+                      </button>
+                      <button 
+                        onClick={handleClearAll}
+                        className="text-xs text-slate-400 hover:text-red-400"
+                      >
+                        Clear All
+                      </button>
                     </div>
                   </div>
 
                   <div className="max-h-[60vh] overflow-y-auto divide-y divide-slate-800/50">
-                    {notifications.map((n, i) => (
-                      <div key={`${n.title}-${i}`} className="flex flex-col px-4 py-3 hover:bg-slate-800/30 transition">
-                        {n.type === "price" ? (
-                          <>
-                            <div className="flex items-center justify-between">
-                              <span className="text-slate-200 font-medium">{n.title}</span>
-                              <span className="text-xs text-cyan-400">{n.time}</span>
-                            </div>
+                    {notifications.length === 0 ? (
+                      <div className="px-4 py-8 text-center text-slate-400">
+                        No notifications
+                      </div>
+                    ) : (
+                      notifications.map((n, i) => (
+                        <div 
+                          key={`${n.id}-${i}`} 
+                          className={`flex flex-col px-4 py-3 hover:bg-slate-800/30 transition cursor-pointer ${
+                            !n.isRead ? 'bg-slate-800/20' : ''
+                          }`}
+                          onClick={() => handleNotificationClick(n.id)}
+                        >
+                          {n.type === "price" ? (
+                            <>
+                              <div className="flex items-center justify-between">
+                                <span className="text-slate-200 font-medium">{n.title}</span>
+                                <span className="text-xs text-cyan-400">{n.time}</span>
+                              </div>
                             <p className="text-sm text-slate-300 mt-1">
                               {n.pair} reached your target of {n.target}
                             </p>
@@ -118,7 +198,8 @@ const OpportunitiesHeader: React.FC<OpportunitiesHeaderProps> = ({
                           </>
                         )}
                       </div>
-                    ))}
+                    ))
+                    )}
                   </div>
 
                   <button

@@ -31,7 +31,6 @@ export const useRegisterForm = () => {
   
   const [errors, setErrors] = useState<FormErrors>({});
   const [agreeToTerms, setAgreeToTerms] = useState(false);
-  const [subscribeToUpdates, setSubscribeToUpdates] = useState(false);
 
   const validateForm = (): boolean => {
     const newErrors: FormErrors = {};
@@ -211,10 +210,8 @@ export const useRegisterForm = () => {
     formData,
     errors,
     agreeToTerms,
-    subscribeToUpdates,
     isLoading,
     setAgreeToTerms,
-    setSubscribeToUpdates,
     handleInputChange,
     handleSubmit,
     clearErrors,

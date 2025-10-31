@@ -1,27 +1,26 @@
+import { useNavigate } from "react-router-dom";
 import BrandingPanel from "../components/sections/BrandingPanel";
 import VerticalSeparator from "../components/ui/VerticalSeparator/VerticalSeparator";
 import ChangePasswordForm from "../components/forms/ChangePasswordForm";
+import AuthLayout from "../components/sections/AuthLayout";
 
 const ChangePasswordPage = () => {
+  const navigate = useNavigate();
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 text-white">
-      {/* Background */}
-      <div className="fixed inset-0 bg-[radial-gradient(ellipse_at_top_left,_var(--tw-gradient-stops))] from-cyan-900/10 via-slate-950 to-purple-900/10"></div>
-      
-      <div className="relative z-10 flex min-h-screen">
-        {/* Left Panel - Branding */}
-        <BrandingPanel />
-        
-        {/* Vertical Separator */}
-        <VerticalSeparator />
-        
-        {/* Right Panel - Form */}
-        <div className="flex-1 flex items-center justify-center px-4 sm:px-6 lg:px-8 py-12">
-          <ChangePasswordForm />
-        </div>
+    <AuthLayout>
+      <BrandingPanel />
+      <VerticalSeparator />
+      <div className="flex flex-col justify-center px-4 sm:px-6 lg:px-8 py-12">
+        <button
+          onClick={() => navigate("/dashboard")}
+          className="mb-6 self-start rounded-lg border border-slate-700/60 px-3 py-1.5 text-xs font-semibold uppercase tracking-wide text-slate-300 transition-colors hover:bg-slate-800/60"
+        >
+          Back to dashboard
+        </button>
+        <ChangePasswordForm />
       </div>
-    </div>
+    </AuthLayout>
   );
 };
 

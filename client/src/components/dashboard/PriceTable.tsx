@@ -98,7 +98,6 @@ const PriceTable: React.FC<Props> = ({
     };
   };
 
-  // derive unique chains and tokens for selectors
   const chains = useMemo(
     () => Array.from(new Set(tokens.map(t => t.chain))).sort((a, b) => a.localeCompare(b)),
     [tokens]

@@ -1,6 +1,7 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
+import { useNotifications } from "../hooks/useNotifications";
 import FAQLayout from "../components/faq/FAQLayout";
 import FAQSidebar from "../components/faq/FAQSidebar";
 import FAQHeader from "../components/faq/FAQHeader";
@@ -12,12 +13,12 @@ import {
   FAQ_CATEGORIES,
   FAQ_ITEMS,
   FAQ_NAVIGATION,
-  FAQ_NOTIFICATIONS,
 } from "../components/faq/constants";
 
 const FAQPage = () => {
   const navigate = useNavigate();
   const { user, logout } = useAuth();
+  const isAuthenticated = Boolean(user);
 
   const [activeTab, setActiveTab] = useState("FAQ");
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -26,6 +27,8 @@ const FAQPage = () => {
   const [openFAQItems, setOpenFAQItems] = useState<string[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("all");
+
+  const { notifications, unreadCount, markAsRead, markAllAsRead, clearAllNotifications } = useNotifications(10, 3600000, { enabled: isAuthenticated });
 
   const categoriesWithCounts = useMemo<FAQCategoryWithCount[]>(() => {
     return FAQ_CATEGORIES.map((category) => {
@@ -69,8 +72,8 @@ const FAQPage = () => {
     try {
       await logout();
       navigate("/");
-    } catch (error) {
-      console.error("Logout failed:", error);
+    } catch {
+      /* Error handled by auth context */
     }
   };
 
@@ -79,6 +82,27 @@ const FAQPage = () => {
     setSelectedCategory("all");
     setOpenFAQItems([]);
   };
+
+  useEffect(() => {
+    if (!isAuthenticated) {
+      setProfileDropdownOpen(false);
+      setNotificationOpen(false);
+    }
+  }, [isAuthenticated]);
+
+  useEffect(() => {
+    if (sidebarOpen) {
+      setNotificationOpen(false);
+      setProfileDropdownOpen(false);
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+    }
+
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [sidebarOpen]);
 
   const activeCategoryLabel =
     categoriesWithCounts.find((category) => category.id === selectedCategory)?.name ??
@@ -108,15 +132,20 @@ const FAQPage = () => {
         }}
       >
         <FAQHeader
+          isAuthenticated={isAuthenticated}
           onSidebarToggle={() => setSidebarOpen((prev) => !prev)}
           notificationOpen={notificationOpen}
           onNotificationToggle={() => setNotificationOpen((prev) => !prev)}
           profileDropdownOpen={profileDropdownOpen}
           onProfileDropdownToggle={() => setProfileDropdownOpen((prev) => !prev)}
-          notifications={FAQ_NOTIFICATIONS}
+          notifications={notifications}
           userName={user?.name ?? null}
           onNavigate={(path) => navigate(path)}
           onLogout={handleLogout}
+          unreadCount={unreadCount}
+          onMarkAsRead={markAsRead}
+          onMarkAllAsRead={markAllAsRead}
+          onClearAll={clearAllNotifications}
         />
 
         <main className="flex-1 overflow-y-auto p-4 lg:p-6">

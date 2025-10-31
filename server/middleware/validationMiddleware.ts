@@ -1,27 +1,26 @@
-// middleware/validationMiddleware.ts
 import { Request, Response, NextFunction } from 'express';
 import Joi from 'joi';
+import { createError } from './errorMiddleware';
+import logger from '../utils/logger';
 
 export const validate = (schema: Joi.ObjectSchema) => {
   return (req: Request, res: Response, next: NextFunction) => {
-    console.log('🔍 [ValidationMiddleware] Validating request body:', req.body);
-    const { error } = schema.validate(req.body);
-    
+    const { error, value } = schema.validate(req.body, {
+      abortEarly: false,
+      stripUnknown: true,
+    });
+
     if (error) {
-      console.log('❌ [ValidationMiddleware] Validation failed:', error.details);
-      const errorMessage = error.details.map(detail => detail.message).join(', ');
-      return res.status(400).json({
-        error: 'Validation Error',
-        message: errorMessage,
-      });
+      const errorMessage = error.details.map((detail) => detail.message).join(', ');
+      logger.warn('Request body validation failed', { path: req.path, error: errorMessage });
+      return next(createError(errorMessage, 400));
     }
-    
-    console.log('✅ [ValidationMiddleware] Validation passed');
+
+    req.body = value;
     next();
   };
 };
 
-// Validation schemas
 export const authSchemas = {
   register: Joi.object({
     name: Joi.string().min(10).max(50).required().messages({
@@ -87,7 +86,6 @@ export const authSchemas = {
   }),
 };
 
-// Profile validation schemas
 export const profileSchemas = {
   updateProfile: Joi.object({
     name: Joi.string().min(10).max(50).optional().messages({
@@ -103,9 +101,6 @@ export const profileSchemas = {
       'number.min': 'Avatar must be between 0 and 5',
       'number.max': 'Avatar must be between 0 and 5',
     }),
-    // email: Joi.string().email().optional().messages({
-    //   'string.email': 'Please provide a valid email address',
-    // }), // Email changes are disabled for security
   }).min(1).messages({
     'object.min': 'At least one field must be provided for update',
   }),
@@ -128,6 +123,37 @@ export const profileSchemas = {
   deleteAccount: Joi.object({
     password: Joi.string().required().messages({
       'any.required': 'Password is required to delete account',
+    }),
+  }),
+};
+
+export const twoFactorSchemas = {
+  setup: Joi.object({}),
+  verifySetup: Joi.object({
+    token: Joi.string().length(6).pattern(/^[0-9]+$/).required().messages({
+      'string.length': 'Verification code must be 6 digits',
+      'string.pattern.base': 'Verification code must contain only numbers',
+    }),
+  }),
+  verifyToken: Joi.object({
+    token: Joi.string().min(6).max(8).required().messages({
+      'string.min': 'Token must be at least 6 characters',
+      'string.max': 'Token must be at most 8 characters',
+    }),
+  }),
+  verifyLogin: Joi.object({
+    email: Joi.string().email().required().messages({
+      'string.email': 'Please provide a valid email address',
+      'any.required': 'Email is required',
+    }),
+    token: Joi.string().min(6).max(8).required().messages({
+      'string.min': 'Token must be at least 6 characters',
+      'string.max': 'Token must be at most 8 characters',
+    }),
+  }),
+  disable: Joi.object({
+    password: Joi.string().required().messages({
+      'any.required': 'Password is required to disable two-factor authentication',
     }),
   }),
 };

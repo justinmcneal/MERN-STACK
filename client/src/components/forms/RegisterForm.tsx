@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Input from '../ui/Input/Input';
 import Button from '../ui/Button/Button';
+import TermsAgreementModal from '../ui/TermsAgreementModal/TermsAgreementModal';
 import { useRegisterForm } from '../../hooks/useRegisterForm';
 
 interface RegisterFormProps {
@@ -10,14 +11,13 @@ interface RegisterFormProps {
 
 const RegisterForm: React.FC<RegisterFormProps> = ({ className = "" }) => {
   const navigate = useNavigate();
+  const [showTermsModal, setShowTermsModal] = useState(false);
   const {
     formData,
     errors,
     agreeToTerms,
-    subscribeToUpdates,
     isLoading,
     setAgreeToTerms,
-    setSubscribeToUpdates,
     handleInputChange,
     handleSubmit,
   } = useRegisterForm();
@@ -159,47 +159,23 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ className = "" }) => {
           {isLoading ? 'Creating Account...' : 'Sign Up'}
         </Button>
 
-        {/* Terms of Service and Privacy Policy */}
-        <div className="flex items-start gap-2">
-          <input
-            type="checkbox"
-            checked={agreeToTerms}
-            onChange={(e) => setAgreeToTerms(e.target.checked)}
-            className="w-4 h-4 bg-slate-800 border border-slate-600 rounded focus:ring-2 focus:ring-cyan-400/50 text-cyan-500 mt-1"
-            aria-describedby="terms-description"
-          />
-          <span className="text-sm text-slate-300" id="terms-description">
-            I agree to the{" "}
-            <button 
-              type="button"
-              className="text-cyan-400 cursor-pointer hover:underline"
-              onClick={() => {/* TODO: Open terms modal */}}
-            >
-              Terms of Service
-            </button> and{" "}
-            <button 
-              type="button"
-              className="text-cyan-400 cursor-pointer hover:underline"
-              onClick={() => {/* TODO: Open privacy modal */}}
-            >
-              Privacy Policy
-            </button>
-          </span>
-        </div>
+        {/* Terms Agreement Button */}
+        <button
+          type="button"
+          onClick={() => setShowTermsModal(true)}
+          className="w-full px-6 py-3 bg-slate-800/50 border border-slate-700/50 hover:border-cyan-400/50 text-slate-300 hover:text-white rounded-xl transition-all duration-300 font-medium text-sm"
+        >
+          Review & Accept Terms
+        </button>
 
-        {/* Subscribe to trading */}
-        <div className="flex items-center gap-2">
-          <input
-            type="checkbox"
-            checked={subscribeToUpdates}
-            onChange={(e) => setSubscribeToUpdates(e.target.checked)}
-            className="w-4 h-4 bg-slate-800 border border-slate-600 rounded focus:ring-2 focus:ring-cyan-400/50 text-cyan-500"
-            aria-describedby="subscribe-description"
-          />
-          <span className="text-sm text-slate-300" id="subscribe-description">
-            Subscribe to trading insights and updates
-          </span>
-        </div>
+        {agreeToTerms && (
+          <div className="bg-emerald-500/10 border border-emerald-500/30 rounded-lg p-3 flex items-center gap-2">
+            <svg className="w-5 h-5 text-emerald-400 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+            </svg>
+            <span className="text-xs text-emerald-400">You have agreed to our Terms of Service and Privacy Policy</span>
+          </div>
+        )}
 
         {/* Login Link */}
         <div className="text-center pt-4">
@@ -216,6 +192,16 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ className = "" }) => {
           </p>
         </div>
       </form>
+
+      <TermsAgreementModal
+        isOpen={showTermsModal}
+        onClose={() => setShowTermsModal(false)}
+        onAgree={() => {
+          setAgreeToTerms(true);
+          setShowTermsModal(false);
+        }}
+        isLoading={isLoading}
+      />
     </div>
   );
 };

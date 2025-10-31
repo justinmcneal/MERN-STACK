@@ -103,11 +103,10 @@ export interface UserPreference {
   notificationSettings: {
     email: boolean;
     dashboard: boolean;
-    telegram?: boolean;
-    discord?: boolean;
   };
   refreshInterval: number;
   currency: CurrencyCode;
+  manualMonitoringMinutes: number | null;
 }
 
 export interface ProfileResponse {
@@ -140,6 +139,7 @@ export interface UpdatePreferencesData {
   notificationSettings?: Partial<UserPreference['notificationSettings']>;
   refreshInterval?: number;
   currency?: CurrencyCode;
+  manualMonitoringMinutes?: number | null;
 }
 
 export interface DeleteAccountData {
@@ -266,6 +266,21 @@ class ProfileService {
       const response = await apiClient.put<{ success: boolean; data: UserPreference; message: string }>(
         '/preferences/notifications',
         { notificationSettings },
+      );
+      return response.data.data;
+    } catch (error: unknown) {
+      throw this.handleError(error);
+    }
+  }
+
+  /**
+   * Update manual monitoring time (in minutes)
+   */
+  static async updateManualMonitoringTime(manualMonitoringMinutes: number | null): Promise<UserPreference> {
+    try {
+      const response = await apiClient.put<{ success: boolean; data: UserPreference; message: string }>(
+        '/preferences/manual-monitoring',
+        { manualMonitoringMinutes },
       );
       return response.data.data;
     } catch (error: unknown) {

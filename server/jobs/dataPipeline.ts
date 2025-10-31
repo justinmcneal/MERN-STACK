@@ -22,11 +22,9 @@ class DataPipeline {
   };
 
   constructor(options?: { autoStart?: boolean }) {
-    // By default, autoStart is true to preserve existing behavior.
     const autoStart = options?.autoStart !== false;
     if (autoStart) {
       this.startDataPipeline();
-      // Kick off an initial update so prices are available before the first cron tick.
       this.updateTokenPrices().catch((err) => {
         console.error('Initial token price update failed:', err);
         this.status.errors.push(`Initial token update failed: ${err instanceof Error ? err.message : err}`);
@@ -34,21 +32,15 @@ class DataPipeline {
     }
   }
 
-  /**
-   * Start the data pipeline with scheduled tasks
-   */
   public startDataPipeline(): void {
-    // Update token prices every hour
     cron.schedule('0 * * * *', async () => {
       await this.updateTokenPrices();
     });
 
-    // Update gas prices every hour
     cron.schedule('0 * * * *', async () => {
       await this.updateGasPrices();
     });
 
-    // Clean up old data every hour
     cron.schedule('0 * * * *', async () => {
       await this.cleanupOldData();
     });
@@ -59,9 +51,6 @@ class DataPipeline {
     console.log('   - Data cleanup: every hour');
   }
 
-  /**
-   * Update token prices from external APIs
-   */
   public async updateTokenPrices(): Promise<void> {
     if (this.isRunning) {
       console.log('⚠️  Price update already in progress, skipping...');
@@ -80,12 +69,10 @@ class DataPipeline {
     const snapshotTime = new Date();
     const historyBatch: Array<{ symbol: string; chain: string; price: number; collectedAt: Date; source: string }> = [];
 
-      // Respect backoff / empty results
       if (!prices || prices.length === 0) {
         console.log('No price data returned (possible backoff). Skipping token upserts.');
       } else {
         for (const priceInfo of prices) {
-          // Safety check: Only process supported tokens
           if (!isValidToken(priceInfo.symbol)) {
             console.warn(`⚠️  Skipping unsupported token: ${priceInfo.symbol}`);
             continue;
@@ -93,7 +80,6 @@ class DataPipeline {
           
           const tokenContracts = TOKEN_CONTRACTS[priceInfo.symbol as keyof typeof TOKEN_CONTRACTS] || {};
           for (const chain of supportedChains) {
-            // Skip if token not mapped to this chain
             if (!Object.prototype.hasOwnProperty.call(tokenContracts, chain)) continue;
 
             const contractAddr = tokenContracts[chain as keyof typeof tokenContracts];
@@ -145,7 +131,6 @@ class DataPipeline {
       const duration = Date.now() - startTime;
       console.log(`✅ Updated ${tokensUpdated} CEX token prices in ${duration}ms`);
 
-      // Now fetch DEX prices for chain-specific arbitrage
       await this.updateDexPrices();
 
     } catch (error) {
@@ -157,9 +142,6 @@ class DataPipeline {
     }
   }
 
-  /**
-   * Update DEX prices for chain-specific arbitrage detection
-   */
   public async updateDexPrices(): Promise<void> {
     const startTime = Date.now();
 
@@ -174,10 +156,8 @@ class DataPipeline {
         return;
       }
 
-      // Update each token with its chain-specific DEX price
       for (const dexPrice of dexPrices) {
         try {
-          // Safety check: Only update supported tokens
           if (!isValidToken(dexPrice.symbol)) {
             console.warn(`⚠️  Skipping DEX price for unsupported token: ${dexPrice.symbol}`);
             continue;
@@ -198,7 +178,6 @@ class DataPipeline {
 
           if (result) {
             tokensUpdated++;
-            // Only log if there's a significant price
             if (tokensUpdated <= 3 || dexPrice.price > 100) {
               console.log(`  ✓ ${dexPrice.symbol}/${dexPrice.chain}: $${dexPrice.price.toFixed(2)}`);
             }
@@ -218,9 +197,6 @@ class DataPipeline {
     }
   }
 
-  /**
-   * Update gas prices for all supported chains
-   */
   public async updateGasPrices(): Promise<void> {
     try {
       console.log('⛽ Updating gas prices...');
@@ -257,23 +233,18 @@ class DataPipeline {
     }
   }
 
-  /**
-   * Clean up old data to maintain database performance
-   */
   public async cleanupOldData(): Promise<void> {
     try {
       console.log('🧹 Starting data cleanup...');
 
       const cutoffDate = new Date();
-      cutoffDate.setDate(cutoffDate.getDate() - 7); // Keep data for 7 days
+      cutoffDate.setDate(cutoffDate.getDate() - 7);
 
-      // Clean up old expired opportunities
       const expiredOpportunities = await require('../models').Opportunity.deleteMany({
         status: 'expired',
         updatedAt: { $lt: cutoffDate }
       });
 
-      // Clean up old read alerts
       const oldAlerts = await require('../models').Alert.deleteMany({
         isRead: true,
         createdAt: { $lt: cutoffDate }
@@ -295,9 +266,6 @@ class DataPipeline {
     }
   }
 
-  /**
-   * Force update all data (for manual triggers)
-   */
   public async forceUpdateAll(): Promise<void> {
     console.log('🔄 Force updating all data...');
     
@@ -309,9 +277,6 @@ class DataPipeline {
     console.log('✅ Force update completed');
   }
 
-  /**
-   * Get pipeline status
-   */
   public getStatus(): PipelineStatus {
     return {
       ...this.status,
@@ -319,9 +284,6 @@ class DataPipeline {
     };
   }
 
-  /**
-   * Get health check information
-   */
   public getHealthCheck(): any {
     const now = new Date();
     const lastPriceUpdate = this.status.lastPriceUpdate;
@@ -335,17 +297,12 @@ class DataPipeline {
       priceUpdateAge: lastPriceUpdate ? Math.floor((now.getTime() - lastPriceUpdate.getTime()) / 1000) : null,
       gasUpdateAge: lastGasUpdate ? Math.floor((now.getTime() - lastGasUpdate.getTime()) / 1000) : null,
       totalTokensUpdated: this.status.totalTokensUpdated,
-      recentErrors: this.status.errors.slice(-5), // Last 5 errors
+      recentErrors: this.status.errors.slice(-5),
       uptime: process.uptime()
     };
   }
 
-  /**
-   * Stop the data pipeline
-   */
   public stop(): void {
-    // Note: node-cron doesn't have a destroy method
-    // The cron jobs will stop when the process exits
     this.isRunning = false;
     console.log('🛑 Data pipeline stopped');
   }

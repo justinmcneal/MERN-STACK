@@ -52,6 +52,7 @@ const App: React.FC = () => {
             <Route path="/forgot-password" element={<ForgotPassword />} />
             <Route path="/reset-password" element={<ResetPassword />} />
             <Route path="/about" element={<AboutUs />} />
+            <Route path="/faq" element={<FAQ />} />
             
             {/* Protected Routes */}
             <Route path="/dashboard" element={
@@ -72,11 +73,6 @@ const App: React.FC = () => {
             <Route path="/contact-support" element={
               <ProtectedRoute>
                 <ContactSupport />
-              </ProtectedRoute>
-            } />
-            <Route path="/faq" element={
-              <ProtectedRoute>
-                <FAQ />
               </ProtectedRoute>
             } />
             <Route path="/about-us" element={

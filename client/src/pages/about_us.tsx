@@ -13,7 +13,7 @@ const AboutUsPage = () => {
   const navigate = useNavigate();
 
   const handleBackHome = () => {
-    navigate("/landing_page");
+    navigate("/");
   };
 
   return (

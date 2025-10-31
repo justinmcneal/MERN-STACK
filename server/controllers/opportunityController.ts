@@ -30,14 +30,10 @@ export const getOpportunities = asyncHandler(async (req: Request, res: Response)
 
   const { limit, skip, sortBy, sortOrder } = parsePaginationParams(req.query);
 
-  let query: any = {};
+  const query: any = {};
 
   if (status) {
     query.status = status;
-  }
-
-  if (tokenId) {
-    query.tokenId = tokenId;
   }
 
   if (chainFrom) {
@@ -51,6 +47,10 @@ export const getOpportunities = asyncHandler(async (req: Request, res: Response)
   Object.assign(query, buildRangeFilter('estimatedProfit', minProfit as any, maxProfit as any));
   Object.assign(query, buildRangeFilter('score', minScore as any, maxScore as any));
 
+  if (tokenId) {
+    query.tokenId = String(tokenId);
+  }
+
   const sort = buildSortObject(sortBy, sortOrder);
 
   const opportunities = await Opportunity.find(query)
@@ -62,7 +62,7 @@ export const getOpportunities = asyncHandler(async (req: Request, res: Response)
   const total = await Opportunity.countDocuments(query);
 
   const allowFlagged = parseBoolean(includeFlagged);
-  const filtered = filterOpportunities(opportunities.map(o => o.toObject()), allowFlagged);
+  const filtered = filterOpportunities(opportunities.map((opportunity) => opportunity.toObject()), allowFlagged);
 
   sendPaginatedSuccess(res, filtered, total);
 });

@@ -6,6 +6,8 @@ import { useAuth } from "../../context/AuthContext";
 
 interface ProfileHeaderProps {
   notificationOpen: boolean;
+  onNotificationToggle: () => void;
+  onNotificationClose: () => void;
   profileDropdownOpen: boolean;
   setProfileDropdownOpen: (open: boolean) => void;
   notifications: any[];
@@ -14,6 +16,8 @@ interface ProfileHeaderProps {
 
 const ProfileHeader: React.FC<ProfileHeaderProps> = ({
   notificationOpen,
+  onNotificationToggle,
+  onNotificationClose,
   profileDropdownOpen,
   setProfileDropdownOpen,
   notifications,
@@ -51,7 +55,7 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({
           {/* Notification */}
           <div className="relative">
             <button
-              onClick={() => {}}
+              onClick={onNotificationToggle}
               className="relative p-2 rounded-lg bg-slate-800/50 border border-slate-700/50 hover:bg-slate-700/50 transition-all">
               <svg
                 className="w-5 h-5 text-yellow-400"
@@ -79,10 +83,11 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({
                       </svg>
                       <span className="font-semibold text-slate-200">Notifications</span>
                     </div>
-                    <div className="flex gap-6">
-                      <button className="text-xs text-slate-400 hover:text-slate-200">Mark All Read</button>
-                      <button className="text-xs text-slate-400 hover:text-slate-200">Clear All</button>
-                    </div>
+                    <button onClick={onNotificationClose} className="text-slate-400 hover:text-slate-200">
+                      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                    </button>
                   </div>
 
                   {/* List */}

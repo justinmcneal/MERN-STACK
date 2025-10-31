@@ -7,6 +7,7 @@ import {
   updateAlertThresholds,
   updateNotificationSettings,
   updateAppearanceSettings,
+  updateManualMonitoringTime,
   resetPreferences,
   getSupportedTokensForPreferences
 } from '../controllers/preferenceController';
@@ -20,6 +21,7 @@ router.put('/tokens', updateTrackedTokens);
 router.put('/alerts', updateAlertThresholds);
 router.put('/notifications', updateNotificationSettings);
 router.put('/appearance', updateAppearanceSettings);
+router.put('/manual-monitoring', updateManualMonitoringTime);
 router.post('/reset', resetPreferences);
 
 export default router;
